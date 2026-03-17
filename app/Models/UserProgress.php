@@ -26,4 +26,24 @@ class UserProgress extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function gainExperience(int $amount): bool
+    {
+        $this->experience_points += $amount;
+        $leveledUp = false;
+
+        $xpForNextLevel = $this->current_level * 100;
+
+        while ($this->experience_points >= $xpForNextLevel) {
+            $this->current_level += 1;
+            $this->experience_points -= $xpForNextLevel;
+            $leveledUp = true;
+
+            $xpForNextLevel = $this->current_level * 100;
+        }
+
+        $this->save();
+
+        return $leveledUp;
+    }
 }

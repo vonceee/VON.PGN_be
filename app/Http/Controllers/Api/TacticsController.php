@@ -31,56 +31,60 @@ class TacticsController extends Controller
         return response()->json(['data' => $puzzle]);
     }
 
-    // 2. Process the result of their attempt
     public function solve(Request $request)
     {
         $request->validate([
             'puzzle_id' => 'required|exists:puzzles,id',
-            'success' => 'required|boolean', // Did they solve it correctly?
+            'success' => 'required|boolean',
         ]);
 
         $user = $request->user('sanctum');
-        if (!$user) return response()->json(['error' => 'Unauthorized'], 401);
+        if (!$user)
+            return response()->json(['error' => 'Unauthorized'], 401);
 
         $puzzle = Puzzle::find($request->puzzle_id);
 
-        // A simplified Elo system:
-        // Win = +15 Rating, Lose = -10 Rating.
-        // You can upgrade this to a true mathematical Elo formula later!
         $ratingChange = $request->success ? 15 : -10;
-        $xpEarned = $request->success ? 110 : 0; // Give 10 XP for getting it right
+        $xpEarned = $request->success ? 110 : 0;
 
-        // Update the user's progress
         $progress = $user->progress;
         if (!$progress) {
             $progress = $user->progress()->create();
         }
 
+        /**
+         * Update Rating
+         */
         $currentRating = $progress->puzzle_rating ?? 1200;
         $newRating = $currentRating + $ratingChange;
-
-        // Prevent ratings from dropping below 400 (absolute beginner)
-        if ($newRating < 400) $newRating = 400;
-
+        if ($newRating < 400)
+            $newRating = 400;
         $progress->puzzle_rating = $newRating;
 
-        // Add XP logic if you have an XP column on your user model:
-        $currentXp = $progress->experience_points ?? 0;
-        $progress->experience_points = $currentXp + $xpEarned;
-
-        // Update puzzle streak — increment on win, reset on fail
+        /**
+         * Update Streak
+         */
         $currentStreak = $progress->puzzle_streak ?? 0;
         $newStreak = $request->success ? $currentStreak + 1 : 0;
         $progress->puzzle_streak = $newStreak;
 
         $progress->save();
 
+        /**
+         * Update XP
+         */
+        $leveledUp = false;
+        if ($xpEarned > 0) {
+            $leveledUp = $progress->gainExperience($xpEarned);
+        }
+
         return response()->json([
             'success' => true,
             'new_rating' => $progress->puzzle_rating,
             'rating_change' => $ratingChange,
-            'xp_earned' => $xpEarned,
             'new_streak' => $newStreak,
+            'xp_earned' => $xpEarned,
+            'leveled_up' => $leveledUp,
         ]);
     }
 }

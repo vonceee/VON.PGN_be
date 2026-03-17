@@ -11,16 +11,28 @@ class CourseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create Course
         $course = Course::updateOrCreate(
             ['slug' => 'chess-basics'],
             [
                 'title' => 'Chess Basics',
-                'description' => 'Learn chess from the ground up. Understand the board, the pieces, and how the game works.',
+                'description' => '
+                    <p>Every chess grandmaster started exactly where you are right now — staring at a board full of pieces, wondering what they all do.</p>
+                    <br>
+                    <p>In this course, you will meet every piece on the board one by one. You will see how each one moves, practice on real boards, and solve challenges that test what you have learned — just like a real chess training session.</p>
+                    <br>
+                    <p>By the time you finish, you will know every piece by heart and be ready to play your very first game of chess.</p>
+                    <br>
+                    <p>Your pieces are on the board. Let us begin.</p>
+                ',
             ]
         );
 
-        // 2. Create Chapter
+        /*
+        =========================
+        CHAPTER 1 — MEET THE CHESS PIECES
+        =========================
+        */
+
         $chapter = Chapter::updateOrCreate(
             ['course_id' => $course->id, 'order' => 1],
             ['title' => 'Meet the Chess Pieces']
@@ -42,44 +54,78 @@ class CourseSeeder extends Seeder
                 'content_blocks' => [
                     [
                         'type' => 'text',
-                        'content' => '<p>the pawn is the most common piece in chess, and each player begins the game with eight pawns.</p>
-                    <br>
-                    <p>pawns may look small, but they are very important, they control space and help protect stronger pieces.</p>'
+                        'content' => '
+                            <p>Meet the pawn — the foot soldier of your army.</p>
+                            <br>
+                            <p>You have <strong>8 of them</strong>, standing in a line at the front. They might look small, but do not let that fool you. Pawns protect your stronger pieces, control the center of the board, and carry a secret power that we will discover at the end of this lesson.</p>
+                            <br>
+                            <p>First, let us see how a pawn moves.</p>
+                        '
+                    ],
+                    [
+                        'type' => 'board',
+                        'task' => [
+                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/Rf7GTWxj',
+                            'instructions' => 'A pawn moves forward — one square at a time. Click the pawn and move it forward one square.',
+                        ]
                     ],
                     [
                         'type' => 'text',
-                        'content' => '<p>pawns move forward one square at a time, however, on their very first move they may move two squares forward.</p>'
+                        'content' => '
+                            <p>Good. Now here is a special rule:</p>
+                            <br>
+                            <p>On a pawn\'s <strong>very first move</strong>, it gets to choose — move one square forward as usual, or jump two squares forward to get into the game faster.</p>
+                            <br>
+                            <p>After that first move, it is back to one square at a time.</p>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
                             'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/ZK3XhnhN',
-                            'instructions' => 'move the pawn forward two squares.',
+                            'instructions' => 'This pawn has not moved yet. Try moving it two squares forward — that is the special first-move option in action.',
                         ]
                     ],
                     [
                         'type' => 'text',
-                        'content' => '<p>pawns capture differently than they move, instead of capturing straight ahead, they capture one square diagonally.</p>'
+                        'content' => '
+                            <p>Now for something important: pawns do not capture the same way they move.</p>
+                            <br>
+                            <p>Instead of taking a piece straight ahead, a pawn captures <strong>one square diagonally forward</strong> — to the left or to the right.</p>
+                            <br>
+                            <p>This means a pawn can be completely blocked from moving forward, but still threaten pieces beside it.</p>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
                             'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/iyEeRw9s',
-                            'instructions' => 'capture the pawn.',
+                            'instructions' => 'An enemy piece is sitting on a diagonal square. Capture it by moving the pawn one square diagonally forward.',
                         ]
                     ],
                     [
                         'type' => 'text',
-                        'content' => '<p>pawns cannot move backward, they always march forward.</p>
-                    <p>if a pawn reaches the other side of the board, it can be promoted into a stronger piece such as a queen.</p>'
+                        'content' => '
+                            <p>Here is the pawn\'s secret power: <strong>promotion</strong>.</p>
+                            <br>
+                            <p>If a pawn marches all the way to the other end of the board — the very last row — it transforms. You can turn it into any piece you want: a queen, a rook, a bishop, or a knight.</p>
+                            <br>
+                            <p>Almost every player chooses the queen, because she is the most powerful piece in the game. Promoting a pawn to a queen is one of the most exciting moments in chess.</p>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
                             'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/mAMHxWi3',
-                            'instructions' => 'promote the pawn into a queen.',
+                            'instructions' => 'Guide the pawn forward to the last row. When it arrives, choose a piece to promote it to. What will you pick?',
                         ]
-                    ]
+                    ],
+                    [
+                        'type' => 'text',
+                        'content' => '
+                            <p><strong>Coach\'s tip:</strong> Pawns can never move backwards. Every step forward is permanent — so think before you push a pawn, because it cannot come back.</p>
+                        '
+                    ],
                 ]
             ]
         );
@@ -100,21 +146,46 @@ class CourseSeeder extends Seeder
                 'content_blocks' => [
                     [
                         'type' => 'text',
-                        'content' => '<p>the rook looks like a castle tower, each player starts with two rooks placed at the corners of the board.</p>
-                    <p>rooks are powerful pieces that control long straight lines.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>the rook moves horizontally or vertically, it can move any number of squares as long as nothing blocks its path.</p>
-                    <p>however, the rook cannot jump over pieces.</p>'
+                        'content' => '
+                            <p>The rook looks like a castle tower — and it plays like one too. It is one of the strongest pieces on the board.</p>
+                            <br>
+                            <p>You start with <strong>2 rooks</strong>, one in each corner. They begin tucked behind your pawns, but once those pawns move and the board opens up, the rooks become incredibly powerful.</p>
+                            <br>
+                            <p>Let us see how the rook moves.</p>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/toJNO3I2',
-                            'instructions' => 'observe how the rook moves.',
+                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/mgpyQnnU',
+                            'instructions' => 'The rook slides in straight lines — left, right, up, or down. It can travel as many squares as it wants, as long as nothing is in the way. Explore the board and see how far the rook can reach.',
                         ]
-                    ]
+                    ],
+                    [
+                        'type' => 'text',
+                        'content' => '
+                            <p>Here is what to remember about the rook:</p>
+                            <br>
+                            <ul>
+                                <li>-It moves in a <strong>straight line</strong> — horizontally or vertically.</li><br>
+                                <li>-It can go <strong>as many squares as it likes</strong> in one direction.</li><br>
+                                <li>-It <strong>cannot jump over</strong> other pieces. If something is in the way, it must stop.</li>
+                            </ul>
+                        '
+                    ],
+                    [
+                        'type' => 'board',
+                        'task' => [
+                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/rook-challenge',
+                            'instructions' => 'Move the rook to the highlighted square. There are pieces in the way — you will need to find the right path.',
+                        ]
+                    ],
+                    [
+                        'type' => 'text',
+                        'content' => '
+                            <p><strong>Coach\'s tip:</strong> Rooks love open lines. A rook trapped behind its own pawns does very little. As you learn to play, look for chances to move your pawns and free your rooks — that is when they truly come alive.</p>
+                        '
+                    ],
                 ]
             ]
         );
@@ -135,21 +206,51 @@ class CourseSeeder extends Seeder
                 'content_blocks' => [
                     [
                         'type' => 'text',
-                        'content' => '<p>each player starts the game with two bishops.</p>
-                    <p>bishops move diagonally across the board and can travel as far as they want.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>a special rule about bishops is that they always stay on the same color squares.</p>
-                    <p>if a bishop starts on a light square, it will always remain on light squares.</p>'
+                        'content' => '
+                            <p>The bishop is a long-range piece that strikes diagonally across the board.</p>
+                            <br>
+                            <p>You start with <strong>2 bishops</strong>. Look closely at where they begin — one starts on a light square, and the other starts on a dark square. That detail matters, and you will see why in a moment.</p>
+                            <br>
+                            <p>Let us see how the bishop moves.</p>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/3aKL0baG',
-                            'instructions' => 'observe how the bishop moves.',
+                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/k4752fQ9',
+                            'instructions' => 'The bishop moves diagonally — like an X shape spreading outward. Move it in different directions and notice which squares it visits.',
                         ]
-                    ]
+                    ],
+                    [
+                        'type' => 'text',
+                        'content' => '
+                            <p>Did you notice something? The bishop only ever lands on one color.</p>
+                            <br>
+                            <p>A bishop that starts on a light square will <strong>always</strong> stay on light squares. A bishop that starts on a dark square will always stay on dark squares. No matter how many moves it makes, it can never reach the other color.</p>
+                            <br>
+                            <p>Here is what to remember about the bishop:</p>
+                            <br>
+                            <ul>
+                                <li>-It moves <strong>diagonally</strong> in any direction.</li><br>
+                                <li>-It can go <strong>as many squares as it likes</strong> along a diagonal.</li><br>
+                                <li>-It <strong>always stays on the same color</strong>.</li><br>
+                                <li>-It <strong>cannot jump over</strong> other pieces.</li>
+                            </ul>
+                        '
+                    ],
+                    [
+                        'type' => 'board',
+                        'task' => [
+                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/bishop-challenge',
+                            'instructions' => 'Move the bishop to the highlighted square using diagonal moves. Plan your path before you move.',
+                        ]
+                    ],
+                    [
+                        'type' => 'text',
+                        'content' => '
+                            <p><strong>Coach\'s tip:</strong> Your two bishops are a team. One covers light squares, the other covers dark squares. Together they can reach every corner of the board. Keeping both bishops active and unblocked is a sign of good chess.</p>
+                        '
+                    ],
                 ]
             ]
         );
@@ -170,21 +271,57 @@ class CourseSeeder extends Seeder
                 'content_blocks' => [
                     [
                         'type' => 'text',
-                        'content' => '<p>the knight is the only piece shaped like a horse.</p>
-                    <p>it moves differently from every other chess piece.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>the knight moves in an L-shape: two squares in one direction and then one square to the side.</p>
-                    <p>knights also have a special ability. they can jump over other pieces.</p>'
+                        'content' => '
+                            <p>The knight is unlike any other piece on the board.</p>
+                            <br>
+                            <p>Every other piece moves in a straight line — forwards, backwards, sideways, or diagonally. The knight does none of that. It moves in an <strong>L-shape</strong>, and it is the only piece that can <strong>jump over</strong> other pieces in its way.</p>
+                            <br>
+                            <p>You start with <strong>2 knights</strong>. They are often the first pieces to come out at the start of a game — because unlike the rook or bishop, they do not need an open path to move.</p>
+                            <br>
+                            <p>Let us see the L-shape in action.</p>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/rdYsSMha',
-                            'instructions' => 'observe how the knight moves.',
+                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/eMYlOjbJ',
+                            'instructions' => 'Watch the knight move in its L-shape: two squares in one direction, then one square to the side. Try all the different directions — from the center of the board, a knight can reach up to 8 different squares.',
                         ]
-                    ]
+                    ],
+                    [
+                        'type' => 'text',
+                        'content' => '
+                            <p>Here is a simple way to remember the knight\'s move:</p>
+                            <br>
+                            <p><strong>Two squares in any direction, then one square to the side.</strong></p>
+                            <br>
+                            <p>Two forward and one right. Two left and one down. Two backward and one left. Any combination works — as long as it makes the L-shape.</p>
+                            <br>
+                            <p>One more thing worth noticing: the knight always lands on the <strong>opposite color</strong> from where it started. Start on a light square, land on a dark square. Every single time.</p>
+                            <br>
+                            <p>And unlike every other piece, the knight <strong>jumps right over</strong> anything in its path — friendly pieces, enemy pieces, it does not matter.</p>
+                        '
+                    ],
+                    [
+                        'type' => 'board',
+                        'task' => [
+                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/knight-jump',
+                            'instructions' => 'The board is crowded with pieces. Move the knight to the highlighted square — it will have to jump over pieces to get there. No other piece could make this move.',
+                        ]
+                    ],
+                    [
+                        'type' => 'board',
+                        'task' => [
+                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/knight-challenge',
+                            'instructions' => 'Can you get the knight to the highlighted square? Count the L carefully — there may be more than one way to get there.',
+                        ]
+                    ],
+                    [
+                        'type' => 'text',
+                        'content' => '
+                            <p><strong>Coach\'s tip:</strong> The knight is the sneakiest attacker on the board. Because it jumps in an L and hops over pieces, it can threaten pieces that do not see it coming. When your opponent is focused on the rooks and bishops, the knight is often the one causing problems.</p>
+                        '
+                    ],
                 ]
             ]
         );
@@ -205,21 +342,47 @@ class CourseSeeder extends Seeder
                 'content_blocks' => [
                     [
                         'type' => 'text',
-                        'content' => '<p>the queen is the most powerful piece in chess.</p>
-                    <p>she combines the movement of the rook and the bishop.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>this means the queen can move horizontally, vertically, and diagonally across the board.</p>
-                    <p>because of this, losing your queen early can be a big disadvantage.</p>'
+                        'content' => '
+                            <p>The queen is the most powerful piece in chess — and you only get one.</p>
+                            <br>
+                            <p>Think back to what you learned about the rook and the bishop. The queen combines both of them. She moves like a rook along straight lines, and she moves like a bishop along diagonals. All in one piece, in any direction she chooses.</p>
+                            <br>
+                            <p>From the center of the board, the queen can reach more than half of all 64 squares in a single move. No other piece comes close.</p>
+                            <br>
+                            <p>Let us see her in action.</p>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/pETxy6PB',
-                            'instructions' => 'observe how the queen moves.',
+                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/CSED0dFK',
+                            'instructions' => 'Move the queen in every direction — straight lines and diagonals. Try placing her in the center and see how many squares she can reach from that one spot.',
                         ]
-                    ]
+                    ],
+                    [
+                        'type' => 'text',
+                        'content' => '
+                            <p>Here is what to remember about the queen:</p>
+                            <ul>
+                                <li>She moves <strong>horizontally, vertically, or diagonally</strong> — any direction.</li><br>
+                                <li>She can go <strong>as many squares as she likes</strong> in one direction.</li><br>
+                                <li>She <strong>cannot jump over</strong> other pieces.</li>
+                            </ul>
+                        '
+                    ],
+                    [
+                        'type' => 'board',
+                        'task' => [
+                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/queen-challenge',
+                            'instructions' => 'Use the queen to capture all the highlighted pieces in as few moves as possible. She can reach all of them — but plan your route carefully.',
+                        ]
+                    ],
+                    [
+                        'type' => 'text',
+                        'content' => '
+                            <p><strong>Coach\'s tip:</strong> The queen is powerful, but that power makes her a target. If you bring her out too early, your opponent will chase her around the board and gain time while you retreat. Save the queen for the right moment — and always keep her safe.</p>
+                        '
+                    ],
                 ]
             ]
         );
@@ -240,336 +403,66 @@ class CourseSeeder extends Seeder
                 'content_blocks' => [
                     [
                         'type' => 'text',
-                        'content' => '<p>the king is the most important piece in chess.</p>
-                    <p>if your king is trapped and cannot escape attack, the game is over.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>the king moves one square in any direction: forward, backward, sideways, or diagonally.</p>
-                    <p>even though the king moves slowly, protecting it is the most important goal in chess.</p>'
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/Uwk35qqI',
-                            'instructions' => 'observe how the king moves.',
-                        ]
-                    ]
-                ]
-            ]
-        );
-
-        /*
-        =====================================================
-        COURSE 2 — OPENING PRINCIPLES
-        =====================================================
-        */
-
-        $course2 = Course::updateOrCreate(
-            ['slug' => 'opening-principles'],
-            [
-                'title' => 'Opening Principles',
-                'description' => 'Master the fundamentals of chess openings. Learn how to control the center, develop your pieces, and keep your king safe in the first few moves.',
-            ]
-        );
-
-        $chapter2 = Chapter::updateOrCreate(
-            ['course_id' => $course2->id, 'order' => 1],
-            ['title' => 'The Three Golden Rules']
-        );
-
-        Lesson::updateOrCreate(
-            ['slug' => 'control-the-center'],
-            [
-                'chapter_id' => $chapter2->id,
-                'title' => 'Control the Center',
-                'order' => 1,
-                'xp_reward' => 15,
-                'content_blocks' => [
-                    [
-                        'type' => 'text',
-                        'content' => '<p>the center of the board consists of four squares: e4, d4, e5, and d5.</p>
-                    <p>controlling those squares gives your pieces more room to move and limits your opponent\'s options.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>the best way to control the center is to place a pawn there early.</p>
-                    <p>moves like 1.e4 or 1.d4 immediately stake a claim on the center and open lines for your pieces.</p>'
+                        'content' => '
+                            <p>The king is not the fastest piece, not the strongest piece, and not the most dangerous piece. But the king is the most important piece on the board.</p>
+                            <br>
+                            <p>Here is why: the entire game of chess is about one thing — trapping the enemy king. If your king is trapped, you lose. If you trap their king, you win. Every single move in chess, from the very first to the very last, is connected to this.</p>
+                            <br>
+                            <p>You each have <strong>1 king</strong>. Let us see how it moves.</p>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/ZK3XhnhN',
-                            'instructions' => 'push a pawn to control the center.',
+                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/lkn6Ln0L',
+                            'instructions' => 'The king moves one square at a time in any direction — forward, backward, sideways, or diagonally. Move the king around the board and explore all eight directions it can go.',
                         ]
-                    ]
-                ]
-            ]
-        );
-
-        Lesson::updateOrCreate(
-            ['slug' => 'develop-your-pieces'],
-            [
-                'chapter_id' => $chapter2->id,
-                'title' => 'Develop Your Pieces',
-                'order' => 2,
-                'xp_reward' => 15,
-                'content_blocks' => [
-                    [
-                        'type' => 'text',
-                        'content' => '<p>development means moving your pieces off their starting squares so they can participate in the game.</p>
-                    <p>a piece sitting on its starting square is like a soldier still in the barracks — it cannot fight.</p>'
                     ],
                     [
                         'type' => 'text',
-                        'content' => '<p>aim to develop your knights and bishops before moving the same piece twice.</p>
-                    <p>as a rule, avoid moving a piece more than once in the opening unless absolutely necessary.</p>'
+                        'content' => '
+                            <p>There is one very important rule: <strong>the king can never move into danger.</strong></p>
+                            <br>
+                            <p>If an enemy piece can capture on a square, your king is not allowed to step there. It does not matter if moving there seems useful — the king must always stay safe.</p>
+                            <br>
+                            <p>Now let us learn the two most important words in chess.</p>
+                            <br>
+                            <p><strong>Check</strong> means your king is under attack right now. When you are in check, you must deal with it immediately — you cannot ignore it and make a different move.<br><br>You have three ways to get out of check:</p>
+                            <ul>
+                                <li><strong>Move the king</strong> to a safe square.</li><br>
+                                <li><strong>Block the attack</strong> by moving another piece in between.</li><br>
+                                <li><strong>Capture the attacking piece.</strong></li>
+                            </ul>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/toJNO3I2',
-                            'instructions' => 'develop your knights and bishops toward the center.',
+                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/king-in-check',
+                            'instructions' => 'Your king is in check — it is being attacked right now. Find a way to get out of danger. Look for all three options: can you move the king, block the attack, or capture the piece giving check?',
                         ]
-                    ]
-                ]
-            ]
-        );
-
-        Lesson::updateOrCreate(
-            ['slug' => 'castle-early'],
-            [
-                'chapter_id' => $chapter2->id,
-                'title' => 'Castle Early',
-                'order' => 3,
-                'xp_reward' => 15,
-                'content_blocks' => [
-                    [
-                        'type' => 'text',
-                        'content' => '<p>castling is a special move that tucks your king safely behind a wall of pawns.</p>
-                    <p>it also activates your rook by moving it toward the center.</p>'
                     ],
                     [
                         'type' => 'text',
-                        'content' => '<p>to castle, you must not have moved your king or rook before, and there must be no pieces between them.</p>
-                    <p>try to castle within the first 10 moves of the game.</p>'
+                        'content' => '
+                            <p><strong>Checkmate</strong> is when the king is in check and there is absolutely no way to escape. You cannot move the king to safety, you cannot block the attack, and you cannot capture the attacker. The game ends immediately — the player who delivers checkmate wins.</p>
+                            <br>
+                            <p>Checkmate is the goal of the entire game. Everything you have learned in this course — every piece, every move — is building toward that one moment.</p>
+                        '
                     ],
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/3aKL0baG',
-                            'instructions' => 'castle your king to safety.',
+                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/checkmate-recognition',
+                            'instructions' => 'Look at this position. The king is in check — but every square it could move to is also under attack, and there is no way to block or capture. This is checkmate. Explore the position and see why every exit is covered.',
                         ]
-                    ]
-                ]
-            ]
-        );
-
-        /*
-        =====================================================
-        COURSE 3 — BASIC TACTICS
-        =====================================================
-        */
-
-        $course3 = Course::updateOrCreate(
-            ['slug' => 'basic-tactics'],
-            [
-                'title' => 'Basic Tactics',
-                'description' => 'Sharpen your tactical vision. Learn the most common patterns used to win material and create decisive advantages.',
-            ]
-        );
-
-        $chapter3 = Chapter::updateOrCreate(
-            ['course_id' => $course3->id, 'order' => 1],
-            ['title' => 'Winning Material']
-        );
-
-        Lesson::updateOrCreate(
-            ['slug' => 'the-fork'],
-            [
-                'chapter_id' => $chapter3->id,
-                'title' => 'The Fork',
-                'order' => 1,
-                'xp_reward' => 20,
-                'content_blocks' => [
-                    [
-                        'type' => 'text',
-                        'content' => '<p>a fork is when one piece attacks two or more of the opponent\'s pieces at the same time.</p>
-                    <p>the opponent can only save one, so you win the other.</p>'
                     ],
                     [
                         'type' => 'text',
-                        'content' => '<p>knights are especially dangerous forkers because of their unique L-shaped movement.</p>
-                    <p>a knight fork attacking the king and queen at the same time is called a royal fork.</p>'
+                        'content' => '
+                            <p><strong>Coach\'s tip:</strong> In chess, we say the king is precious — not powerful. New players often forget about their king until it is too late. Make it a habit from your very first game: before every move, ask yourself — "Is my king safe?"</p>
+                        '
                     ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/rdYsSMha',
-                            'instructions' => 'find the fork and win material.',
-                        ]
-                    ]
-                ]
-            ]
-        );
-
-        Lesson::updateOrCreate(
-            ['slug' => 'the-pin'],
-            [
-                'chapter_id' => $chapter3->id,
-                'title' => 'The Pin',
-                'order' => 2,
-                'xp_reward' => 20,
-                'content_blocks' => [
-                    [
-                        'type' => 'text',
-                        'content' => '<p>a pin is when a piece cannot move without exposing a more valuable piece behind it to capture.</p>
-                    <p>there are two types: an absolute pin (the piece behind is the king) and a relative pin (any other valuable piece).</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>bishops and rooks are the most common pieces used to create pins.</p>
-                    <p>a pinned piece is often weak and can be attacked repeatedly.</p>'
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/pETxy6PB',
-                            'instructions' => 'identify and exploit the pin.',
-                        ]
-                    ]
-                ]
-            ]
-        );
-
-        Lesson::updateOrCreate(
-            ['slug' => 'the-skewer'],
-            [
-                'chapter_id' => $chapter3->id,
-                'title' => 'The Skewer',
-                'order' => 3,
-                'xp_reward' => 20,
-                'content_blocks' => [
-                    [
-                        'type' => 'text',
-                        'content' => '<p>a skewer is the opposite of a pin.</p>
-                    <p>a valuable piece is attacked directly and forced to move, leaving the less valuable piece behind it to be captured.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>skewers usually happen in the endgame when kings and rooks are exposed on open files and ranks.</p>
-                    <p>always be cautious when your king or queen is on the same line as another piece.</p>'
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/iyEeRw9s',
-                            'instructions' => 'execute the skewer to win material.',
-                        ]
-                    ]
-                ]
-            ]
-        );
-
-        /*
-        =====================================================
-        COURSE 4 — CHECKMATE PATTERNS
-        =====================================================
-        */
-
-        $course4 = Course::updateOrCreate(
-            ['slug' => 'checkmate-patterns'],
-            [
-                'title' => 'Checkmate Patterns',
-                'description' => 'Learn the most common checkmate patterns every chess player must know. Recognizing these patterns will help you finish games decisively.',
-            ]
-        );
-
-        $chapter4 = Chapter::updateOrCreate(
-            ['course_id' => $course4->id, 'order' => 1],
-            ['title' => 'Classic Mates']
-        );
-
-        Lesson::updateOrCreate(
-            ['slug' => 'back-rank-mate'],
-            [
-                'chapter_id' => $chapter4->id,
-                'title' => 'Back Rank Mate',
-                'order' => 1,
-                'xp_reward' => 25,
-                'content_blocks' => [
-                    [
-                        'type' => 'text',
-                        'content' => '<p>the back rank mate happens when a king is trapped on its back rank by its own pawns and a rook or queen delivers checkmate along that rank.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>this is one of the most common ways games are won at every level.</p>
-                    <p>to avoid it, make a "luft" (escape square) for your king by pushing one of the pawns in front of it.</p>'
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/mAMHxWi3',
-                            'instructions' => 'deliver checkmate on the back rank.',
-                        ]
-                    ]
-                ]
-            ]
-        );
-
-        Lesson::updateOrCreate(
-            ['slug' => 'scholars-mate'],
-            [
-                'chapter_id' => $chapter4->id,
-                'title' => 'Scholar\'s Mate',
-                'order' => 2,
-                'xp_reward' => 25,
-                'content_blocks' => [
-                    [
-                        'type' => 'text',
-                        'content' => '<p>scholar\'s mate is a four-move checkmate that targets the f7 square, which is the weakest point in black\'s starting position.</p>
-                    <p>it uses the queen and bishop working together to deliver fast checkmate.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>while scholar\'s mate is easy to defend against, knowing it helps you understand how to attack weak squares and coordinate your pieces.</p>'
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/ZK3XhnhN',
-                            'instructions' => 'execute scholar\'s mate in four moves.',
-                        ]
-                    ]
-                ]
-            ]
-        );
-
-        Lesson::updateOrCreate(
-            ['slug' => 'smothered-mate'],
-            [
-                'chapter_id' => $chapter4->id,
-                'title' => 'Smothered Mate',
-                'order' => 3,
-                'xp_reward' => 25,
-                'content_blocks' => [
-                    [
-                        'type' => 'text',
-                        'content' => '<p>smothered mate is a checkmate delivered by a knight when the opponent\'s king is surrounded (smothered) by its own pieces.</p>'
-                    ],
-                    [
-                        'type' => 'text',
-                        'content' => '<p>because the king\'s own pieces block all its escape squares, the knight delivers checkmate with no way out.</p>
-                    <p>this is one of the most beautiful and surprising patterns in chess.</p>'
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/rdYsSMha',
-                            'instructions' => 'deliver the smothered mate with your knight.',
-                        ]
-                    ]
                 ]
             ]
         );

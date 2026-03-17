@@ -15,17 +15,19 @@ class CourseController extends Controller
     public function index()
     {
         // Fetch all courses from the database
-        $courses = Course::all();
-
+        $courses = Course::with('chapters.lessons')->get();
+        
         // Use the Resource to format them into your exact TypeScript interface
         return \App\Http\Resources\CourseResource::collection($courses);
     }
 
     public function show(Request $request, $slug)
     {
-        $course = Course::with(['chapters.lessons' => function ($query) {
-            $query->orderBy('order'); // Ensure lessons are in order
-        }])->where('slug', $slug)->firstOrFail();
+        $course = Course::with([
+            'chapters.lessons' => function ($query) {
+                $query->orderBy('order'); // Ensure lessons are in order
+            }
+        ])->where('slug', $slug)->firstOrFail();
 
         return new CourseResource($course);
     }
