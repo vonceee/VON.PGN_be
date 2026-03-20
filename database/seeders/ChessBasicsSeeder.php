@@ -155,13 +155,13 @@ class ChessBasicsSeeder extends Seeder
                             </ul>
                         '
                     ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/rook-challenge',
-                            'instructions' => 'Move the rook to the highlighted square. There are pieces in the way — you will need to find the right path.',
-                        ]
-                    ],
+                    // [
+                    //     'type' => 'board',
+                    //     'task' => [
+                    //         'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/rook-challenge',
+                    //         'instructions' => 'Move the rook to the highlighted square. There are pieces in the way — you will need to find the right path.',
+                    //     ]
+                    // ],
                     [
                         'type' => 'text',
                         'content' => '
@@ -214,13 +214,13 @@ class ChessBasicsSeeder extends Seeder
                             </ul>
                         '
                     ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/bishop-challenge',
-                            'instructions' => 'Move the bishop to the highlighted square using diagonal moves. Plan your path before you move.',
-                        ]
-                    ],
+                    // [
+                    //     'type' => 'board',
+                    //     'task' => [
+                    //         'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/bishop-challenge',
+                    //         'instructions' => 'Move the bishop to the highlighted square using diagonal moves. Plan your path before you move.',
+                    //     ]
+                    // ],
                     [
                         'type' => 'text',
                         'content' => '
@@ -272,20 +272,20 @@ class ChessBasicsSeeder extends Seeder
                             <p>And unlike every other piece, the knight <strong>jumps right over</strong> anything in its path — friendly pieces, enemy pieces, it does not matter.</p>
                         '
                     ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/knight-jump',
-                            'instructions' => 'The board is crowded with pieces. Move the knight to the highlighted square — it will have to jump over pieces to get there. No other piece could make this move.',
-                        ]
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/knight-challenge',
-                            'instructions' => 'Can you get the knight to the highlighted square? Count the L carefully — there may be more than one way to get there.',
-                        ]
-                    ],
+                    // [
+                    //     'type' => 'board',
+                    //     'task' => [
+                    //         'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/knight-jump',
+                    //         'instructions' => 'The board is crowded with pieces. Move the knight to the highlighted square — it will have to jump over pieces to get there. No other piece could make this move.',
+                    //     ]
+                    // ],
+                    // [
+                    //     'type' => 'board',
+                    //     'task' => [
+                    //         'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/knight-challenge',
+                    //         'instructions' => 'Can you get the knight to the highlighted square? Count the L carefully — there may be more than one way to get there.',
+                    //     ]
+                    // ],
                     [
                         'type' => 'text',
                         'content' => '
@@ -334,13 +334,13 @@ class ChessBasicsSeeder extends Seeder
                             </ul>
                         '
                     ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/queen-challenge',
-                            'instructions' => 'Use the queen to capture all the highlighted pieces in as few moves as possible. She can reach all of them — but plan your route carefully.',
-                        ]
-                    ],
+                    // [
+                    //     'type' => 'board',
+                    //     'task' => [
+                    //         'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/queen-challenge',
+                    //         'instructions' => 'Use the queen to capture all the highlighted pieces in as few moves as possible. She can reach all of them — but plan your route carefully.',
+                    //     ]
+                    // ],
                     [
                         'type' => 'text',
                         'content' => '
@@ -451,7 +451,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/empty-board',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/cLBtVq1S',
                             'instructions' => 'This is an empty chessboard. Count the squares along one side — there are 8. Now count along the other side — also 8. That gives us 64 squares in total. Notice how the light and dark squares alternate in every direction.',
                         ]
                     ],
@@ -466,13 +466,6 @@ class ChessBasicsSeeder extends Seeder
                             <br>
                             <p>If you sit down at a board and the bottom-right corner is dark, the board is turned the wrong way. Rotate it 90 degrees and check again.</p>
                         '
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/board-orientation',
-                            'instructions' => 'Look at the bottom-right corner of this board. Is it a light square or a dark square? If it is light, the board is set up correctly. This is how your board should always look before you start a game.',
-                        ]
                     ],
                     [
                         'type' => 'text',
@@ -507,7 +500,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/files-introduction',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/HaS732BO',
                             'instructions' => 'The highlighted column is the e-file — every square in that column shares the name "e". Notice how the files run vertically, from the bottom of the board to the top. The letters go a, b, c, d, e, f, g, h from left to right.',
                         ]
                     ],
@@ -522,7 +515,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/ranks-introduction',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/RnfSqa5W',
                             'instructions' => 'The highlighted row is the 4th rank — every square in that row has the number 4 in its name. The ranks are numbered 1 to 8, starting from White\'s side at the bottom.',
                         ]
                     ],
@@ -545,7 +538,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/square-names-practice',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/aeflTLnt',
                             'instructions' => 'A square is highlighted on the board. What is its name? Find the file (the letter, a–h) and the rank (the number, 1–8) — then put them together. File first, rank second.',
                         ]
                     ],
@@ -584,7 +577,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/setup-pawns',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/nG77y3GR',
                             'instructions' => 'White\'s pawns fill the entire 2nd rank, and Black\'s pawns fill the entire 7th rank — one pawn per square, all the way across. This is where all 16 pawns begin every single game.',
                         ]
                     ],
@@ -605,7 +598,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/setup-rooks-knights-bishops',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/RozFzaca',
                             'instructions' => 'Rooks in the corners, knights beside them, bishops beside the knights. Notice how the back rank is filling in from the outside toward the center — two squares in the middle are still empty. That is where the queen and king go.',
                         ]
                     ],
@@ -624,15 +617,8 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/setup-complete',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/CajNz0xv',
                             'instructions' => 'The board is now fully set up and ready to play. White\'s queen is on d1 — a light square. Black\'s queen is on d8 — a dark square. The kings face each other directly across the board. This is the starting position of every chess game ever played.',
-                        ]
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/setup-practice',
-                            'instructions' => 'The board is empty. Place every piece in its correct starting square. Work from the outside in — rooks in the corners, then knights, then bishops, then the queen on her color, and the king on the last square. Take your time.',
                         ]
                     ],
                     [
@@ -671,7 +657,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/DKy0YYJs/mAMHxWi3',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/9PedRmNR',
                             'instructions' => 'Move the pawn forward to the last rank. The moment it arrives, you will be asked to choose a new piece. Watch how it transforms.',
                         ]
                     ],
@@ -695,15 +681,8 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/underpromotion',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/OZXAwmHB',
                             'instructions' => 'Look at this position carefully. If the pawn promotes to a queen, the game continues. But if it promotes to a knight, it delivers checkmate immediately — the knight lands on a square the enemy king cannot escape. Try promoting to a knight and see what happens.',
-                        ]
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/promotion-challenge',
-                            'instructions' => 'Guide the pawn to the last rank, then use your newly promoted piece to deliver checkmate. Choose your promotion wisely — think about which piece will be most useful in this position.',
                         ]
                     ],
                     [
@@ -741,7 +720,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/kingside-castling',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/6k0TUlDp',
                             'instructions' => 'The king moves two squares to the right, toward the h-file rook. The rook then jumps over the king and lands on f1 — right beside it. In one move, the king is tucked safely in the corner. Try castling kingside.',
                         ]
                     ],
@@ -756,7 +735,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/queenside-castling',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/mb91pEwb',
                             'instructions' => 'This time, castle queenside. The king moves two squares to the left, toward the a-file rook. The rook jumps over and lands on d1. Notice the king ends up on c1 — one square further from the edge than with kingside castling.',
                         ]
                     ],
@@ -777,7 +756,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/castling-conditions',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/7Z7jVKdK',
                             'instructions' => 'In this position, one side can castle and one cannot. Look at both kings and their rooks — check the five conditions. Which side is able to castle? Castle with the correct side.',
                         ]
                     ],
@@ -820,7 +799,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/three-ways-out',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/GgpQ7oIY',
                             'instructions' => 'Your king is in check. Look carefully — all three escapes are available in this position. Can you find each one? Try moving the king, then try blocking, then try capturing the attacker. Notice how each one resolves the check differently.',
                         ]
                     ],
@@ -837,7 +816,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/checkmate-analysis',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/BES4J6db',
                             'instructions' => 'This position is checkmate. Do not just take our word for it — check each exit yourself. Can the king move anywhere safe? Can the check be blocked? Can the attacker be captured? Work through each question and you will see why there is no escape.',
                         ]
                     ],
@@ -854,15 +833,8 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/stalemate-vs-checkmate',
-                            'instructions' => 'Compare these two positions side by side. In one, the king is in check with no escape — that is checkmate. In the other, the king is not in check but has no legal moves — that is stalemate. Spot the difference: is the king being attacked or not?',
-                        ]
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/check-checkmate-stalemate-quiz',
-                            'instructions' => 'Three positions, three different situations. For each one, decide: is this check, checkmate, or stalemate? Use what you have learned — look at whether the king is attacked, and whether any escape is possible.',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/faENBbBD',
+                            'instructions' => 'The black king is not in check but has no legal moves — that is stalemate.',
                         ]
                     ],
                     [
@@ -900,15 +872,8 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/en-passant-trigger',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/TH1ceo90',
                             'instructions' => 'Watch what happens here. The Black pawn on the right advances two squares, landing right beside the White pawn. Without en passant, White cannot capture it — the Black pawn has slipped past. This is the moment that triggers the en passant rule.',
-                        ]
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/en-passant-capture',
-                            'instructions' => 'Now execute the en passant capture. Move the White pawn diagonally forward — as if the Black pawn had only moved one square. The Black pawn is removed from the square it actually landed on, not the square White moved to. This is the only move in chess where a piece is captured from a different square than where the capturing piece lands.',
                         ]
                     ],
                     [
@@ -928,20 +893,6 @@ class ChessBasicsSeeder extends Seeder
                                 <li>Your pawn moves <strong>diagonally forward</strong> to the square the enemy pawn skipped over, and the enemy pawn is removed.</li>
                             </ul>
                         '
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/en-passant-timing',
-                            'instructions' => 'The Black pawn has just moved two squares. You have one move to capture en passant — right now. If you move anything else first, the chance disappears. Find the en passant capture and take it.',
-                        ]
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/en-passant-challenge',
-                            'instructions' => 'En passant is available — but so are other moves. Is capturing en passant the best choice here, or should you do something else? Think about what each option gives you, then make your decision.',
-                        ]
                     ],
                     [
                         'type' => 'text',
@@ -1025,7 +976,7 @@ class ChessBasicsSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/starting-position-final',
+                            'lichessUrl' => 'https://lichess.org/study/DKy0YYJs/ZZ7kxutX',
                             'instructions' => 'This is the starting position of chess — the same position that has begun every chess game ever played, from beginners to world champions. You now know what every piece on this board does, where it belongs, and what it is capable of.',
                         ]
                     ],
