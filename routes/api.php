@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\TacticsController;
+use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
+use App\Http\Controllers\Api\Admin\ChapterController as AdminChapterController;
+use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:10,60');
@@ -50,3 +53,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/tactics/solve', [TacticsController::class, 'solve']);
 });
+
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    Route::apiResource('courses', AdminCourseController::class);
+    Route::apiResource('chapters', AdminChapterController::class);
+    Route::apiResource('lessons', AdminLessonController::class);
+});
+

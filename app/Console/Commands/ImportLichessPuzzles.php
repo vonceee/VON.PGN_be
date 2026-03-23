@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 
 class ImportLichessPuzzles extends Command
 {
-    // The command you will type in the terminal
     protected $signature = 'puzzles:import {filepath} {--limit=1000}';
 
     protected $description = 'Import puzzles from the official Lichess CSV database';
@@ -32,16 +31,16 @@ class ImportLichessPuzzles extends Command
         // Lichess CSV format: 
         // PuzzleId, FEN, Moves, Rating, RatingDeviation, Popularity, NbPlays, Themes, GameUrl, OpeningTags
 
-        // Skip the header row if it exists
+        // skip the header row if it exists
         $firstLine = fgets($file);
         if (!str_contains($firstLine, 'PuzzleId')) {
-            rewind($file); // No header, start from beginning
+            rewind($file); // no header, start from beginning
         }
 
         while (($data = fgetcsv($file)) !== FALSE) {
             if ($count >= $limit) break;
 
-            // Map the CSV columns to our database schema
+            // map the CSV columns to our database schema
             $batch[] = [
                 'lichess_puzzle_id' => $data[0],
                 'fen' => $data[1],

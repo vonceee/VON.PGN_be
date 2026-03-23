@@ -86,8 +86,8 @@ class OpeningPrinciplesSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/three-phases-overview',
-                            'instructions' => 'This sequence shows a game moving through all three phases. Watch how the board looks in the opening — pieces on the back rank, pawns moving forward. Then notice how it changes as pieces develop and the fighting begins. Finally, see how the endgame strips the board down to just a few pieces.',
+                            'lichessUrl' => 'https://lichess.org/study/IoDYlfZK/DF2IL7J4',
+                            'instructions' => 'This game shows a game moving through all three phases. Watch how the board looks in the opening — pieces on the back rank, pawns moving forward. Then notice how it changes as pieces develop and the fighting begins. Finally, see how the endgame strips the board down to just a few pieces.',
                         ]
                     ],
                     [
@@ -139,7 +139,7 @@ class OpeningPrinciplesSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/good-vs-bad-opening',
+                            'lichessUrl' => 'https://lichess.org/study/IoDYlfZK/ApJAAJeb',
                             'instructions' => 'Compare these two positions — both after ten moves. One player followed good opening principles: pieces developed, center controlled, king castled. The other made common beginner mistakes: pieces undeveloped, queen moved too early, king still in the center. Which position would you rather play?',
                         ]
                     ],
@@ -210,7 +210,7 @@ class OpeningPrinciplesSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/center-squares',
+                            'lichessUrl' => 'https://lichess.org/study/IoDYlfZK/cmjVamfb',
                             'instructions' => 'The four highlighted squares are e4, d4, e5, and d5 — the center of the board. These are the squares that matter most in the opening. Every principle you learn in this course connects back to controlling these four squares.',
                         ]
                     ],
@@ -227,8 +227,8 @@ class OpeningPrinciplesSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/knight-center-vs-edge',
-                            'instructions' => 'Two knights — one on e4, one on a1. Click each knight and count how many squares it can move to. The knight in the center reaches 8 squares. The knight in the corner reaches only 2. Same piece, completely different power. This is why the center matters.',
+                            'lichessUrl' => 'https://lichess.org/study/IoDYlfZK/Y8ULQKnC',
+                            'instructions' => 'Two knights — one on d5, one on h8. Click each knight and count how many squares it can move to. The knight in the center reaches 8 squares. The knight in the corner reaches only 2. Same piece, completely different power. This is why the center matters.',
                         ]
                     ],
                     [
@@ -242,13 +242,6 @@ class OpeningPrinciplesSeeder extends Seeder
                             <br>
                             <p>For now, focus on the first method. Moving your central pawns forward on move one is the clearest, most direct way to start the fight for the center.</p>
                         '
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/center-control-practice',
-                            'instructions' => 'It is your first move. Three options are highlighted. Which one best fights for control of the center? Think about which move places your pawn on — or aims at — the four central squares.',
-                        ]
                     ],
                     [
                         'type' => 'text',
@@ -310,7 +303,7 @@ class OpeningPrinciplesSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/good-development',
+                            'lichessUrl' => 'https://lichess.org/study/IoDYlfZK/WhreFWOp',
                             'instructions' => 'Watch this sequence of five moves. Every single move develops a new piece or fights for the center. By move five, both knights are out, both bishops are active, and the position is ready to castle. This is what efficient development looks like.',
                         ]
                     ],
@@ -321,20 +314,6 @@ class OpeningPrinciplesSeeder extends Seeder
                             <br>
                             <p>After five moves, if you have only moved pawns and shuffled one piece around, your opponent who has developed all their pieces has a significant advantage — not because of any brilliant tactics, but simply because more of their army is ready to fight.</p>
                         '
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/development-comparison',
-                            'instructions' => 'Two positions, both after five moves. Count the developed pieces on each side — pieces that have moved off the back rank into active squares. One player has developed efficiently. The other has not. Which side would you rather play, and why?',
-                        ]
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/development-practice',
-                            'instructions' => 'Three moves are available. One develops a new piece toward the center. One moves a piece that is already developed. One pushes a pawn with no clear benefit. Which move follows the principle of development? Make the best choice.',
-                        ]
                     ],
                     [
                         'type' => 'text',
@@ -382,13 +361,6 @@ class OpeningPrinciplesSeeder extends Seeder
                         '
                     ],
                     [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/same-piece-twice-cost',
-                            'instructions' => 'Watch this sequence. White moves the same knight three times in the first six moves, chasing small advantages that do not matter yet. Black develops a new piece every single move. By move six, count the developed pieces on each side. White\'s time-wasting has given Black a free lead in development.',
-                        ]
-                    ],
-                    [
                         'type' => 'text',
                         'content' => '
                             <p>That said, there are times when moving the same piece twice is the right decision. The principle is not an absolute rule — it is a reminder to think carefully before you do it.</p>
@@ -407,15 +379,8 @@ class OpeningPrinciplesSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/justified-relocation',
-                            'instructions' => 'In this position, moving a piece that has already moved is actually the right call — it wins a free piece. See if you can spot which move it is. Sometimes breaking a principle is correct. The key is knowing why.',
-                        ]
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/same-piece-practice',
-                            'instructions' => 'Two options: move a knight that has already moved to a slightly better square, or develop a bishop that has not moved yet. Neither move wins material. Neither is forced. Which one follows good opening principles?',
+                            'lichessUrl' => 'https://lichess.org/study/IoDYlfZK/aTHIMHWB',
+                            'instructions' => 'Watch this sequence. White moves the same knight three times in the first six moves, chasing small advantages that do not matter yet. Black develops a new piece every single move. By move six, count the developed pieces on each side. White\'s time-wasting has given Black a free lead in development.',
                         ]
                     ],
                     [
@@ -468,7 +433,7 @@ class OpeningPrinciplesSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/early-queen-punished',
+                            'lichessUrl' => 'https://lichess.org/study/IoDYlfZK/DxftabYM',
                             'instructions' => 'White brings the queen out on move two, looking for quick attacks. Watch what happens — Black simply develops pieces and threatens the queen on every move. White spends the entire opening retreating. By move eight, Black has a fully developed army and White has achieved nothing. Notice how Black gains a free developing move every time the queen is chased.',
                         ]
                     ],
@@ -481,13 +446,6 @@ class OpeningPrinciplesSeeder extends Seeder
                             <br>
                             <p>There are exceptions. Moving the queen to recapture a piece is fine — you are not bringing her out aggressively, you are restoring material balance. And in some specific positions, an early queen move is part of a well-known idea. But those are exceptions to learn later. For now, the default is clear: develop your minor pieces first.</p>
                         '
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/queen-resist-temptation',
-                            'instructions' => 'The queen could move here and attack an enemy pawn. It is tempting. But look at the position — you have two undeveloped minor pieces still on the back rank. Find the developing move instead of the queen move, and explain to yourself why it is better.',
-                        ]
                     ],
                     [
                         'type' => 'text',
@@ -536,13 +494,6 @@ class OpeningPrinciplesSeeder extends Seeder
                         '
                     ],
                     [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/uncastled-king-danger',
-                            'instructions' => 'White\'s king never castled and is still sitting in the center. Watch how Black exploits this — opening files, bringing pieces toward the center, and launching a direct attack on the king. Notice how difficult it is to defend when the king has nowhere safe to go.',
-                        ]
-                    ],
-                    [
                         'type' => 'text',
                         'content' => '
                             <p>Castling solves this. It moves the king to the corner — behind a wall of pawns, far from the center of the action — and at the same time brings a rook toward the middle of the board where it can be useful.</p>
@@ -553,20 +504,6 @@ class OpeningPrinciplesSeeder extends Seeder
                             <br>
                             <p>The goal: <strong>castle within your first ten moves</strong>. Ideally sooner. The faster your king is safe, the more freely you can attack without worrying about a counter-attack on your own king.</p>
                         '
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/castled-vs-uncastled',
-                            'instructions' => 'Both positions are ten moves in. One player castled kingside on move six. The other never castled. Compare the two kings — their safety, their exposure, the pawn structures around them. Which king would you rather have?',
-                        ]
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/castle-quickly',
-                            'instructions' => 'Your king is not yet castled. The knight on g1 and the bishop on f1 are still blocking the way. Find the moves that clear the path and get your king castled as quickly as possible. Remember: develop the pieces that are in the way first.',
-                        ]
                     ],
                     [
                         'type' => 'text',
@@ -636,7 +573,7 @@ class OpeningPrinciplesSeeder extends Seeder
                     [
                         'type' => 'board',
                         'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/model-opening-annotated',
+                            'lichessUrl' => 'https://lichess.org/study/IoDYlfZK/bb1Z3Izn',
                             'instructions' => 'Follow this opening move by move. For each move, read the annotation — it explains which principle that move is following and why. By move eight, the position demonstrates all five principles working together: center control, full development, no piece moved twice, queen kept back until the right moment, and king safely castled.',
                         ]
                     ],
@@ -649,19 +586,12 @@ class OpeningPrinciplesSeeder extends Seeder
                                 <li><strong>Move 1 — e4:</strong> Occupies the center immediately and opens lines for the bishop and queen.</li><br>
                                 <li><strong>Move 2 — Nf3:</strong> Develops the knight toward the center, attacks the e5 square, and does not block the bishop on f1.</li><br>
                                 <li><strong>Move 3 — Bc4:</strong> Develops the bishop to an active diagonal aiming at the center and Black\'s kingside — and clears the path for castling.</li><br>
-                                <li><strong>Move 4 — O-O:</strong> King is safe. Rook moves to f1 and becomes active. Two benefits in one move.</li><br>
-                                <li><strong>Move 5 — d3:</strong> Supports the center and opens the diagonal for the other bishop — development continues.</li>
+                                <li><strong>Move 4 — d3:</strong> Supports the center and opens the diagonal for the other bishop — development continues.</li>
+                                <li><strong>Move 5 — O-O:</strong> King is safe. Rook moves to f1 and becomes active. Two benefits in one move.</li><br>
                             </ul>
                             <br>
                             <p>Five moves. Every single one serves at least one of the five principles. No time wasted, no piece moved twice, no early queen adventure, king safely tucked away. This is what a good opening looks like.</p>
                         '
-                    ],
-                    [
-                        'type' => 'board',
-                        'task' => [
-                            'lichessUrl' => 'https://lichess.org/study/embed/PLACEHOLDER/model-opening-practice',
-                            'instructions' => 'Now play it yourself. The board is reset to the starting position. Play the first five moves following the five principles — you do not need to copy the exact moves from the model. Just ask yourself at each step: am I controlling the center, developing a new piece, avoiding moving the same piece twice, keeping the queen back, and working toward castling?',
-                        ]
                     ],
                     [
                         'type' => 'text',

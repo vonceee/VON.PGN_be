@@ -28,6 +28,9 @@ class AuthController extends Controller
         $user->preferences()->create();
         $user->progress()->create();
 
+        // Load relationships so the resource has them
+        $user->load(['preferences', 'progress', 'badges']);
+
         event(new Registered($user));
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -36,7 +39,7 @@ class AuthController extends Controller
             'message' => 'User successfully registered',
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user
+            'user' => new \App\Http\Resources\UserProfileResource($user)
         ], 201);
     }
 
@@ -46,7 +49,9 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required',
         ]);
-        $user = User::where('email', $request->email)->first();
+        
+        // Eager load relationships needed for the frontend
+        $user = User::with(['preferences', 'progress', 'badges'])->where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
@@ -60,7 +65,7 @@ class AuthController extends Controller
             'message' => 'Login successful',
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user
+            'user' => new \App\Http\Resources\UserProfileResource($user)
         ]);
     }
 
