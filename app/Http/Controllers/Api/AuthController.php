@@ -28,7 +28,6 @@ class AuthController extends Controller
         $user->preferences()->create();
         $user->progress()->create();
 
-        // Load relationships so the resource has them
         $user->load(['preferences', 'progress', 'badges']);
 
         event(new Registered($user));
@@ -50,7 +49,6 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
         
-        // Eager load relationships needed for the frontend
         $user = User::with(['preferences', 'progress', 'badges'])->where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {

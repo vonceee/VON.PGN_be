@@ -17,7 +17,6 @@ class LessonController extends Controller
             'slug' => 'nullable|string|max:255|unique:lessons',
             'content_blocks' => 'nullable|array',
             'order' => 'required|integer',
-            'xp_reward' => 'required|integer',
         ]);
 
         if (empty($validated['slug'])) {
@@ -46,7 +45,6 @@ class LessonController extends Controller
             'slug' => 'sometimes|required|string|max:255|unique:lessons,slug,' . $lesson->id,
             'content_blocks' => 'nullable|array',
             'order' => 'sometimes|required|integer',
-            'xp_reward' => 'sometimes|required|integer',
         ]);
 
         if (empty($validated['slug']) && isset($validated['title'])) {

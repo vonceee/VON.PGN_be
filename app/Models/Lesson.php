@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Lesson extends Model
 {
     use HasFactory;
-
-    protected $fillable = ['chapter_id', 'title', 'slug', 'content_blocks', 'order', 'xp_reward'];
+    protected $fillable = ['chapter_id', 'title', 'slug', 'content_blocks', 'order'];
 
     protected $casts = [
         'content_blocks' => 'array',

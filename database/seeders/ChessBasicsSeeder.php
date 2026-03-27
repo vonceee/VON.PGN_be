@@ -38,8 +38,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Pawn',
                 'order' => 1,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -124,8 +123,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Rook',
                 'order' => 2,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -178,8 +176,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Bishop',
                 'order' => 3,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -237,8 +234,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Knight',
                 'order' => 4,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -302,8 +298,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Queen',
                 'order' => 5,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -357,8 +352,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The King',
                 'order' => 6,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -436,8 +430,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'The Board',
                 'order' => 1,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -483,8 +476,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Ranks and Files',
                 'order' => 2,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -558,8 +550,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Placing the Pieces',
                 'order' => 3,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -642,7 +633,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'Pawn Promotion',
                 'order' => 1,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -701,7 +692,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'Castling',
                 'order' => 2,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -776,7 +767,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'Check and Checkmate',
                 'order' => 3,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -853,7 +844,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'En Passant',
                 'order' => 4,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -915,7 +906,7 @@ class ChessBasicsSeeder extends Seeder
                 'chapter_id' => $chapter4->id,
                 'title' => 'You Are Ready',
                 'order' => 1,
-                'xp_reward' => 20,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',

@@ -34,7 +34,6 @@ class LessonFactory extends Factory
                 ],
             ],
             'order'          => fake()->numberBetween(1, 20),
-            'xp_reward'      => fake()->randomElement([10, 20, 30, 50]),
         ];
     }
 }

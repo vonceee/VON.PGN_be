@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('slug')->unique(); // e.g., 'the-pawn'
             $table->json('content_blocks');
             $table->integer('order');
-            $table->integer('xp_reward')->default(10);
             $table->timestamps();
         });
     }

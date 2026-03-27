@@ -71,7 +71,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'Good Pieces and Bad Pieces',
                 'order' => 1,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -149,7 +149,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'Outposts',
                 'order' => 2,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -227,7 +227,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'Piece Coordination',
                 'order' => 3,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -337,7 +337,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Passed Pawns',
                 'order' => 1,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -414,7 +414,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Pawn Weaknesses',
                 'order' => 2,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -500,7 +500,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Pawn Chains',
                 'order' => 3,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -601,7 +601,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'The Fork',
                 'order' => 1,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -681,7 +681,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'The Pin',
                 'order' => 2,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -765,7 +765,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'The Skewer',
                 'order' => 3,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -841,7 +841,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'The Discovered Attack',
                 'order' => 4,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -950,7 +950,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter4->id,
                 'title' => 'Building an Attack',
                 'order' => 1,
-                'xp_reward' => 20,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -1030,7 +1030,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter4->id,
                 'title' => 'Recognizing Danger',
                 'order' => 2,
-                'xp_reward' => 20,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -1121,7 +1121,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter4->id,
                 'title' => 'How to Defend',
                 'order' => 3,
-                'xp_reward' => 20,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -1224,7 +1224,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter5->id,
                 'title' => 'A Model Middlegame',
                 'order' => 1,
-                'xp_reward' => 25,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -1289,7 +1289,7 @@ class MiddlegamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter5->id,
                 'title' => 'Course Summary',
                 'order' => 2,
-                'xp_reward' => 25,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',

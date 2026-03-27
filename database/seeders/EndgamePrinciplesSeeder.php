@@ -71,7 +71,7 @@ class EndgamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Active King',
                 'order' => 1,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -156,7 +156,7 @@ class EndgamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Opposition',
                 'order' => 2,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -261,7 +261,7 @@ class EndgamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'King and Pawn vs King',
                 'order' => 1,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -352,7 +352,7 @@ class EndgamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Passed Pawns in the Endgame',
                 'order' => 2,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -460,7 +460,7 @@ class EndgamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'King and Queen vs King',
                 'order' => 1,
-                'xp_reward' => 20,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -541,7 +541,7 @@ class EndgamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'King and Rook vs King',
                 'order' => 2,
-                'xp_reward' => 20,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -616,7 +616,7 @@ class EndgamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'Basic Rook Endgames',
                 'order' => 3,
-                'xp_reward' => 20,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -732,7 +732,7 @@ class EndgamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter4->id,
                 'title' => 'A Model Endgame',
                 'order' => 1,
-                'xp_reward' => 25,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -793,7 +793,7 @@ class EndgamePrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter4->id,
                 'title' => 'Course & Series Summary',
                 'order' => 2,
-                'xp_reward' => 25,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',

@@ -69,8 +69,7 @@ class OpeningPrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Three Phases of Chess',
                 'order' => 1,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -120,8 +119,7 @@ class OpeningPrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Goal of the Opening',
                 'order' => 2,
-                'xp_reward' => 10,
-                'content_blocks' => [
+                                'content_blocks' => [
                     [
                         'type' => 'text',
                         'content' => '
@@ -195,7 +193,7 @@ class OpeningPrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Control the Center',
                 'order' => 1,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -276,7 +274,7 @@ class OpeningPrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Develop Your Pieces',
                 'order' => 2,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -348,7 +346,7 @@ class OpeningPrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Avoid Moving the Same Piece Twice',
                 'order' => 3,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -416,7 +414,7 @@ class OpeningPrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => "Don't Bring the Queen Out Too Early",
                 'order' => 4,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -481,7 +479,7 @@ class OpeningPrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter2->id,
                 'title' => 'Castle Early',
                 'order' => 5,
-                'xp_reward' => 15,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -560,7 +558,7 @@ class OpeningPrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'A Model Opening',
                 'order' => 1,
-                'xp_reward' => 20,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
@@ -623,7 +621,7 @@ class OpeningPrinciplesSeeder extends Seeder
                 'chapter_id' => $chapter3->id,
                 'title' => 'Course Summary',
                 'order' => 2,
-                'xp_reward' => 20,
+               
                 'content_blocks' => [
                     [
                         'type' => 'text',
