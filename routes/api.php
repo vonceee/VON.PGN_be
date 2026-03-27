@@ -7,9 +7,11 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\TacticsController;
+use App\Http\Controllers\Api\TournamentController;
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\ChapterController as AdminChapterController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
+use App\Http\Controllers\Api\Admin\TournamentController as AdminTournamentController;
 
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:10,60');
@@ -45,6 +47,9 @@ Route::get('/lessons/{slug}', [CourseController::class, 'getLesson']);
 
 Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
 
+Route::get('/tournaments', [TournamentController::class, 'index']);
+Route::get('/tournaments/{slug}', [TournamentController::class, 'show']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [UserProfileController::class, 'myProfile']);
@@ -58,5 +63,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::apiResource('courses', AdminCourseController::class);
     Route::apiResource('chapters', AdminChapterController::class);
     Route::apiResource('lessons', AdminLessonController::class);
+    Route::apiResource('tournaments', AdminTournamentController::class);
 });
 

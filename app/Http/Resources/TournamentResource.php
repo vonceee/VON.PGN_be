@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class TournamentResource extends JsonResource
+{
+    public function toArray($request)
+    {
+        return [
+            'id' => $this->slug,
+            'name' => $this->name,
+            'bannerImage' => $this->banner_image,
+            'status' => $this->status,
+            'dates' => [
+                'start' => $this->start_date?->toDateString(),
+                'end' => $this->end_date?->toDateString(),
+            ],
+            'location' => $this->location,
+            'coordinates' => [
+                'lat' => (float) $this->latitude,
+                'lng' => (float) $this->longitude,
+            ],
+            'format' => $this->format,
+            'timeControl' => $this->time_control,
+            'entryFee' => $this->entry_fee,
+            'registrationDeadline' => $this->registration_deadline?->toDateString(),
+            'prizePool' => $this->prize_pool,
+            'organizer' => $this->organizer,
+            'contactEmail' => $this->contact_email,
+            'description' => $this->description,
+            'rounds' => $this->rounds,
+            'participants' => [
+                'current' => $this->current_participants,
+                'max' => $this->max_participants,
+            ],
+            'eligibility' => $this->eligibility,
+            'categories' => $this->categories,
+            'schedule' => $this->schedule,
+            'winner' => $this->winner,
+            'standings' => $this->standings,
+        ];
+    }
+}
