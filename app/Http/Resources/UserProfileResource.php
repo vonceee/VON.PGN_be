@@ -21,6 +21,7 @@ class UserProfileResource extends JsonResource
             'username' => $this->name,
             'displayName' => $this->name,
             'is_admin' => $this->is_admin,
+            'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'createdAt' => $this->created_at->toIso8601String(),
 
             // Nested Preferences
