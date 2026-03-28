@@ -27,6 +27,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'is_admin',
+        'last_seen_at',
+        'is_online',
     ];
 
     /**
@@ -50,6 +52,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_online' => 'boolean',
+            'last_seen_at' => 'datetime',
         ];
     }
 
@@ -84,5 +88,12 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isFollowing(User $user): bool
     {
         return $this->following()->where('following_id', $user->id)->exists();
+    }
+
+    public function conversations()
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_user')
+            ->withPivot(['unread_count', 'last_read_at'])
+            ->withTimestamps();
     }
 }

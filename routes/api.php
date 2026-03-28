@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\TacticsController;
 use App\Http\Controllers\Api\TournamentController;
 use App\Http\Controllers\Api\FollowController;
+use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\ChapterController as AdminChapterController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
@@ -69,6 +70,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users/{id}/follow', [FollowController::class, 'follow']);
     Route::delete('/users/{id}/follow', [FollowController::class, 'unfollow']);
     Route::get('/users/{id}/follow-status', [FollowController::class, 'status']);
+
+    // Chat routes
+    Route::get('/chat/conversations', [ChatController::class, 'conversations']);
+    Route::post('/chat/conversations', [ChatController::class, 'startConversation']);
+    Route::get('/chat/conversations/{conversationId}/messages', [ChatController::class, 'messages']);
+    Route::post('/chat/conversations/{conversationId}/messages', [ChatController::class, 'sendMessage']);
+    Route::post('/chat/conversations/{conversationId}/read', [ChatController::class, 'markAsRead']);
+    Route::post('/chat/conversations/{conversationId}/typing', [ChatController::class, 'typing']);
+    Route::post('/chat/status', [ChatController::class, 'updateStatus']);
+    Route::get('/chat/unread', [ChatController::class, 'unreadCount']);
 });
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
