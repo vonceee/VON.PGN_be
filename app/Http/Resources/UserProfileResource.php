@@ -14,6 +14,8 @@ class UserProfileResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $currentUser = $request->user();
+
         return [
             // Core User Data
             'uid' => (string) $this->id,
@@ -23,6 +25,11 @@ class UserProfileResource extends JsonResource
             'is_admin' => $this->is_admin,
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'createdAt' => $this->created_at->toIso8601String(),
+
+            // Follow stats
+            'followers_count' => $this->followers_count ?? 0,
+            'following_count' => $this->following_count ?? 0,
+            'is_following' => $currentUser ? $currentUser->isFollowing($this->resource) : false,
 
             // Nested Preferences
             'preferences' => [

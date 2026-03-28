@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\TacticsController;
 use App\Http\Controllers\Api\TournamentController;
+use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\ChapterController as AdminChapterController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
@@ -41,6 +42,12 @@ Route::post('/email/verification-notification', function (Request $request) {
     return response()->json(['message' => 'Verification link sent!']);
 })->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');
 
+Route::get('/users/search', [UserProfileController::class, 'search']);
+Route::get('/users/{id}', [UserProfileController::class, 'showProfile']);
+
+Route::get('/users/{id}/followers', [FollowController::class, 'followers']);
+Route::get('/users/{id}/following', [FollowController::class, 'following']);
+
 Route::get('/courses', [CourseController::class, 'index']);
 Route::get('/courses/{slug}', [CourseController::class, 'show']);
 Route::get('/lessons/{slug}', [CourseController::class, 'getLesson']);
@@ -57,6 +64,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/progress/complete-lecture', [ProgressController::class, 'completeLecture']);
 
     Route::post('/tactics/solve', [TacticsController::class, 'solve']);
+
+    // Follow routes
+    Route::post('/users/{id}/follow', [FollowController::class, 'follow']);
+    Route::delete('/users/{id}/follow', [FollowController::class, 'unfollow']);
+    Route::get('/users/{id}/follow-status', [FollowController::class, 'status']);
 });
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {

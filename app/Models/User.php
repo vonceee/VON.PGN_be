@@ -10,6 +10,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\UserPreference;
 use App\Models\UserProgress;
 use App\Models\Badge;
+use App\Models\Follow;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -66,5 +67,22 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Badge::class, 'badge_user')
             ->withPivot('earned_at');
+    }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')
+            ->withTimestamps();
+    }
+
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id')
+            ->withTimestamps();
+    }
+
+    public function isFollowing(User $user): bool
+    {
+        return $this->following()->where('following_id', $user->id)->exists();
     }
 }

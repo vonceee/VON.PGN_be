@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PuzzleSeeder::class,
             BadgeSeeder::class,
+            TournamentSeeder::class,
         ]);
     }
 }
