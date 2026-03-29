@@ -36,7 +36,7 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
         event(new \Illuminate\Auth\Events\Verified($user));
     }
     
-    return redirect('http://localhost:4200/login?verified=1');
+    return redirect(env('FRONTEND_URL', 'http://localhost:4200') . '/login?verified=1');
 })->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
