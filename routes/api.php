@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\TacticsController;
 use App\Http\Controllers\Api\TournamentController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\ChapterController as AdminChapterController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
@@ -80,6 +81,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chat/conversations/{conversationId}/typing', [ChatController::class, 'typing']);
     Route::post('/chat/status', [ChatController::class, 'updateStatus']);
     Route::get('/chat/unread', [ChatController::class, 'unreadCount']);
+
+    // Game routes
+    Route::post('/game/seek', [GameController::class, 'seek']);
+    Route::post('/game/seek/cancel', [GameController::class, 'cancelSeek']);
+    Route::get('/game/active', [GameController::class, 'activeGame']);
+    Route::get('/game/{gameId}', [GameController::class, 'show']);
+    Route::post('/game/{gameId}/move', [GameController::class, 'move']);
+    Route::post('/game/{gameId}/resign', [GameController::class, 'resign']);
+    Route::post('/game/{gameId}/abort', [GameController::class, 'abort']);
+    Route::post('/game/{gameId}/draw', [GameController::class, 'draw']);
+    Route::post('/game/{gameId}/sync-clock', [GameController::class, 'syncClock']);
 });
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
