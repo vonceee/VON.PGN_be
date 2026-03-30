@@ -13,7 +13,6 @@ class TournamentSeeder extends Seeder
         $tournaments = [
             [
                 'name' => 'Manila Open Chess Championship 2026',
-                'banner_image' => 'https://images.unsplash.com/photo-1529699211952-734e80c4d42b?w=1200&h=400&fit=crop',
                 'status' => 'upcoming',
                 'start_date' => '2026-04-15',
                 'end_date' => '2026-04-20',
@@ -116,7 +115,6 @@ class TournamentSeeder extends Seeder
             ],
             [
                 'name' => 'ASEAN Youth Chess Championship 2026',
-                'banner_image' => 'https://images.unsplash.com/photo-1580541631950-7282082b53ce?w=1200&h=400&fit=crop',
                 'status' => 'ongoing',
                 'start_date' => '2026-03-20',
                 'end_date' => '2026-03-30',
@@ -142,7 +140,6 @@ class TournamentSeeder extends Seeder
             ],
             [
                 'name' => 'Pasig Rapid Chess Open 2026',
-                'banner_image' => 'https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=1200&h=400&fit=crop',
                 'status' => 'upcoming',
                 'start_date' => '2026-05-03',
                 'end_date' => '2026-05-03',
@@ -185,7 +182,6 @@ class TournamentSeeder extends Seeder
             ],
             [
                 'name' => 'Quezon City Invitational Masters 2025',
-                'banner_image' => 'https://images.unsplash.com/photo-1560174038-51f4b4c22f1d?w=1200&h=400&fit=crop',
                 'status' => 'past',
                 'start_date' => '2025-11-10',
                 'end_date' => '2025-11-17',
@@ -214,7 +210,6 @@ class TournamentSeeder extends Seeder
             ],
             [
                 'name' => 'Makati Weekend Blitz Series 2025',
-                'banner_image' => 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&h=400&fit=crop',
                 'status' => 'past',
                 'start_date' => '2025-12-06',
                 'end_date' => '2025-12-07',

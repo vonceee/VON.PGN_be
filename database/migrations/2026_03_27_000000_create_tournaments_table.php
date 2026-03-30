@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('banner_image')->nullable();
             $table->enum('status', ['upcoming', 'ongoing', 'past'])->default('upcoming');
             $table->date('start_date');
             $table->date('end_date');
@@ -27,6 +26,7 @@ return new class extends Migration
             $table->string('organizer')->nullable();
             $table->string('contact_email')->nullable();
             $table->text('description')->nullable();
+            $table->text('registration_instructions')->nullable();
             $table->unsignedInteger('rounds')->default(0);
             $table->unsignedInteger('current_participants')->default(0);
             $table->unsignedInteger('max_participants')->default(0);

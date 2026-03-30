@@ -11,7 +11,6 @@ class TournamentResource extends JsonResource
         return [
             'id' => $this->slug,
             'name' => $this->name,
-            'bannerImage' => $this->banner_image,
             'status' => $this->status,
             'dates' => [
                 'start' => $this->start_date?->toDateString(),
@@ -28,8 +27,9 @@ class TournamentResource extends JsonResource
             'registrationDeadline' => $this->registration_deadline?->toDateString(),
             'prizePool' => $this->prize_pool,
             'organizer' => $this->organizer,
-            'contactEmail' => $this->contact_email,
+            'contact' => $this->contact_email,
             'description' => $this->description,
+            'registrationInstructions' => $this->registration_instructions,
             'rounds' => $this->rounds,
             'participants' => [
                 'current' => $this->current_participants,

@@ -21,7 +21,6 @@ class TournamentController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:tournaments',
-            'banner_image' => 'nullable|string|max:2048',
             'status' => 'required|in:upcoming,ongoing,past',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -34,8 +33,9 @@ class TournamentController extends Controller
             'entry_fee' => 'nullable|string|max:255',
             'prize_pool' => 'nullable|string|max:255',
             'organizer' => 'nullable|string|max:255',
-            'contact_email' => 'nullable|email|max:255',
+            'contact_email' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'registration_instructions' => 'nullable|string',
             'rounds' => 'nullable|integer|min:0',
             'current_participants' => 'nullable|integer|min:0',
             'max_participants' => 'nullable|integer|min:0',
@@ -59,18 +59,17 @@ class TournamentController extends Controller
 
     public function show($id)
     {
-        $tournament = Tournament::findOrFail($id);
+        $tournament = Tournament::where('slug', $id)->firstOrFail();
         return new TournamentResource($tournament);
     }
 
     public function update(Request $request, $id)
     {
-        $tournament = Tournament::findOrFail($id);
+        $tournament = Tournament::where('slug', $id)->firstOrFail();
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'slug' => 'sometimes|required|string|max:255|unique:tournaments,slug,' . $tournament->id,
-            'banner_image' => 'nullable|string|max:2048',
             'status' => 'sometimes|required|in:upcoming,ongoing,past',
             'start_date' => 'sometimes|required|date',
             'end_date' => 'sometimes|required|date|after_or_equal:start_date',
@@ -83,8 +82,9 @@ class TournamentController extends Controller
             'entry_fee' => 'nullable|string|max:255',
             'prize_pool' => 'nullable|string|max:255',
             'organizer' => 'nullable|string|max:255',
-            'contact_email' => 'nullable|email|max:255',
+            'contact_email' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'registration_instructions' => 'nullable|string',
             'rounds' => 'nullable|integer|min:0',
             'current_participants' => 'nullable|integer|min:0',
             'max_participants' => 'nullable|integer|min:0',
@@ -106,7 +106,7 @@ class TournamentController extends Controller
 
     public function destroy($id)
     {
-        $tournament = Tournament::findOrFail($id);
+        $tournament = Tournament::where('slug', $id)->firstOrFail();
         $tournament->delete();
 
         return response()->json(['message' => 'Tournament deleted']);

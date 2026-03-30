@@ -23,13 +23,6 @@ class TournamentFactory extends Factory
         return [
             'name' => $name,
             'slug' => Str::slug($name),
-            'banner_image' => fake()->randomElement([
-                'https://images.unsplash.com/photo-1529699211952-734e80c4d42b?w=1200&h=400&fit=crop',
-                'https://images.unsplash.com/photo-1580541631950-7282082b53ce?w=1200&h=400&fit=crop',
-                'https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=1200&h=400&fit=crop',
-                'https://images.unsplash.com/photo-1560174038-51f4b4c22f1d?w=1200&h=400&fit=crop',
-                'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&h=400&fit=crop',
-            ]),
             'status' => $status,
             'start_date' => $startDate,
             'end_date' => $endDate,

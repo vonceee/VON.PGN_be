@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Api\Admin\TournamentController as AdminTournamentController;
 
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\MapsUrlResolverController;
 
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:10,60');
@@ -113,5 +114,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::apiResource('chapters', AdminChapterController::class);
     Route::apiResource('lessons', AdminLessonController::class);
     Route::apiResource('tournaments', AdminTournamentController::class);
+    Route::post('resolve-maps-url', [MapsUrlResolverController::class, 'resolve']);
 });
 

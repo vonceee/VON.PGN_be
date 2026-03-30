@@ -12,7 +12,6 @@ class Tournament extends Model
     protected $fillable = [
         'name',
         'slug',
-        'banner_image',
         'status',
         'start_date',
         'end_date',
@@ -27,6 +26,7 @@ class Tournament extends Model
         'organizer',
         'contact_email',
         'description',
+        'registration_instructions',
         'rounds',
         'current_participants',
         'max_participants',
