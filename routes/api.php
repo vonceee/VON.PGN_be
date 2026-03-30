@@ -16,9 +16,17 @@ use App\Http\Controllers\Api\Admin\ChapterController as AdminChapterController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Api\Admin\TournamentController as AdminTournamentController;
 
+use App\Http\Controllers\Api\PasswordResetController;
+
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:10,60');
 Route::post('/login', [AuthController::class, 'login']);
+
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail'])
+    ->middleware('throttle:6,1')
+    ->name('password.email');
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])
+    ->name('password.store');
 
 Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
     if (! $request->hasValidSignature()) {
@@ -40,8 +48,13 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
 })->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
-    $request->user()->sendEmailVerificationNotification();
-    return response()->json(['message' => 'Verification link sent!']);
+    try {
+        $request->user()->sendEmailVerificationNotification();
+        return response()->json(['message' => 'Verification link sent!']);
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Failed to resend verification email: ' . $e->getMessage());
+        return response()->json(['message' => 'Failed to send email, please try again later.'], 500);
+    }
 })->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');
 
 Route::get('/users/search', [UserProfileController::class, 'search']);
@@ -61,6 +74,7 @@ Route::get('/tournaments/{slug}', [TournamentController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::put('/email/update', [AuthController::class, 'updateEmail']);
     Route::get('/profile', [UserProfileController::class, 'myProfile']);
 
     Route::post('/progress/complete-lecture', [ProgressController::class, 'completeLecture']);

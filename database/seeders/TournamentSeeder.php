@@ -249,11 +249,5 @@ class TournamentSeeder extends Seeder
                 array_merge($data, ['slug' => Str::slug($data['name'])])
             );
         }
-
-        // Generate a few random tournaments using the factory
-        Tournament::factory()->count(3)->upcoming()->create();
-        Tournament::factory()->count(2)->past()->create();
-
-        $this->command->info('Tournaments seeded: ' . Tournament::count() . ' total');
     }
 }

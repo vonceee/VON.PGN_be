@@ -16,7 +16,14 @@ class AuthController extends Controller
         $request->validate([
             'username' => 'required|string|max:255|unique:users,name',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => [
+                'required',
+                'confirmed',
+                \Illuminate\Validation\Rules\Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+            ],
         ]);
 
         $user = User::create([
@@ -30,7 +37,11 @@ class AuthController extends Controller
 
         $user->load(['preferences', 'progress', 'badges']);
 
-        event(new Registered($user));
+        try {
+            event(new Registered($user));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send registration email: ' . $e->getMessage());
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -73,6 +84,30 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Successfully logged out'
+        ]);
+    }
+
+    public function updateEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email|max:255|unique:users,email,' . $request->user()->id,
+        ]);
+
+        $user = $request->user();
+        $user->email = $request->email;
+        $user->email_verified_at = null;
+        $user->save();
+
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send verification email after update: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'message' => 'Email updated successfully. Verification link sent!',
+            // We can return the updated user profile representation if helpful
+            'user' => new \App\Http\Resources\UserProfileResource($user)
         ]);
     }
 }
