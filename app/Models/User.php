@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\VerifyEmail;
 use App\Models\UserPreference;
 use App\Models\UserProgress;
 use App\Models\Badge;
@@ -88,6 +89,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isFollowing(User $user): bool
     {
         return $this->following()->where('following_id', $user->id)->exists();
+    }
+
+    /**
+     * Send the email verification notification.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmail);
     }
 
     public function conversations()
