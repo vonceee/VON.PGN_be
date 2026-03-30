@@ -114,8 +114,8 @@ class OpeningPrinciplesSeeder extends Seeder
         */
 
         Lesson::updateOrCreate(
+            ['slug' => 'the-goal-of-the-opening'],
             [
-                'slug' => 'the-goal-of-the-opening',
                 'chapter_id' => $chapter1->id,
                 'title' => 'The Goal of the Opening',
                 'order' => 2,
