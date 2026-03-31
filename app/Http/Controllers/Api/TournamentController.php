@@ -17,15 +17,26 @@ class TournamentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $tournaments = $query->orderBy('start_date', 'desc')->get();
+        $tournaments = $query->with('creator')
+            ->orderByRaw('COALESCE((SELECT verified_organizer FROM users WHERE users.id = tournaments.created_by), 0) DESC')
+            ->orderBy('start_date', 'desc')
+            ->get();
 
         return TournamentResource::collection($tournaments);
     }
 
-    public function show($slug)
+    public function show(Request $request, $slug)
     {
-        $tournament = Tournament::where('slug', $slug)->firstOrFail();
+        $tournament = Tournament::where('slug', $slug)->with('creator')->firstOrFail();
 
-        return new TournamentResource($tournament);
+        $tournament->increment('view_count');
+
+        $isBookmarked = false;
+        if ($user = $request->user()) {
+            $isBookmarked = $tournament->isBookmarkedBy($user);
+        }
+
+        return (new TournamentResource($tournament))
+            ->additional(['is_bookmarked' => $isBookmarked]);
     }
 }

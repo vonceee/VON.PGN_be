@@ -22,7 +22,9 @@ class UserProfileResource extends JsonResource
             'email' => $this->email,
             'username' => $this->name,
             'displayName' => $this->name,
+            'bio' => $this->bio,
             'is_admin' => $this->is_admin,
+            'verified_organizer' => $this->verified_organizer ?? false,
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'createdAt' => $this->created_at->toIso8601String(),
 

@@ -18,6 +18,9 @@ use App\Http\Controllers\Api\Admin\TournamentController as AdminTournamentContro
 
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\MapsUrlResolverController;
+use App\Http\Controllers\Api\UserTournamentController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\TournamentBookmarkController;
 
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:10,60');
@@ -71,12 +74,18 @@ Route::get('/lessons/{slug}', [CourseController::class, 'getLesson']);
 Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
 
 Route::get('/tournaments', [TournamentController::class, 'index']);
+Route::get('/tournaments/bookmarks', [TournamentBookmarkController::class, 'index'])
+    ->middleware('auth:sanctum');
 Route::get('/tournaments/{slug}', [TournamentController::class, 'show']);
+
+// PayMongo webhook (no auth - verified by PayMongo signature)
+Route::post('/webhooks/paymongo', [PaymentController::class, 'webhook']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/email/update', [AuthController::class, 'updateEmail']);
     Route::get('/profile', [UserProfileController::class, 'myProfile']);
+    Route::put('/profile/bio', [UserProfileController::class, 'updateBio']);
 
     Route::post('/progress/complete-lecture', [ProgressController::class, 'completeLecture']);
 
@@ -107,6 +116,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/game/{gameId}/abort', [GameController::class, 'abort']);
     Route::post('/game/{gameId}/draw', [GameController::class, 'draw']);
     Route::post('/game/{gameId}/sync-clock', [GameController::class, 'syncClock']);
+
+    // User tournament management
+    Route::get('/my/tournaments', [UserTournamentController::class, 'index']);
+    Route::post('/my/tournaments', [UserTournamentController::class, 'store']);
+    Route::get('/my/tournaments/{id}', [UserTournamentController::class, 'show']);
+    Route::put('/my/tournaments/{id}', [UserTournamentController::class, 'update']);
+    Route::delete('/my/tournaments/{id}', [UserTournamentController::class, 'destroy']);
+
+    // Payment routes
+    Route::post('/payments/checkout', [PaymentController::class, 'createCheckout']);
+    Route::get('/payments/history', [PaymentController::class, 'history']);
+
+    // Tournament bookmark routes
+    Route::post('/tournaments/{slug}/bookmark', [TournamentBookmarkController::class, 'toggle']);
 });
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
@@ -115,5 +138,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::apiResource('lessons', AdminLessonController::class);
     Route::apiResource('tournaments', AdminTournamentController::class);
     Route::post('resolve-maps-url', [MapsUrlResolverController::class, 'resolve']);
+    Route::post('users/{id}/toggle-verified-organizer', [UserProfileController::class, 'toggleVerifiedOrganizer']);
 });
 

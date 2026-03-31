@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -27,7 +28,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'bio',
         'is_admin',
+        'verified_organizer',
         'last_seen_at',
         'is_online',
     ];
@@ -53,6 +56,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'verified_organizer' => 'boolean',
             'is_online' => 'boolean',
             'last_seen_at' => 'datetime',
         ];
@@ -104,5 +108,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Conversation::class, 'conversation_user')
             ->withPivot(['unread_count', 'last_read_at'])
             ->withTimestamps();
+    }
+
+    public function tournaments()
+    {
+        return $this->hasMany(Tournament::class, 'created_by');
+    }
+
+    public function bookmarkedTournaments()
+    {
+        return $this->belongsToMany(Tournament::class, 'tournament_bookmarks')->withTimestamps();
     }
 }

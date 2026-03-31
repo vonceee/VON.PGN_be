@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Admin;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TournamentResource;
@@ -9,11 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-class TournamentController extends Controller
+class UserTournamentController extends Controller
 {
-    /**
-     * Generate a unique slug, appending a numeric suffix if a collision is detected.
-     */
     private function generateUniqueSlug(string $baseSlug, ?int $excludeId = null): string
     {
         $slug = $baseSlug;
@@ -76,7 +73,6 @@ class TournamentController extends Controller
         }
 
         $validated['slug'] = $this->generateUniqueSlug($validated['slug']);
-
         $validated['created_by'] = $request->user()->id;
 
         $tournament = Tournament::create($validated);
@@ -86,7 +82,7 @@ class TournamentController extends Controller
             ->setStatusCode(201);
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, string $id)
     {
         $tournament = Tournament::where('slug', $id)->firstOrFail();
 
@@ -97,7 +93,7 @@ class TournamentController extends Controller
         return new TournamentResource($tournament);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, string $id)
     {
         $tournament = Tournament::where('slug', $id)->firstOrFail();
 
@@ -146,7 +142,7 @@ class TournamentController extends Controller
         return new TournamentResource($tournament);
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, string $id)
     {
         $tournament = Tournament::where('slug', $id)->firstOrFail();
 

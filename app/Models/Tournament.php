@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Tournament extends Model
 {
@@ -35,6 +37,8 @@ class Tournament extends Model
         'schedule',
         'winner',
         'standings',
+        'created_by',
+        'view_count',
     ];
 
     protected $casts = [
@@ -50,6 +54,7 @@ class Tournament extends Model
         'categories' => 'array',
         'schedule' => 'array',
         'standings' => 'array',
+        'view_count' => 'integer',
     ];
 
     public function scopeUpcoming($query)
@@ -65,5 +70,20 @@ class Tournament extends Model
     public function scopePast($query)
     {
         return $query->where('status', 'past');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function bookmarkedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'tournament_bookmarks')->withTimestamps();
+    }
+
+    public function isBookmarkedBy(User $user): bool
+    {
+        return $this->bookmarkedBy()->where('user_id', $user->id)->exists();
     }
 }

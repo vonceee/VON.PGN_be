@@ -40,6 +40,14 @@ class TournamentResource extends JsonResource
             'schedule' => $this->schedule,
             'winner' => $this->winner,
             'standings' => $this->standings,
+            'viewCount' => $this->view_count ?? 0,
+            'creator' => $this->whenLoaded('creator', function () {
+                return [
+                    'id' => $this->creator->id,
+                    'name' => $this->creator->name,
+                    'verified_organizer' => $this->creator->verified_organizer ?? false,
+                ];
+            }),
         ];
     }
 }
