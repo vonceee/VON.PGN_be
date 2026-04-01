@@ -9,7 +9,7 @@ class PuzzleSeeder extends Seeder
 {
     public function run(): void
     {
-        $jsonPath = storage_path('app/puzzles_selected.json');
+        $jsonPath = database_path('puzzles_selected.json');
         $csvPath  = storage_path('app/lichess_db_puzzle.csv');
 
         if (file_exists($jsonPath)) {

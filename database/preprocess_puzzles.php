@@ -8,7 +8,7 @@
  */
 
 $csvPath = __DIR__ . '/../storage/app/lichess_db_puzzle.csv';
-$jsonPath = __DIR__ . '/../storage/app/puzzles_selected.json';
+$jsonPath = __DIR__ . '/puzzles_selected.json';
 
 if (!file_exists($csvPath)) {
     echo "CSV not found at: $csvPath\n";
