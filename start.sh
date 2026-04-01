@@ -2,10 +2,7 @@
 set -e
 
 echo "Running migrations..."
-php artisan migrate:fresh --force
-
-echo "Seeding database..."
-php artisan db:seed --force
+php artisan migrate --force
 
 echo "Clearing caches..."
 php artisan config:cache

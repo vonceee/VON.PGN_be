@@ -18,7 +18,7 @@ class TournamentController extends Controller
         }
 
         $tournaments = $query->with('creator')
-            ->orderByRaw('COALESCE((SELECT verified_organizer FROM users WHERE users.id = tournaments.created_by), 0) DESC')
+            ->orderByRaw('CASE WHEN (SELECT verified_organizer FROM users WHERE users.id = tournaments.created_by) = TRUE THEN 1 ELSE 0 END DESC')
             ->orderBy('start_date', 'desc')
             ->get();
 
@@ -32,11 +32,21 @@ class TournamentController extends Controller
         $tournament->increment('view_count');
 
         $isBookmarked = false;
-        if ($user = $request->user()) {
+        if ($user = auth('sanctum')->user()) {
             $isBookmarked = $tournament->isBookmarkedBy($user);
         }
 
         return (new TournamentResource($tournament))
             ->additional(['is_bookmarked' => $isBookmarked]);
+    }
+
+    public function userTournaments(string $id)
+    {
+        $tournaments = Tournament::where('created_by', $id)
+            ->with('creator')
+            ->orderBy('start_date', 'desc')
+            ->get();
+
+        return TournamentResource::collection($tournaments);
     }
 }

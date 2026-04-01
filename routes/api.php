@@ -77,6 +77,7 @@ Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournaments/bookmarks', [TournamentBookmarkController::class, 'index'])
     ->middleware('auth:sanctum');
 Route::get('/tournaments/{slug}', [TournamentController::class, 'show']);
+Route::get('/users/{id}/tournaments', [TournamentController::class, 'userTournaments']);
 
 // PayMongo webhook (no auth - verified by PayMongo signature)
 Route::post('/webhooks/paymongo', [PaymentController::class, 'webhook']);
