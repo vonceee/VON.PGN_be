@@ -28,6 +28,7 @@ class TournamentResource extends JsonResource
             'prizePool' => $this->prize_pool,
             'organizer' => $this->organizer,
             'contact' => $this->contact_email,
+            'link' => $this->link,
             'description' => $this->description,
             'registrationInstructions' => $this->registration_instructions,
             'rounds' => $this->rounds,

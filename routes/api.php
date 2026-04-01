@@ -21,6 +21,10 @@ use App\Http\Controllers\Api\MapsUrlResolverController;
 use App\Http\Controllers\Api\UserTournamentController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TournamentBookmarkController;
+use App\Http\Controllers\Api\GoogleAuthController;
+
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect']);
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:10,60');

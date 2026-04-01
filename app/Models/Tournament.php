@@ -27,6 +27,7 @@ class Tournament extends Model
         'prize_pool',
         'organizer',
         'contact_email',
+        'link',
         'description',
         'registration_instructions',
         'rounds',
