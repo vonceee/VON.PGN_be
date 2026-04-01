@@ -42,6 +42,7 @@ class TournamentResource extends JsonResource
             'winner' => $this->winner,
             'standings' => $this->standings,
             'viewCount' => $this->view_count ?? 0,
+            'createdAt' => $this->created_at?->toIso8601String(),
             'creator' => $this->whenLoaded('creator', function () {
                 return [
                     'id' => $this->creator->id,

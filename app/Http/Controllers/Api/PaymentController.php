@@ -63,7 +63,7 @@ class PaymentController extends Controller
                             'qrph',
                         ],
                         'reference_number' => 'verify_' . $user->id . '_' . time(),
-                        'description' => 'VON.PGN Verified Organizer — Monthly Subscription',
+                        'description' => 'vonchess Verified Organizer — Monthly Subscription',
                         'success_url' => $frontendUrl . '/profile?payment=success',
                         'cancel_url' => $frontendUrl . '/profile?payment=cancelled',
                         'metadata' => [

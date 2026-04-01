@@ -4,6 +4,9 @@ set -e
 echo "Running migrations..."
 php artisan migrate --force
 
+echo "Seeding puzzles..."
+php artisan db:seed --class=PuzzleSeeder --force
+
 echo "Clearing caches..."
 php artisan config:cache
 php artisan route:cache

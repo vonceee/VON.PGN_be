@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\UserTournamentController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TournamentBookmarkController;
 use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Api\LichessProxyController;
 
 Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect']);
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
@@ -74,6 +75,8 @@ Route::get('/users/{id}/following', [FollowController::class, 'following']);
 Route::get('/courses', [CourseController::class, 'index']);
 Route::get('/courses/{slug}', [CourseController::class, 'show']);
 Route::get('/lessons/{slug}', [CourseController::class, 'getLesson']);
+
+Route::get('/lichess/pgn', [LichessProxyController::class, 'pgn']);
 
 Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
 
