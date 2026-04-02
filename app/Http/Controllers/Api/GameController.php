@@ -28,81 +28,102 @@ class GameController
      */
     public function seek(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'time_control' => 'required|string|regex:/^\d+\+\d+$/',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'time_control' => 'required|string|regex:/^\d+\+\d+$/',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['message' => 'Invalid time control format. Use e.g. "300+0" or "180+2".'], 422);
-        }
-
-        $timeControl = $request->input('time_control');
-        $user = $request->user();
-        $elo = $user->progress?->puzzle_rating ?? 1200;
-
-        // Upsert this user's seek (in case they re-seek the same time control)
-        GameSeek::updateOrCreate(
-            ['user_id' => $user->id, 'time_control' => $timeControl],
-            ['elo' => $elo, 'created_at' => now()],
-        );
-
-        // Immediately try to match within this request
-        $opponent = DB::transaction(function () use ($user, $timeControl, $elo) {
-            $match = GameSeek::where('time_control', $timeControl)
-                ->where('user_id', '!=', $user->id)
-                ->lockForUpdate()
-                ->orderByRaw('ABS(elo - ?)', [$elo])
-                ->first();
-
-            if (!$match) {
-                return null;
+            if ($validator->fails()) {
+                return response()->json(['message' => 'Invalid time control format. Use e.g. "300+0" or "180+2".'], 422);
             }
 
-            $opponent = $match->user;
-            $match->delete();
+            $timeControl = $request->input('time_control');
+            $user = $request->user();
+            $elo = $user->progress?->puzzle_rating ?? 1200;
 
-            return $opponent;
-        });
+            \Illuminate\Support\Facades\Log::info('seek called', ['user_id' => $user->id, 'time_control' => $timeControl]);
 
-        if ($opponent) {
-            // Remove own seek too
-            GameSeek::where('user_id', $user->id)->where('time_control', $timeControl)->delete();
+            // Upsert this user's seek (in case they re-seek the same time control)
+            GameSeek::updateOrCreate(
+                ['user_id' => $user->id, 'time_control' => $timeControl],
+                ['elo' => $elo, 'created_at' => now()],
+            );
 
-            // Randomize colors
-            $whiteId = rand(0, 1) ? $user->id : $opponent->id;
-            $blackId = $whiteId === $user->id ? $opponent->id : $user->id;
+            // Immediately try to match within this request
+            $opponent = DB::transaction(function () use ($user, $timeControl, $elo) {
+                $match = GameSeek::where('time_control', $timeControl)
+                    ->where('user_id', '!=', $user->id)
+                    ->lockForUpdate()
+                    ->orderByRaw('ABS(elo - ?)', [$elo])
+                    ->first();
 
-            $timeData = ClockService::parseTimeControl($timeControl);
+                if (!$match) {
+                    return null;
+                }
 
-            $game = Game::create([
-                'white_player_id' => $whiteId,
-                'black_player_id' => $blackId,
-                'status' => 'active',
-                'time_control' => $timeControl,
-                'initial_time_ms' => $timeData['initial_time_ms'],
-                'increment_ms' => $timeData['increment_ms'],
-                'white_time_remaining_ms' => $timeData['initial_time_ms'],
-                'black_time_remaining_ms' => $timeData['initial_time_ms'],
-                'turn' => 'white',
-                'moves' => [],
-                'white_elo' => $user->progress?->puzzle_rating ?? 1200,
-                'black_elo' => $opponent->progress?->puzzle_rating ?? 1200,
-            ]);
+                $opponent = $match->user;
+                $match->delete();
 
-            broadcast(new \App\Events\GameMatched($game));
+                return $opponent;
+            });
+
+            if ($opponent) {
+                // Remove own seek too
+                GameSeek::where('user_id', $user->id)->where('time_control', $timeControl)->delete();
+
+                // Randomize colors
+                $whiteId = rand(0, 1) ? $user->id : $opponent->id;
+                $blackId = $whiteId === $user->id ? $opponent->id : $user->id;
+
+                $timeData = ClockService::parseTimeControl($timeControl);
+
+                $game = Game::create([
+                    'white_player_id' => $whiteId,
+                    'black_player_id' => $blackId,
+                    'status' => 'active',
+                    'time_control' => $timeControl,
+                    'initial_time_ms' => $timeData['initial_time_ms'],
+                    'increment_ms' => $timeData['increment_ms'],
+                    'white_time_remaining_ms' => $timeData['initial_time_ms'],
+                    'black_time_remaining_ms' => $timeData['initial_time_ms'],
+                    'turn' => 'white',
+                    'moves' => [],
+                    'white_elo' => $user->progress?->puzzle_rating ?? 1200,
+                    'black_elo' => $opponent->progress?->puzzle_rating ?? 1200,
+                ]);
+
+                \Illuminate\Support\Facades\Log::info('Game created', ['game_id' => $game->id]);
+
+                try {
+                    broadcast(new \App\Events\GameMatched($game));
+                    \Illuminate\Support\Facades\Log::info('GameMatched broadcasted', ['game_id' => $game->id]);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('GameMatched broadcast failed: ' . $e->getMessage(), [
+                        'game_id' => $game->id,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+
+                return response()->json([
+                    'message' => 'Match found!',
+                    'game_id' => $game->id,
+                    'matched' => true,
+                ]);
+            }
 
             return response()->json([
-                'message' => 'Match found!',
-                'game_id' => $game->id,
-                'matched' => true,
+                'message' => 'Searching for opponent...',
+                'time_control' => $timeControl,
+                'matched' => false,
             ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('seek FAILED: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['message' => 'Internal server error', 'error' => $e->getMessage()], 500);
         }
-
-        return response()->json([
-            'message' => 'Searching for opponent...',
-            'time_control' => $timeControl,
-            'matched' => false,
-        ]);
     }
 
     /**
@@ -558,61 +579,88 @@ class GameController
      */
     public function activeGame(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
-            ->where('status', 'active')
-            ->where(function ($q) use ($user) {
-                $q->where('white_player_id', $user->id)
-                  ->orWhere('black_player_id', $user->id);
-            })
-            ->first();
-
-        if (!$game) {
-            return response()->json(['game' => null]);
-        }
-
         try {
-            $clockTimes = $this->clockService->getEffectiveTimes($game);
+            $user = $request->user();
+
+            \Illuminate\Support\Facades\Log::info('activeGame called', ['user_id' => $user->id]);
+
+            $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
+                ->where('status', 'active')
+                ->where(function ($q) use ($user) {
+                    $q->where('white_player_id', $user->id)
+                      ->orWhere('black_player_id', $user->id);
+                })
+                ->first();
+
+            \Illuminate\Support\Facades\Log::info('activeGame query result', ['has_game' => !!$game, 'game_id' => $game?->id]);
+
+            if (!$game) {
+                return response()->json(['game' => null]);
+            }
+
+            try {
+                $clockTimes = $this->clockService->getEffectiveTimes($game);
+                \Illuminate\Support\Facades\Log::info('activeGame clock times resolved', ['game_id' => $game->id]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('activeGame getEffectiveTimes failed: ' . $e->getMessage(), [
+                    'game_id' => $game->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                $clockTimes = [
+                    'white_time_remaining_ms' => $game->white_time_remaining_ms,
+                    'black_time_remaining_ms' => $game->black_time_remaining_ms,
+                    'server_timestamp' => now()->toISOString(),
+                ];
+            }
+
+            try {
+                $legalMoves = $this->chessService->getLegalMoves($game->current_fen);
+                \Illuminate\Support\Facades\Log::info('activeGame legal moves resolved', ['game_id' => $game->id, 'move_count' => count($legalMoves)]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('activeGame getLegalMoves failed: ' . $e->getMessage(), [
+                    'game_id' => $game->id,
+                    'fen' => $game->current_fen,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                $legalMoves = [];
+            }
+
+            return response()->json([
+                'game' => [
+                    'id' => $game->id,
+                    'white_player' => [
+                        'id' => $game->whitePlayer->id,
+                        'name' => $game->whitePlayer->name,
+                    ],
+                    'black_player' => [
+                        'id' => $game->blackPlayer->id,
+                        'name' => $game->blackPlayer->name,
+                    ],
+                    'status' => $game->status,
+                    'time_control' => $game->time_control,
+                    'initial_time_ms' => $game->initial_time_ms,
+                    'increment_ms' => $game->increment_ms,
+                    'fen' => $game->current_fen,
+                    'turn' => $game->turn,
+                    'moves' => $game->moves ?? [],
+                    'white_time_remaining_ms' => $clockTimes['white_time_remaining_ms'],
+                    'black_time_remaining_ms' => $clockTimes['black_time_remaining_ms'],
+                    'server_timestamp' => $clockTimes['server_timestamp'],
+                    'result' => $game->result,
+                    'termination' => $game->termination,
+                    'my_color' => $game->getPlayerColor($user->id),
+                    'legal_moves' => $legalMoves,
+                    'draw_offered_by' => $game->draw_offered_by,
+                    'draw_offered_at' => $game->draw_offered_at?->toIso8601String(),
+                ],
+            ]);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('activeGame getEffectiveTimes failed: ' . $e->getMessage(), ['game_id' => $game->id]);
-            $clockTimes = [
-                'white_time_remaining_ms' => $game->white_time_remaining_ms,
-                'black_time_remaining_ms' => $game->black_time_remaining_ms,
-                'server_timestamp' => now()->toISOString(),
-            ];
+            \Illuminate\Support\Facades\Log::error('activeGame FAILED: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['message' => 'Internal server error', 'error' => $e->getMessage()], 500);
         }
-
-        $legalMoves = $this->chessService->getLegalMoves($game->current_fen);
-
-        return response()->json([
-            'game' => [
-                'id' => $game->id,
-                'white_player' => [
-                    'id' => $game->whitePlayer->id,
-                    'name' => $game->whitePlayer->name,
-                ],
-                'black_player' => [
-                    'id' => $game->blackPlayer->id,
-                    'name' => $game->blackPlayer->name,
-                ],
-                'status' => $game->status,
-                'time_control' => $game->time_control,
-                'initial_time_ms' => $game->initial_time_ms,
-                'increment_ms' => $game->increment_ms,
-                'fen' => $game->current_fen,
-                'turn' => $game->turn,
-                'moves' => $game->moves ?? [],
-                'white_time_remaining_ms' => $clockTimes['white_time_remaining_ms'],
-                'black_time_remaining_ms' => $clockTimes['black_time_remaining_ms'],
-                'server_timestamp' => $clockTimes['server_timestamp'],
-                'result' => $game->result,
-                'termination' => $game->termination,
-                'my_color' => $game->getPlayerColor($user->id),
-                'legal_moves' => $legalMoves,
-                'draw_offered_by' => $game->draw_offered_by,
-                'draw_offered_at' => $game->draw_offered_at?->toIso8601String(),
-            ],
-        ]);
     }
 }
