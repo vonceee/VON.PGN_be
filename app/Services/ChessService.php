@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Ryanhs\Chess\Chess;
+use PChess\Chess\Chess;
 
 class ChessService
 {
@@ -12,22 +12,35 @@ class ChessService
      */
     public function validateMove(string $fen, string $uciMove): ?array
     {
-        $chess = new Chess();
-
-        if (!$chess->load($fen)) {
+        try {
+            $chess = new Chess($fen);
+        } catch (\Exception $e) {
             return null;
         }
 
+        // Convert UCI to SAN for the move
         $from = substr($uciMove, 0, 2);
         $to = substr($uciMove, 2, 2);
         $promotion = strlen($uciMove) > 4 ? $uciMove[4] : null;
 
-        $moveInput = ['from' => $from, 'to' => $to];
-        if ($promotion) {
-            $moveInput['promotion'] = $promotion;
+        // Get all legal moves and find the matching one
+        $moves = $chess->moves();
+        $matchingMove = null;
+        
+        foreach ($moves as $move) {
+            if ($move->from === $from && $move->to === $to) {
+                if ($promotion === null || (isset($move->promotion) && $move->promotion === $promotion)) {
+                    $matchingMove = $move;
+                    break;
+                }
+            }
         }
 
-        $result = $chess->move($moveInput);
+        if ($matchingMove === null) {
+            return null;
+        }
+
+        $result = $chess->move($matchingMove->san);
 
         if ($result === null) {
             return null;
@@ -35,7 +48,7 @@ class ChessService
 
         return [
             'fen' => $chess->fen(),
-            'san' => $result['san'],
+            'san' => $result->san,
         ];
     }
 
@@ -45,9 +58,9 @@ class ChessService
      */
     public function getGameStatus(string $fen): string
     {
-        $chess = new Chess();
-
-        if (!$chess->load($fen)) {
+        try {
+            $chess = new Chess($fen);
+        } catch (\Exception $e) {
             return 'invalid';
         }
 
@@ -76,10 +89,13 @@ class ChessService
      */
     public function getTurn(string $fen): string
     {
-        $chess = new Chess();
-        $chess->load($fen);
+        try {
+            $chess = new Chess($fen);
+        } catch (\Exception $e) {
+            return 'white';
+        }
 
-        return $chess->turn() === 'w' ? 'white' : 'black';
+        return $chess->turn === 'w' ? 'white' : 'black';
     }
 
     /**
@@ -87,17 +103,17 @@ class ChessService
      */
     public function getLegalMoves(string $fen): array
     {
-        $chess = new Chess();
-
-        if (!$chess->load($fen)) {
+        try {
+            $chess = new Chess($fen);
+        } catch (\Exception $e) {
             return [];
         }
 
         $moves = [];
-        foreach ($chess->moves(['verbose' => true]) as $move) {
-            $uci = $move['from'] . $move['to'];
-            if (isset($move['promotion'])) {
-                $uci .= $move['promotion'];
+        foreach ($chess->moves() as $move) {
+            $uci = $move->from . $move->to;
+            if (isset($move->promotion)) {
+                $uci .= $move->promotion;
             }
             $moves[] = $uci;
         }
