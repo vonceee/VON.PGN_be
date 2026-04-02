@@ -83,7 +83,6 @@ class GameController
                 'increment_ms' => $timeData['increment_ms'],
                 'white_time_remaining_ms' => $timeData['initial_time_ms'],
                 'black_time_remaining_ms' => $timeData['initial_time_ms'],
-                'last_move_timestamp' => now(),
                 'turn' => 'white',
                 'moves' => [],
                 'white_elo' => $user->progress?->puzzle_rating ?? 1200,
@@ -143,7 +142,18 @@ class GameController
         if (!$game->isPlayer($user->id)) {
             return response()->json(['message' => 'Not authorized to view this game'], 403);
         }
-        $clockTimes = $this->clockService->getEffectiveTimes($game);
+
+        try {
+            $clockTimes = $this->clockService->getEffectiveTimes($game);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('getEffectiveTimes failed: ' . $e->getMessage(), ['game_id' => $gameId]);
+            $clockTimes = [
+                'white_time_remaining_ms' => $game->white_time_remaining_ms,
+                'black_time_remaining_ms' => $game->black_time_remaining_ms,
+                'server_timestamp' => now()->toISOString(),
+            ];
+        }
+
         $legalMoves = $game->isActive() ? $this->chessService->getLegalMoves($game->current_fen) : [];
 
         return response()->json([
@@ -264,7 +274,7 @@ class GameController
         $moves = $game->moves ?? [];
         $moves[] = $uciMove;
 
-        $game->update([
+        $updateData = [
             'current_fen' => $result['fen'],
             'turn' => $newTurn,
             'moves' => $moves,
@@ -273,7 +283,27 @@ class GameController
             'termination' => $termination,
             'draw_offered_by' => null,
             'draw_offered_at' => null,
-        ]);
+        ];
+
+        // Track first-move timestamps for pre-game buffer
+        $now = now();
+        if ($playerColor === 'white' && $game->white_first_move_at === null) {
+            $updateData['white_first_move_at'] = $now;
+        }
+        if ($playerColor === 'black' && $game->black_first_move_at === null) {
+            $updateData['black_first_move_at'] = $now;
+        }
+
+        // Set last_move_timestamp and clock_start_at on the first move
+        if ($game->last_move_timestamp === null) {
+            $updateData['last_move_timestamp'] = $now;
+            // Clock starts running from the first move time.
+            // The frontend's 5-second buffer has already elapsed by this point,
+            // so elapsed time from clock_start_at reflects actual thinking time.
+            $updateData['clock_start_at'] = $now;
+        }
+
+        $game->update($updateData);
 
         $clockData['is_check'] = $status === 'check';
         $clockData['is_checkmate'] = $status === 'checkmate';
@@ -501,6 +531,16 @@ class GameController
             return response()->json(['message' => 'Not authorized'], 403);
         }
 
+        // Check for timeout before syncing
+        if ($game->isActive() && $this->clockService->checkAndFlag($game)) {
+            return response()->json([
+                'message' => 'Time expired',
+                'game_status' => 'completed',
+                'result' => $game->result,
+                'termination' => $game->termination,
+            ]);
+        }
+
         $times = $this->clockService->getEffectiveTimes($game);
 
         broadcast(new ClockSync(
@@ -532,7 +572,17 @@ class GameController
             return response()->json(['game' => null]);
         }
 
-        $clockTimes = $this->clockService->getEffectiveTimes($game);
+        try {
+            $clockTimes = $this->clockService->getEffectiveTimes($game);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('activeGame getEffectiveTimes failed: ' . $e->getMessage(), ['game_id' => $game->id]);
+            $clockTimes = [
+                'white_time_remaining_ms' => $game->white_time_remaining_ms,
+                'black_time_remaining_ms' => $game->black_time_remaining_ms,
+                'server_timestamp' => now()->toISOString(),
+            ];
+        }
+
         $legalMoves = $this->chessService->getLegalMoves($game->current_fen);
 
         return response()->json([

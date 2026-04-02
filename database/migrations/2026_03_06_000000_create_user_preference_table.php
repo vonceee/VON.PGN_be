@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('theme')->default('system');
-            $table->string('board_style')->default('classic');
-            $table->string('piece_style')->default('standard');
+            $table->string('board_style')->default('newspaper');
+            $table->string('piece_style')->default('cburnett');
             $table->boolean('sound_enabled')->default(true);
             $table->timestamps();
         });

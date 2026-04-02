@@ -23,6 +23,9 @@ class Game extends Model
         'white_time_remaining_ms',
         'black_time_remaining_ms',
         'last_move_timestamp',
+        'white_first_move_at',
+        'black_first_move_at',
+        'clock_start_at',
         'turn',
         'moves',
         'result',
@@ -38,6 +41,9 @@ class Game extends Model
         return [
             'moves' => 'array',
             'last_move_timestamp' => 'datetime',
+            'white_first_move_at' => 'datetime',
+            'black_first_move_at' => 'datetime',
+            'clock_start_at' => 'datetime',
             'draw_offered_at' => 'datetime',
             'white_time_remaining_ms' => 'integer',
             'black_time_remaining_ms' => 'integer',
@@ -121,5 +127,10 @@ class Game extends Model
         }
 
         return $this->draw_offered_at->addSeconds(30)->isFuture();
+    }
+
+    public function hasBothFirstMoves(): bool
+    {
+        return $this->white_first_move_at !== null && $this->black_first_move_at !== null;
     }
 }
