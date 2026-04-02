@@ -18,6 +18,7 @@ class ClockSync implements ShouldBroadcastNow
         public int $whiteTimeMs,
         public int $blackTimeMs,
         public string $serverTimestamp,
+        public int $bufferSecondsRemaining = 0,
     ) {}
 
     public function broadcastOn(): array
@@ -34,6 +35,7 @@ class ClockSync implements ShouldBroadcastNow
             'white_time_remaining_ms' => $this->whiteTimeMs,
             'black_time_remaining_ms' => $this->blackTimeMs,
             'server_timestamp' => $this->serverTimestamp,
+            'buffer_seconds_remaining' => $this->bufferSecondsRemaining,
         ];
     }
 }

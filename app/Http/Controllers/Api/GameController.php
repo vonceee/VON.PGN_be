@@ -204,6 +204,7 @@ class GameController
                 'legal_moves' => $legalMoves,
                 'draw_offered_by' => $game->draw_offered_by,
                 'draw_offered_at' => $game->draw_offered_at?->toIso8601String(),
+                'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
             ],
         ]);
     }
@@ -213,6 +214,12 @@ class GameController
      */
     public function move(Request $request, string $gameId): JsonResponse
     {
+        \Illuminate\Support\Facades\Log::info('[move] ENDPOINT HIT', [
+            'gameId' => $gameId,
+            'user_id' => $request->user()->id ?? 'not authenticated',
+            'headers' => $request->headers->all(),
+        ]);
+
         $validator = Validator::make($request->all(), [
             'move' => 'required|string|regex:/^[a-h][1-8][a-h][1-8][qrnb]?$/',
         ]);
@@ -223,25 +230,39 @@ class GameController
 
         $game = Game::find($gameId);
         if (!$game) {
+            \Illuminate\Support\Facades\Log::warning('[move] Game not found', ['gameId' => $gameId]);
             return response()->json(['message' => 'Game not found'], 404);
         }
 
         $user = $request->user();
 
         if (!$game->isActive()) {
+            \Illuminate\Support\Facades\Log::warning('[move] Game not active', ['gameId' => $gameId, 'status' => $game->status]);
             return response()->json(['message' => 'Game is not active'], 422);
         }
 
         if (!$game->isPlayer($user->id)) {
+            \Illuminate\Support\Facades\Log::warning('[move] Not a player', ['gameId' => $gameId, 'user_id' => $user->id]);
             return response()->json(['message' => 'You are not a player in this game'], 403);
         }
 
         $playerColor = $game->getPlayerColor($user->id);
         if ($playerColor !== $game->turn) {
+            \Illuminate\Support\Facades\Log::warning('[move] Not your turn', [
+                'gameId' => $gameId,
+                'playerColor' => $playerColor,
+                'gameTurn' => $game->turn,
+            ]);
             return response()->json(['message' => 'It is not your turn'], 422);
         }
 
         $uciMove = $request->input('move');
+
+        \Illuminate\Support\Facades\Log::info('[move] Processing move', [
+            'gameId' => $gameId,
+            'move' => $uciMove,
+            'currentFen' => $game->current_fen,
+        ]);
 
         // Check for timeout before processing move
         if ($this->clockService->checkAndFlag($game)) {
@@ -256,11 +277,17 @@ class GameController
         $result = $this->chessService->validateMove($game->current_fen, $uciMove);
 
         if ($result === null) {
+            \Illuminate\Support\Facades\Log::warning('[move] Illegal move', ['gameId' => $gameId, 'move' => $uciMove, 'fen' => $game->current_fen]);
             return response()->json(['message' => 'Illegal move'], 422);
         }
 
+        \Illuminate\Support\Facades\Log::info('[move] Move validated', ['gameId' => $gameId, 'result' => $result]);
+
         // Apply clock
         $clockData = $this->clockService->applyMoveToClock($game, $playerColor);
+
+        // Refresh game to get updated time values
+        $game->refresh();
 
         // Determine new turn
         $newTurn = $this->chessService->getTurn($result['fen']);
@@ -306,23 +333,8 @@ class GameController
             'draw_offered_at' => null,
         ];
 
-        // Track first-move timestamps for pre-game buffer
-        $now = now();
-        if ($playerColor === 'white' && $game->white_first_move_at === null) {
-            $updateData['white_first_move_at'] = $now;
-        }
-        if ($playerColor === 'black' && $game->black_first_move_at === null) {
-            $updateData['black_first_move_at'] = $now;
-        }
-
-        // Set last_move_timestamp and clock_start_at on the first move
-        if ($game->last_move_timestamp === null) {
-            $updateData['last_move_timestamp'] = $now;
-            // Clock starts running from the first move time.
-            // The frontend's 5-second buffer has already elapsed by this point,
-            // so elapsed time from clock_start_at reflects actual thinking time.
-            $updateData['clock_start_at'] = $now;
-        }
+        // Track first-move timestamps for pre-game buffer (not needed for Lichess-style)
+        // last_move_timestamp is now handled by ClockService.applyMoveToClock()
 
         $game->update($updateData);
 
@@ -332,14 +344,18 @@ class GameController
         $clockData['is_draw'] = $status === 'draw';
         $clockData['legal_moves'] = $legalMoves;
 
+        \Illuminate\Support\Facades\Log::info('[move] Broadcasting MovePlayed event', [
+            'gameId' => $game->id,
+            'move' => $uciMove,
+            'san' => $result['san'],
+            'fen' => $result['fen'],
+            'turn' => $game->turn,
+        ]);
+
         broadcast(new MovePlayed($game, $uciMove, $result['san'], $result['fen'], $clockData));
 
-        // Schedule a time check job with a slight delay
-        if ($gameStatus === 'active') {
-            CheckGameTimeJob::dispatch($game->id)
-                ->delay(now()->addSeconds(2))
-                ->onQueue('clock');
-        }
+        // Lichess-style: No scheduled jobs. Timeout is only checked when a move is attempted.
+        // The client calculates time locally using: stored_time - (now - last_move_timestamp) + increment
 
         if ($gameStatus === 'completed') {
             broadcast(new GameEnded($game));
@@ -553,13 +569,21 @@ class GameController
         }
 
         // Check for timeout before syncing
-        if ($game->isActive() && $this->clockService->checkAndFlag($game)) {
-            return response()->json([
-                'message' => 'Time expired',
-                'game_status' => 'completed',
-                'result' => $game->result,
-                'termination' => $game->termination,
-            ]);
+        if ($game->isActive()) {
+            $timedOut = $this->clockService->checkAndFlag($game);
+            
+            if ($timedOut) {
+                return response()->json([
+                    'message' => 'Time expired',
+                    'game_status' => 'completed',
+                    'result' => $game->result,
+                    'termination' => $game->termination,
+                    'white_time_remaining_ms' => $game->white_time_remaining_ms,
+                    'black_time_remaining_ms' => $game->black_time_remaining_ms,
+                    'fen' => $game->current_fen,
+                    'buffer_seconds_remaining' => 0,
+                ]);
+            }
         }
 
         $times = $this->clockService->getEffectiveTimes($game);
@@ -569,6 +593,7 @@ class GameController
             $times['white_time_remaining_ms'],
             $times['black_time_remaining_ms'],
             $times['server_timestamp'],
+            $times['buffer_seconds_remaining'] ?? 0,
         ));
 
         return response()->json($times);
@@ -582,7 +607,13 @@ class GameController
         try {
             $user = $request->user();
 
-            \Illuminate\Support\Facades\Log::info('activeGame called', ['user_id' => $user->id]);
+            $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
+                ->where('status', 'active')
+                ->where(function ($q) use ($user) {
+                    $q->where('white_player_id', $user->id)
+                      ->orWhere('black_player_id', $user->id);
+                })
+                ->first();
 
             $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
                 ->where('status', 'active')
@@ -592,15 +623,12 @@ class GameController
                 })
                 ->first();
 
-            \Illuminate\Support\Facades\Log::info('activeGame query result', ['has_game' => !!$game, 'game_id' => $game?->id]);
-
             if (!$game) {
                 return response()->json(['game' => null]);
             }
 
             try {
                 $clockTimes = $this->clockService->getEffectiveTimes($game);
-                \Illuminate\Support\Facades\Log::info('activeGame clock times resolved', ['game_id' => $game->id]);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('activeGame getEffectiveTimes failed: ' . $e->getMessage(), [
                     'game_id' => $game->id,
@@ -615,7 +643,6 @@ class GameController
 
             try {
                 $legalMoves = $this->chessService->getLegalMoves($game->current_fen);
-                \Illuminate\Support\Facades\Log::info('activeGame legal moves resolved', ['game_id' => $game->id, 'move_count' => count($legalMoves)]);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('activeGame getLegalMoves failed: ' . $e->getMessage(), [
                     'game_id' => $game->id,
@@ -652,6 +679,7 @@ class GameController
                     'legal_moves' => $legalMoves,
                     'draw_offered_by' => $game->draw_offered_by,
                     'draw_offered_at' => $game->draw_offered_at?->toIso8601String(),
+                    'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
                 ],
             ]);
         } catch (\Throwable $e) {

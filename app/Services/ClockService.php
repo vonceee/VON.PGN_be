@@ -4,34 +4,54 @@ namespace App\Services;
 
 use App\Models\Game;
 use App\Events\GameEnded;
-use App\Events\ClockSync;
-use Illuminate\Support\Facades\Log;
 
 class ClockService
 {
     /**
-     * Calculate elapsed time and deduct from the current player's clock.
-     * Adds increment after the move is applied.
-     * Returns the updated time remaining for both players.
+     * Lichess-style implementation:
+     * - Server stores: last_move_timestamp
+     * - Client calculates remaining time locally using: stored_time - (now - last_move_timestamp) + increment
+     * - Server only checks timeout when a move is attempted
+     */
+
+    /**
+     * Apply move to clock - adds increment and subtracts elapsed time.
+     * This is the proper Lichess-style: server calculates consumed time.
      */
     public function applyMoveToClock(Game $game, string $movedPlayerColor): array
     {
         $now = now();
-        $elapsedMs = $this->getElapsedMs($game, $now);
 
+        // Validate current times - fallback to initial if corrupted
+        $maxValidTime = $game->initial_time_ms * 10;
+        
         $whiteTime = $game->white_time_remaining_ms;
         $blackTime = $game->black_time_remaining_ms;
-
-        if ($movedPlayerColor === 'white') {
-            $whiteTime -= $elapsedMs;
-            $whiteTime += $game->increment_ms;
-        } else {
-            $blackTime -= $elapsedMs;
-            $blackTime += $game->increment_ms;
+        
+        // Fix corrupted values before applying
+        if ($whiteTime > $maxValidTime || $whiteTime <= 0) {
+            $whiteTime = $game->initial_time_ms;
+        }
+        if ($blackTime > $maxValidTime || $blackTime <= 0) {
+            $blackTime = $game->initial_time_ms;
         }
 
-        $whiteTime = max(0, $whiteTime);
-        $blackTime = max(0, $blackTime);
+        // Calculate elapsed time since last move
+        $elapsedMs = 0;
+        if ($game->last_move_timestamp) {
+            $lastTs = strtotime($game->last_move_timestamp);
+            $nowTs = strtotime($now);
+            $elapsedMs = max(0, ($nowTs - $lastTs) * 1000);
+        }
+
+        // Subtract elapsed time from the player who made the move
+        if ($movedPlayerColor === 'white') {
+            $whiteTime = max(0, $whiteTime - $elapsedMs);
+            $whiteTime += $game->increment_ms;
+        } else {
+            $blackTime = max(0, $blackTime - $elapsedMs);
+            $blackTime += $game->increment_ms;
+        }
 
         $game->update([
             'white_time_remaining_ms' => $whiteTime,
@@ -47,7 +67,9 @@ class ClockService
     }
 
     /**
-     * Check if a player's time has expired and end the game if so.
+     * Check if player's time has expired.
+     * Lichess-style: calculate time remaining since last move.
+     * Returns true if game was ended.
      */
     public function checkAndFlag(Game $game): bool
     {
@@ -55,25 +77,25 @@ class ClockService
             return false;
         }
 
+        // Calculate elapsed time since last move (server-side, not from getEffectiveTimes)
         $now = now();
-        $elapsedMs = $this->getElapsedMs($game, $now);
-
-        $whiteTime = $game->white_time_remaining_ms;
-        $blackTime = $game->black_time_remaining_ms;
-
-        if ($game->turn === 'white') {
-            $whiteTime -= $elapsedMs;
-        } else {
-            $blackTime -= $elapsedMs;
+        $elapsedMs = 0;
+        
+        if ($game->last_move_timestamp) {
+            $lastTs = strtotime($game->last_move_timestamp);
+            $nowTs = strtotime($now);
+            $elapsedMs = max(0, ($nowTs - $lastTs) * 1000);
         }
 
-        if ($whiteTime <= 0) {
-            $this->flagPlayer($game, 'white');
-            return true;
-        }
+        // Get the stored time for current player and subtract elapsed
+        $storedTime = $game->turn === 'white' 
+            ? $game->white_time_remaining_ms 
+            : $game->black_time_remaining_ms;
+        
+        $currentTime = max(0, $storedTime - $elapsedMs);
 
-        if ($blackTime <= 0) {
-            $this->flagPlayer($game, 'black');
+        if ($currentTime <= 0) {
+            $this->flagPlayer($game, $game->turn);
             return true;
         }
 
@@ -99,88 +121,52 @@ class ClockService
     }
 
     /**
-     * Get the current effective time remaining for both players (calculated live).
+     * Get effective times - returns stored time and timestamp for client-side calculation.
+     * 
+     * Lichess-style: returns the STORED time after last move (with increment added).
+     * Client calculates: currentTime = storedTime - (now - lastMoveTimestamp)
+     * 
+     * Fallback: If stored time is unreasonable (> initial time * 10), use initial time.
      */
     public function getEffectiveTimes(Game $game): array
     {
+        $now = now();
+
         if (!$game->isActive()) {
             return [
                 'white_time_remaining_ms' => $game->white_time_remaining_ms,
                 'black_time_remaining_ms' => $game->black_time_remaining_ms,
-                'server_timestamp' => now()->toISOString(),
+                'server_timestamp' => $now->toISOString(),
             ];
         }
 
-        // No clock has started yet — return stored times (full time)
-        if (!$game->clock_start_at) {
+        // If no moves yet, return full initial time
+        if (!$game->last_move_timestamp) {
             return [
-                'white_time_remaining_ms' => $game->white_time_remaining_ms,
-                'black_time_remaining_ms' => $game->black_time_remaining_ms,
-                'server_timestamp' => now()->toISOString(),
+                'white_time_remaining_ms' => $game->initial_time_ms,
+                'black_time_remaining_ms' => $game->initial_time_ms,
+                'server_timestamp' => $now->toISOString(),
             ];
         }
 
-        $now = now();
-        $elapsedMs = $this->getElapsedMs($game, $now);
-
+        // Validate stored times - fallback to initial if corrupted
+        $maxValidTime = $game->initial_time_ms * 10;
+        
         $whiteTime = $game->white_time_remaining_ms;
         $blackTime = $game->black_time_remaining_ms;
-
-        if ($game->turn === 'white') {
-            $whiteTime -= $elapsedMs;
-        } else {
-            $blackTime -= $elapsedMs;
+        
+        if ($whiteTime > $maxValidTime || $whiteTime <= 0) {
+            $whiteTime = $game->initial_time_ms;
+        }
+        if ($blackTime > $maxValidTime || $blackTime <= 0) {
+            $blackTime = $game->initial_time_ms;
         }
 
         return [
-            'white_time_remaining_ms' => max(0, $whiteTime),
-            'black_time_remaining_ms' => max(0, $blackTime),
-            'server_timestamp' => $now->toISOString(),
+            'white_time_remaining_ms' => $whiteTime,
+            'black_time_remaining_ms' => $blackTime,
+            'server_timestamp' => $game->last_move_timestamp->toISOString(),
         ];
-    }
-
-    /**
-     * Calculate elapsed milliseconds since the game clock started running.
-     *
-     * Timeline:
-     *   t=0        Game created (no clock running, clock_start_at = null)
-     *   t=0..5     Buffer period (clock frozen, display shows full time)
-     *   t=5        Buffer ends, abort timer + clock start ticking
-     *   t=5..20    Abort period (clock ticking, game time consumed)
-     *   t=m1       First player makes move (last_move_timestamp set to m1,
-     *              clock_start_at also set to m1)
-     *   t=m1..m1+5 Buffer for second player (clock frozen for second player)
-     *   t=m1+5     Second buffer ends (clock ticking for second player)
-     *   t=m2       Second player makes move
-     *   t=m2+      Normal play (clock always ticking on active turn)
-     *
-     * Before both players have made their first move, elapsed time is
-     * calculated from clock_start_at (which equals the first move time).
-     * After both first moves, elapsed is from last_move_timestamp.
-     */
-    private function getElapsedMs(Game $game, mixed $now): int
-    {
-        // Before White's first move: clock hasn't started
-        if ($game->white_first_move_at === null) {
-            return 0;
-        }
-
-        // After White's first move but before Black's first move:
-        // Clock started at clock_start_at (White's first move time).
-        // Elapsed = time since clock_start_at.
-        // This correctly shows the game clock ticking during Black's abort period.
-        if ($game->black_first_move_at === null) {
-            if (!$game->clock_start_at) {
-                return 0;
-            }
-            return max(0, (int) ($now->diffInSeconds($game->clock_start_at, false) * 1000));
-        }
-
-        // After both first moves: normal clock behavior from last move timestamp
-        if (!$game->last_move_timestamp) {
-            return 0;
-        }
-        return max(0, (int) ($now->diffInSeconds($game->last_move_timestamp, false) * 1000));
     }
 
     /**
