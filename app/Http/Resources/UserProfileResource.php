@@ -33,6 +33,9 @@ class UserProfileResource extends JsonResource
             'following_count' => $this->following_count ?? 0,
             'is_following' => $currentUser ? $currentUser->isFollowing($this->resource) : false,
 
+            // Live Chess Ratings
+            'ratings' => $this->getLiveChessRatings(),
+
             // Nested Preferences
             'preferences' => [
                 'theme' => $this->preferences->theme ?? 'system',

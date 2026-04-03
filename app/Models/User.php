@@ -35,6 +35,17 @@ class User extends Authenticatable implements MustVerifyEmail
         'verified_organizer',
         'last_seen_at',
         'is_online',
+        // Live chess ratings
+        'bullet_rating',
+        'bullet_rd',
+        'bullet_games',
+        'blitz_rating',
+        'blitz_rd',
+        'blitz_games',
+        'rapid_rating',
+        'rapid_rd',
+        'rapid_games',
+        'last_game_at',
     ];
 
     /**
@@ -61,6 +72,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'verified_organizer' => 'boolean',
             'is_online' => 'boolean',
             'last_seen_at' => 'datetime',
+            'last_game_at' => 'datetime',
+            'bullet_rating' => 'integer',
+            'bullet_rd' => 'integer',
+            'bullet_games' => 'integer',
+            'blitz_rating' => 'integer',
+            'blitz_rd' => 'integer',
+            'blitz_games' => 'integer',
+            'rapid_rating' => 'integer',
+            'rapid_rd' => 'integer',
+            'rapid_games' => 'integer',
         ];
     }
 
@@ -120,5 +141,29 @@ class User extends Authenticatable implements MustVerifyEmail
     public function bookmarkedTournaments()
     {
         return $this->belongsToMany(Tournament::class, 'tournament_bookmarks')->withTimestamps();
+    }
+
+    public function getLiveChessRatings(): array
+    {
+        return [
+            'bullet' => [
+                'rating' => $this->bullet_rating ?? 1500,
+                'rd' => $this->bullet_rd ?? 350,
+                'games' => $this->bullet_games ?? 0,
+                'prov' => ($this->bullet_games ?? 0) < 10,
+            ],
+            'blitz' => [
+                'rating' => $this->blitz_rating ?? 1500,
+                'rd' => $this->blitz_rd ?? 350,
+                'games' => $this->blitz_games ?? 0,
+                'prov' => ($this->blitz_games ?? 0) < 10,
+            ],
+            'rapid' => [
+                'rating' => $this->rapid_rating ?? 1500,
+                'rd' => $this->rapid_rd ?? 350,
+                'games' => $this->rapid_games ?? 0,
+                'prov' => ($this->rapid_games ?? 0) < 10,
+            ],
+        ];
     }
 }
