@@ -8,6 +8,8 @@ use App\Events\ClockSync;
 use App\Events\DrawOffered;
 use App\Events\PlayerAbsent;
 use App\Events\PlayerReturned;
+use App\Events\SeekCreated;
+use App\Events\SeekRemoved;
 use App\Jobs\CheckGameTimeJob;
 use App\Models\Game;
 use App\Models\GameSeek;
@@ -94,10 +96,16 @@ class GameController
             }
 
             // Upsert this user's seek (in case they re-seek the same time control)
-            GameSeek::updateOrCreate(
+            $seek = GameSeek::updateOrCreate(
                 ['user_id' => $user->id, 'time_control' => $timeControl],
                 ['elo' => $elo, 'created_at' => now()],
             );
+
+            try {
+                broadcast(new SeekCreated($seek));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('SeekCreated broadcast failed: ' . $e->getMessage());
+            }
 
             // Immediately try to match within this request
             $opponent = DB::transaction(function () use ($user, $timeControl, $elo) {
@@ -111,19 +119,39 @@ class GameController
                     return null;
                 }
 
+                $matchedSeekId = $match->id;
                 $opponent = $match->user;
                 $match->delete();
 
-                return $opponent;
+                return ['opponent' => $opponent, 'matchedSeekId' => $matchedSeekId];
             });
 
             if ($opponent) {
+                $matchedSeekId = $opponent['matchedSeekId'] ?? null;
+                $opponentUser = $opponent['opponent'] ?? null;
+
                 // Remove own seek too
+                $userSeekId = GameSeek::where('user_id', $user->id)->where('time_control', $timeControl)->value('id');
                 GameSeek::where('user_id', $user->id)->where('time_control', $timeControl)->delete();
 
+                if ($matchedSeekId) {
+                    try {
+                        broadcast(new SeekRemoved($matchedSeekId, 'matched'));
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::error('SeekRemoved (matched) broadcast failed: ' . $e->getMessage());
+                    }
+                }
+                if ($userSeekId) {
+                    try {
+                        broadcast(new SeekRemoved($userSeekId, 'matched'));
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::error('SeekRemoved (user matched) broadcast failed: ' . $e->getMessage());
+                    }
+                }
+
                 // Randomize colors
-                $whiteId = rand(0, 1) ? $user->id : $opponent->id;
-                $blackId = $whiteId === $user->id ? $opponent->id : $user->id;
+                $whiteId = rand(0, 1) ? $user->id : $opponentUser->id;
+                $blackId = $whiteId === $user->id ? $opponentUser->id : $user->id;
 
                 $timeData = ClockService::parseTimeControl($timeControl);
 
@@ -139,7 +167,7 @@ class GameController
                     'turn' => 'white',
                     'moves' => [],
                     'white_elo' => $user->progress?->puzzle_rating ?? 1200,
-                    'black_elo' => $opponent->progress?->puzzle_rating ?? 1200,
+                    'black_elo' => $opponentUser->progress?->puzzle_rating ?? 1200,
                     'white_last_heartbeat_at' => now(),
                     'black_last_heartbeat_at' => now(),
                 ]);
@@ -192,11 +220,43 @@ class GameController
         }
 
         $user = $request->user();
-        GameSeek::where('user_id', $user->id)
+        $seek = GameSeek::where('user_id', $user->id)
             ->where('time_control', $request->input('time_control'))
-            ->delete();
+            ->first();
+
+        $seekId = $seek?->id;
+        $seek?->delete();
+
+        if ($seekId) {
+            try {
+                broadcast(new SeekRemoved($seekId, 'cancelled'));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('SeekRemoved broadcast failed: ' . $e->getMessage());
+            }
+        }
 
         return response()->json(['message' => 'Removed from queue']);
+    }
+
+    /**
+     * List all active seeks.
+     */
+    public function seeks(): JsonResponse
+    {
+        $seeks = GameSeek::with('user:id,name')
+            ->where('created_at', '>', now()->subMinutes(10))
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($seek) => [
+                'id' => $seek->id,
+                'user_id' => $seek->user_id,
+                'username' => $seek->user?->name,
+                'elo' => $seek->elo,
+                'time_control' => $seek->time_control,
+                'created_at' => $seek->created_at?->toISOString(),
+            ]);
+
+        return response()->json(['seeks' => $seeks]);
     }
 
     /**

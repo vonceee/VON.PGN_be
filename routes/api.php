@@ -120,6 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/chat/unread', [ChatController::class, 'unreadCount']);
 
     // Game routes
+    Route::get('/seeks', [GameController::class, 'seeks']);
     Route::post('/game/seek', [GameController::class, 'seek']);
     Route::post('/game/seek/cancel', [GameController::class, 'cancelSeek']);
     Route::get('/game/active', [GameController::class, 'activeGame']);
