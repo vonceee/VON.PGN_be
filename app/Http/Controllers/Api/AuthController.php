@@ -13,6 +13,19 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        $existingUser = User::where('email', $request->email)->first();
+
+        if ($existingUser) {
+            if ($existingUser->google_id && !$existingUser->password) {
+                throw ValidationException::withMessages([
+                    'email' => ['This email is associated with a Google account. Please sign in with Google.'],
+                ]);
+            }
+            throw ValidationException::withMessages([
+                'email' => ['This email is already registered.'],
+            ]);
+        }
+
         $request->validate([
             'username' => ['required', 'string', 'max:255', 'unique:users,name', 'regex:/^[a-zA-Z0-9_-]+$/'],
             'email' => 'required|string|email|max:255|unique:users',

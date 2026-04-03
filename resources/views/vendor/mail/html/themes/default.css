@@ -2,10 +2,8 @@
 
 body,
 body *:not(html):not(style):not(br):not(tr):not(code) {
-    box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-    position: relative;
 }
 
 body {
@@ -147,7 +145,7 @@ img {
 }
 
 .inner-body a {
-    word-break: break-all;
+    word-wrap: break-word;
 }
 
 /* Subcopy */
@@ -210,7 +208,6 @@ img {
 }
 
 .content-cell {
-    max-width: 100vw;
     padding: 32px;
 }
 
@@ -292,5 +289,5 @@ img {
 /* Utilities */
 
 .break-all {
-    word-break: break-all;
+    word-wrap: break-word;
 }

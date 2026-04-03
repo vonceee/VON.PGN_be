@@ -4,20 +4,31 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleAuthController extends Controller
 {
     public function redirect()
     {
-        return Socialite::driver('google')
-            ->stateless()
-            ->redirect();
+        // Use stateless() to avoid session requirement for API routes
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
-    public function callback()
+    public function callback(Request $request)
     {
-        $googleUser = Socialite::driver('google')->stateless()->user();
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (\Exception $e) {
+            Log::error('Google auth failed', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'exception_class' => get_class($e),
+            ]);
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:4200');
+            return redirect("{$frontendUrl}/auth/google/callback?error=google_auth_failed");
+        }
 
         $user = User::where('google_id', $googleUser->id)->first();
 
@@ -25,6 +36,12 @@ class GoogleAuthController extends Controller
             $user = User::where('email', $googleUser->email)->first();
 
             if ($user) {
+                // User exists with email/password - link Google account
+                if ($user->google_id) {
+                    // Already linked to another Google account
+                    $frontendUrl = env('FRONTEND_URL', 'http://localhost:4200');
+                    return redirect("{$frontendUrl}/auth/google/callback?error=email_already_linked");
+                }
                 $user->update([
                     'google_id' => $googleUser->id,
                 ]);
