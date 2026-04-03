@@ -24,6 +24,10 @@ use App\Http\Controllers\Api\TournamentBookmarkController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\LichessProxyController;
 
+Route::get('/ping', function () {
+    return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
+});
+
 Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect']);
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 
@@ -124,6 +128,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/game/{gameId}/abort', [GameController::class, 'abort']);
     Route::post('/game/{gameId}/draw', [GameController::class, 'draw']);
     Route::post('/game/{gameId}/sync-clock', [GameController::class, 'syncClock']);
+    Route::post('/game/{gameId}/heartbeat', [GameController::class, 'heartbeat']);
 
     // User tournament management
     Route::get('/my/tournaments', [UserTournamentController::class, 'index']);

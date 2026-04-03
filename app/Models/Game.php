@@ -34,6 +34,8 @@ class Game extends Model
         'black_elo',
         'draw_offered_by',
         'draw_offered_at',
+        'white_last_heartbeat_at',
+        'black_last_heartbeat_at',
     ];
 
     protected function casts(): array
@@ -52,6 +54,8 @@ class Game extends Model
             'white_elo' => 'integer',
             'black_elo' => 'integer',
             'draw_offered_by' => 'integer',
+            'white_last_heartbeat_at' => 'datetime',
+            'black_last_heartbeat_at' => 'datetime',
         ];
     }
 
@@ -132,5 +136,39 @@ class Game extends Model
     public function hasBothFirstMoves(): bool
     {
         return $this->white_first_move_at !== null && $this->black_first_move_at !== null;
+    }
+
+    public function isPlayerAway(string $color): bool
+    {
+        if ($color === 'white') {
+            return $this->white_last_heartbeat_at !== null 
+                && $this->white_last_heartbeat_at->diffInSeconds(now()) > 30;
+        }
+        return $this->black_last_heartbeat_at !== null 
+            && $this->black_last_heartbeat_at->diffInSeconds(now()) > 30;
+    }
+
+    public function getAwayCountdownSeconds(string $color): ?int
+    {
+        if ($color === 'white') {
+            if (!$this->white_last_heartbeat_at) return null;
+            $awaySeconds = $this->white_last_heartbeat_at->diffInSeconds(now());
+            $remaining = 30 - $awaySeconds;
+            return $remaining > 0 ? $remaining : 0;
+        }
+        if (!$this->black_last_heartbeat_at) return null;
+        $awaySeconds = $this->black_last_heartbeat_at->diffInSeconds(now());
+        $remaining = 30 - $awaySeconds;
+        return $remaining > 0 ? $remaining : 0;
+    }
+
+    public function hasAbandoned(string $color): bool
+    {
+        if ($color === 'white') {
+            return $this->white_last_heartbeat_at !== null 
+                && $this->white_last_heartbeat_at->diffInSeconds(now()) > 30;
+        }
+        return $this->black_last_heartbeat_at !== null 
+            && $this->black_last_heartbeat_at->diffInSeconds(now()) > 30;
     }
 }

@@ -6,6 +6,8 @@ use App\Events\GameEnded;
 use App\Events\MovePlayed;
 use App\Events\ClockSync;
 use App\Events\DrawOffered;
+use App\Events\PlayerAbsent;
+use App\Events\PlayerReturned;
 use App\Jobs\CheckGameTimeJob;
 use App\Models\Game;
 use App\Models\GameSeek;
@@ -42,6 +44,54 @@ class GameController
             $elo = $user->progress?->puzzle_rating ?? 1200;
 
             \Illuminate\Support\Facades\Log::info('seek called', ['user_id' => $user->id, 'time_control' => $timeControl]);
+
+            // Check if user already has an active game
+            $existingGame = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
+                ->where('status', 'active')
+                ->where(function ($q) use ($user) {
+                    $q->where('white_player_id', $user->id)
+                      ->orWhere('black_player_id', $user->id);
+                })
+                ->first();
+
+            if ($existingGame) {
+                $clockTimes = $this->clockService->getEffectiveTimes($existingGame);
+                $legalMoves = $this->chessService->getLegalMoves($existingGame->current_fen);
+
+                return response()->json([
+                    'message' => 'You already have an active game',
+                    'game_id' => $existingGame->id,
+                    'matched' => true,
+                    'existing_game' => [
+                        'id' => $existingGame->id,
+                        'white_player' => [
+                            'id' => $existingGame->whitePlayer->id,
+                            'name' => $existingGame->whitePlayer->name,
+                        ],
+                        'black_player' => [
+                            'id' => $existingGame->blackPlayer->id,
+                            'name' => $existingGame->blackPlayer->name,
+                        ],
+                        'status' => $existingGame->status,
+                        'time_control' => $existingGame->time_control,
+                        'initial_time_ms' => $existingGame->initial_time_ms,
+                        'increment_ms' => $existingGame->increment_ms,
+                        'fen' => $existingGame->current_fen,
+                        'turn' => $existingGame->turn,
+                        'moves' => $existingGame->moves ?? [],
+                        'white_time_remaining_ms' => $clockTimes['white_time_remaining_ms'],
+                        'black_time_remaining_ms' => $clockTimes['black_time_remaining_ms'],
+                        'server_timestamp' => $clockTimes['server_timestamp'],
+                        'result' => $existingGame->result,
+                        'termination' => $existingGame->termination,
+                        'my_color' => $existingGame->getPlayerColor($user->id),
+                        'legal_moves' => $legalMoves,
+                        'draw_offered_by' => $existingGame->draw_offered_by,
+                        'draw_offered_at' => $existingGame->draw_offered_at?->toIso8601String(),
+                        'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
+                    ],
+                ]);
+            }
 
             // Upsert this user's seek (in case they re-seek the same time control)
             GameSeek::updateOrCreate(
@@ -90,6 +140,8 @@ class GameController
                     'moves' => [],
                     'white_elo' => $user->progress?->puzzle_rating ?? 1200,
                     'black_elo' => $opponent->progress?->puzzle_rating ?? 1200,
+                    'white_last_heartbeat_at' => now(),
+                    'black_last_heartbeat_at' => now(),
                 ]);
 
                 \Illuminate\Support\Facades\Log::info('Game created', ['game_id' => $game->id]);
@@ -205,8 +257,27 @@ class GameController
                 'draw_offered_by' => $game->draw_offered_by,
                 'draw_offered_at' => $game->draw_offered_at?->toIso8601String(),
                 'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
+                'opponent_away_countdown' => $this->getOpponentAwayCountdown($game, $user->id),
             ],
         ]);
+    }
+
+    private function getOpponentAwayCountdown(Game $game, int $userId): ?int
+    {
+        if (!$game->isActive()) return null;
+        
+        $myColor = $game->getPlayerColor($userId);
+        $opponentColor = $myColor === 'white' ? 'black' : 'white';
+        
+        $opponentField = $opponentColor === 'white' ? 'white_last_heartbeat_at' : 'black_last_heartbeat_at';
+        
+        if (!$game->$opponentField) return null;
+        
+        $awaySeconds = $game->$opponentField->diffInSeconds(now());
+        if ($awaySeconds <= 30) {
+            return 30 - $awaySeconds;
+        }
+        return 0;
     }
 
     /**
@@ -680,6 +751,7 @@ class GameController
                     'draw_offered_by' => $game->draw_offered_by,
                     'draw_offered_at' => $game->draw_offered_at?->toIso8601String(),
                     'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
+                    'opponent_away_countdown' => $this->getOpponentAwayCountdown($game, $user->id),
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -689,6 +761,80 @@ class GameController
                 'trace' => $e->getTraceAsString(),
             ]);
             return response()->json(['message' => 'Internal server error', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Player heartbeat to indicate they're still connected.
+     */
+    public function heartbeat(Request $request, string $gameId): JsonResponse
+    {
+        $game = Game::find($gameId);
+        if (!$game) {
+            return response()->json(['message' => 'Game not found'], 404);
+        }
+
+        $user = $request->user();
+
+        if (!$game->isPlayer($user->id)) {
+            return response()->json(['message' => 'Not authorized'], 403);
+        }
+
+        $playerColor = $game->getPlayerColor($user->id);
+        
+        $updateField = $playerColor === 'white' ? 'white_last_heartbeat_at' : 'black_last_heartbeat_at';
+        $game->update([$updateField => now()]);
+
+        $this->checkAndBroadcastAbsence($game, $playerColor, false);
+
+        return response()->json(['message' => 'Heartbeat recorded']);
+    }
+
+    /**
+     * Check for abandoned players and broadcast updates.
+     */
+    private function checkAndBroadcastAbsence(Game $game, string $justReturnedColor, bool $checkOnly = false): void
+    {
+        $opponentColor = $justReturnedColor === 'white' ? 'black' : 'white';
+        
+        $justReturnedField = $justReturnedColor === 'white' ? 'white_last_heartbeat_at' : 'black_last_heartbeat_at';
+        $opponentField = $opponentColor === 'white' ? 'white_last_heartbeat_at' : 'black_last_heartbeat_at';
+
+        $opponentAway = $game->$opponentField !== null 
+            && $game->$opponentField->diffInSeconds(now()) > 30;
+
+        $justReturnedAway = $game->$justReturnedField !== null 
+            && $game->$justReturnedField->diffInSeconds(now()) > 30;
+
+        if ($justReturnedAway) {
+            broadcast(new PlayerReturned($game, $justReturnedColor));
+        }
+
+        if ($opponentAway && $game->isActive()) {
+            $awaySeconds = $game->$opponentField->diffInSeconds(now());
+            $countdown = max(0, 30 - $awaySeconds);
+
+            if ($awaySeconds > 30 && !$checkOnly) {
+                $opponentId = $opponentColor === 'white' ? $game->white_player_id : $game->black_player_id;
+                $winnerColor = $opponentColor === 'white' ? 'black' : 'white';
+                $winnerId = $winnerColor === 'white' ? $game->white_player_id : $game->black_player_id;
+
+                $game->update([
+                    'status' => 'completed',
+                    'result' => $winnerColor === 'white' ? '1-0' : '0-1',
+                    'termination' => 'abandoned',
+                ]);
+
+                broadcast(new GameEnded($game));
+
+                \Illuminate\Support\Facades\Log::info('Player abandoned', [
+                    'game_id' => $game->id,
+                    'abandoned_player_id' => $opponentId,
+                    'winner_id' => $winnerId,
+                ]);
+            } else {
+                broadcast(new PlayerAbsent($game, $opponentColor, $countdown));
+            }
         }
     }
 }
