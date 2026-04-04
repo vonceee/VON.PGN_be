@@ -31,7 +31,7 @@ class PasswordResetController extends Controller
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Failed to send password reset email: ' . $e->getMessage());
                 // Return generic message - don't reveal the actual error to user
-                return response()->json(['message' => 'If an account matches, a reset link was sent.'], 200);
+                return response()->json(['message' => 'a reset link was sent.'], 200);
             }
 
             if ($status === Password::RESET_LINK_SENT) {
@@ -44,7 +44,7 @@ class PasswordResetController extends Controller
         }
 
         // User doesn't exist - still return success to prevent enumeration
-        return response()->json(['message' => 'If an account matches, a reset link was sent.']);
+        return response()->json(['message' => 'a reset link was sent.']);
     }
 
     /**
