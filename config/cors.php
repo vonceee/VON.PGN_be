@@ -21,7 +21,9 @@ return [
 
     'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:4200')],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '/^https?:\/\/(www\.)?vonchess\.net$/i',
+    ],
 
     'allowed_headers' => ['*'],
 
