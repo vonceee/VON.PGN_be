@@ -18,22 +18,33 @@ class PasswordResetController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        try {
-            $status = Password::broker()->sendResetLink(
-                $request->only('email')
-            );
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to send reset link email: ' . $e->getMessage());
-            return response()->json(['message' => 'Failed to send email. Ensure mail server is running.'], 500);
+        // Check if user exists first to avoid leaking user existence
+        $user = \App\Models\User::where('email', $request->email)->first();
+        
+        // Always return success to prevent email enumeration
+        // But actually try to send the email if user exists
+        if ($user) {
+            try {
+                $status = Password::broker()->sendResetLink(
+                    $request->only('email')
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send password reset email: ' . $e->getMessage());
+                // Return generic message - don't reveal the actual error to user
+                return response()->json(['message' => 'If an account matches, a reset link was sent.'], 200);
+            }
+
+            if ($status === Password::RESET_LINK_SENT) {
+                return response()->json(['message' => __($status)]);
+            }
+
+            throw ValidationException::withMessages([
+                'email' => [__($status)],
+            ]);
         }
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return response()->json(['message' => __($status)]);
-        }
-
-        throw ValidationException::withMessages([
-            'email' => [__($status)],
-        ]);
+        // User doesn't exist - still return success to prevent enumeration
+        return response()->json(['message' => 'If an account matches, a reset link was sent.']);
     }
 
     /**
