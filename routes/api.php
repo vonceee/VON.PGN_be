@@ -122,6 +122,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Game routes
     Route::get('/seeks', [GameController::class, 'seeks']);
+    Route::post('/seeks/{seekId}/join', [GameController::class, 'joinSeek']);
     Route::post('/game/seek', [GameController::class, 'seek']);
     Route::post('/game/seek/cancel', [GameController::class, 'cancelSeek']);
     Route::get('/game/active', [GameController::class, 'activeGame']);

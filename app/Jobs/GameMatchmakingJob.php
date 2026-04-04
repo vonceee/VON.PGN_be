@@ -27,11 +27,6 @@ class GameMatchmakingJob implements ShouldQueue
 
     public function handle(): void
     {
-        // Clean up stale seeks older than 10 minutes
-        GameSeek::where('time_control', $this->timeControl)
-            ->where('created_at', '<', now()->subMinutes(10))
-            ->delete();
-
         // Try to match any remaining pairs
         while (true) {
             $matched = DB::transaction(function () {

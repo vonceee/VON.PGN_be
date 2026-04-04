@@ -33,3 +33,7 @@ Broadcast::channel('game.{gameId}', function (User $user, string $gameId) {
         'color' => $game->getPlayerColor($user->id),
     ];
 });
+
+Broadcast::channel('seeks', function (User $user) {
+    return true;
+});

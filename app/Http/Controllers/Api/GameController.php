@@ -95,14 +95,20 @@ class GameController
                 ]);
             }
 
-            // Upsert this user's seek (in case they re-seek the same time control)
-            $seek = GameSeek::updateOrCreate(
-                ['user_id' => $user->id, 'time_control' => $timeControl],
-                ['elo' => $elo, 'created_at' => now()],
-            );
+            // Cancel any existing seeks for this user before creating a new one
+            GameSeek::where('user_id', $user->id)->delete();
+
+            // Create new seek
+            $seek = GameSeek::create([
+                'user_id' => $user->id,
+                'time_control' => $timeControl,
+                'elo' => $elo,
+            ]);
 
             try {
+                \Illuminate\Support\Facades\Log::info('Broadcasting SeekCreated', ['seek_id' => $seek->id, 'time_control' => $seek->time_control]);
                 broadcast(new SeekCreated($seek));
+                \Illuminate\Support\Facades\Log::info('SeekCreated broadcast done');
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('SeekCreated broadcast failed: ' . $e->getMessage());
             }
@@ -244,7 +250,6 @@ class GameController
     public function seeks(): JsonResponse
     {
         $seeks = GameSeek::with('user:id,name')
-            ->where('created_at', '>', now()->subMinutes(10))
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($seek) => [
@@ -257,6 +262,129 @@ class GameController
             ]);
 
         return response()->json(['seeks' => $seeks]);
+    }
+
+    /**
+     * Join a specific seek (accept someone's seek).
+     */
+    public function joinSeek(Request $request, int $seekId): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            // Find the seek
+            $seek = GameSeek::find($seekId);
+
+            if (!$seek) {
+                return response()->json(['message' => 'Seek not found'], 404);
+            }
+
+            // Can't join own seek
+            if ($seek->user_id === $user->id) {
+                return response()->json(['message' => 'Cannot join your own seek'], 400);
+            }
+
+            // Check if user already has an active game
+            $existingGame = Game::where('status', 'active')
+                ->where(function ($q) use ($user) {
+                    $q->where('white_player_id', $user->id)
+                      ->orWhere('black_player_id', $user->id);
+                })
+                ->first();
+
+            if ($existingGame) {
+                $clockTimes = $this->clockService->getEffectiveTimes($existingGame);
+                $legalMoves = $this->chessService->getLegalMoves($existingGame->current_fen);
+
+                return response()->json([
+                    'message' => 'You already have an active game',
+                    'game_id' => $existingGame->id,
+                    'matched' => true,
+                    'existing_game' => [
+                        'id' => $existingGame->id,
+                        'white_player' => [
+                            'id' => $existingGame->whitePlayer->id,
+                            'name' => $existingGame->whitePlayer->name,
+                        ],
+                        'black_player' => [
+                            'id' => $existingGame->blackPlayer->id,
+                            'name' => $existingGame->blackPlayer->name,
+                        ],
+                        'status' => $existingGame->status,
+                        'time_control' => $existingGame->time_control,
+                        'initial_time_ms' => $existingGame->initial_time_ms,
+                        'increment_ms' => $existingGame->increment_ms,
+                        'fen' => $existingGame->current_fen,
+                        'turn' => $existingGame->turn,
+                        'moves' => $existingGame->moves ?? [],
+                        'white_time_remaining_ms' => $clockTimes['white_time_remaining_ms'],
+                        'black_time_remaining_ms' => $clockTimes['black_time_remaining_ms'],
+                        'server_timestamp' => $clockTimes['server_timestamp'],
+                        'result' => $existingGame->result,
+                        'termination' => $existingGame->termination,
+                        'my_color' => $existingGame->getPlayerColor($user->id),
+                        'legal_moves' => $legalMoves,
+                        'draw_offered_by' => $existingGame->draw_offered_by,
+                        'draw_offered_at' => $existingGame->draw_offered_at?->toIso8601String(),
+                        'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
+                    ],
+                ]);
+            }
+
+            $opponentUser = $seek->user;
+            $timeControl = $seek->time_control;
+            $elo = $user->progress?->puzzle_rating ?? 1200;
+
+            // Delete the accepted seek
+            $seek->delete();
+
+            try {
+                broadcast(new SeekRemoved($seekId, 'matched'));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('SeekRemoved broadcast failed: ' . $e->getMessage());
+            }
+
+            // Randomize colors
+            $whiteId = rand(0, 1) ? $user->id : $opponentUser->id;
+            $blackId = $whiteId === $user->id ? $opponentUser->id : $user->id;
+
+            $timeData = ClockService::parseTimeControl($timeControl);
+
+            $game = Game::create([
+                'white_player_id' => $whiteId,
+                'black_player_id' => $blackId,
+                'status' => 'active',
+                'time_control' => $timeControl,
+                'initial_time_ms' => $timeData['initial_time_ms'],
+                'increment_ms' => $timeData['increment_ms'],
+                'white_time_remaining_ms' => $timeData['initial_time_ms'],
+                'black_time_remaining_ms' => $timeData['initial_time_ms'],
+                'turn' => 'white',
+                'moves' => [],
+                'white_elo' => $user->progress?->puzzle_rating ?? 1200,
+                'black_elo' => $opponentUser->progress?->puzzle_rating ?? 1200,
+                'white_last_heartbeat_at' => now(),
+                'black_last_heartbeat_at' => now(),
+            ]);
+
+            try {
+                broadcast(new \App\Events\GameMatched($game));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('GameMatched broadcast failed: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'message' => 'Match found!',
+                'game_id' => $game->id,
+                'matched' => true,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('joinSeek FAILED: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            return response()->json(['message' => 'Internal server error', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
