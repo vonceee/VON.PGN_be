@@ -47,4 +47,8 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'lichess' => [
+        'token' => env('LICHESS_TOKEN'),
+    ],
+
 ];

@@ -80,7 +80,7 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['invalid credentials.'],
+                'email' => ['Invalid credentials.'],
             ]);
         }
 
@@ -122,7 +122,6 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Email updated successfully. Verification link sent!',
-            // We can return the updated user profile representation if helpful
             'user' => new \App\Http\Resources\UserProfileResource($user)
         ]);
     }

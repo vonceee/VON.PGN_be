@@ -28,10 +28,6 @@ Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
 });
 
-// Google auth - use stateless (no session needed)
-Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect']);
-Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
-
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:10,60');
 Route::post('/login', [AuthController::class, 'login']);

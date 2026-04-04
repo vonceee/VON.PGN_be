@@ -22,8 +22,8 @@
 <table class="inner-body" align="center" width="570" cellpadding="0" cellspacing="0" role="presentation">
 <tr>
 <td class="content-cell">
-<h1>Welcome to vonchess!</h1>
-<p>Click the link below to verify your email address and activate your account.</p>
+<h1>Reset your password</h1>
+<p>You are receiving this email because we received a password reset request for your account.</p>
 
 <table class="action" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation">
 <tr>
@@ -31,7 +31,7 @@
 <table border="0" cellpadding="0" cellspacing="0" role="presentation">
 <tr>
 <td>
-<a href="{{ $url }}" class="button button-primary" target="_blank">Verify Email Address</a>
+<a href="{{ $url }}" class="button button-primary" target="_blank">Reset Password</a>
 </td>
 </tr>
 </table>
@@ -39,14 +39,14 @@
 </tr>
 </table>
 
-<p>This link will expire in 60 minutes.</p>
-<p>If you didn't create an account, you can safely ignore this email.</p>
+<p>This password reset link will expire in 60 minutes.</p>
+<p>If you did not request a password reset, no further action is required.</p>
 <p>Best regards, The vonchess Team</p>
 
 <table class="subcopy" width="100%" cellpadding="0" cellspacing="0" role="presentation">
 <tr>
 <td>
-<p>If you're having trouble clicking the "Verify Email Address" link, copy and paste the URL below into your web browser: <a href="{{ $url }}">{{ $url }}</a></p>
+<p>If you're having trouble clicking the "Reset Password" link, copy and paste the URL below into your web browser: <a href="{{ $url }}">{{ $url }}</a></p>
 </td>
 </tr>
 </table>
