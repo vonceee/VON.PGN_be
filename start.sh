@@ -4,8 +4,11 @@ set -e
 echo "Running migrations..."
 php artisan migrate --force
 
-echo "Seeding puzzles..."
-php artisan db:seed --class=PuzzleSeeder --force
+# echo "Seeding puzzles..."
+# php artisan db:seed --class=PuzzleSeeder --force
+
+echo "Clearing tournaments table..."
+php artisan tinker --execute="App\\Models\\Tournament::truncate();"
 
 echo "Clearing caches..."
 php artisan config:cache

@@ -46,7 +46,7 @@
 <table class="subcopy" width="100%" cellpadding="0" cellspacing="0" role="presentation">
 <tr>
 <td>
-<p>If you're having trouble clicking the "Verify Email Address" link, copy and paste the URL below into your web browser: <a href="{{ $url }}">{{ $url }}</a></p>
+<p>If you're having trouble clicking the "Verify Email Address" link, copy and paste the URL below into your web browser:<br /> <a href="{{ $url }}">{{ $url }}</a></p>
 </td>
 </tr>
 </table>
