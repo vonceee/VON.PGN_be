@@ -22,7 +22,12 @@ class GameController
 
     public function __construct()
     {
-        $this->microserviceUrl = env('CHESS_MICROSERVICE_URL', 'https://von-pgn-microservice.onrender.com');
+        // Use 127.0.0.1 for development to avoid IPv6/IPv4 resolution issues
+        $defaultUrl = app()->environment('local')
+            ? 'http://127.0.0.1:3006'
+            : 'https://von-pgn-microservice.onrender.com';
+
+        $this->microserviceUrl = env('CHESS_MICROSERVICE_URL', $defaultUrl);
     }
 
     /**
@@ -70,34 +75,47 @@ class GameController
                 ->first();
 
             if ($existingGame) {
-                // Time management handled by microservice
-                $legalMoves = []; // Legal moves will come from microservice
+                // Get real game state from microservice
+                $gameData = $this->fetchGameState($existingGame);
 
-                return response()->json([
-                    'message' => 'You already have an active game',
-                    'game_id' => $existingGame->id,
-                    'matched' => true,
-                    'existing_game' => [
-                        'id' => $existingGame->id,
-                        'white_player' => [
-                            'id' => $existingGame->whitePlayer->id,
-                            'name' => $existingGame->whitePlayer->name,
+                if (!$gameData) {
+                    // Try to proceed if it was just a ghost game we just handled
+                    return $this->seek($request);
+                }
+
+                if ($existingGame->status === 'active') {
+                    return response()->json([
+                        'message' => 'You already have an active game',
+                        'game_id' => $existingGame->id,
+                        'matched' => true,
+                        'existing_game' => [
+                            'id' => $existingGame->id,
+                            'white_player' => [
+                                'id' => $existingGame->whitePlayer->id,
+                                'name' => $existingGame->whitePlayer->name,
+                            ],
+                            'black_player' => [
+                                'id' => $existingGame->blackPlayer->id,
+                                'name' => $existingGame->blackPlayer->name,
+                            ],
+                            'status' => $existingGame->status,
+                            'time_control' => $existingGame->time_control,
+                            'initial_time_ms' => $existingGame->initial_time_ms,
+                            'increment_ms' => $existingGame->increment_ms,
+                            'fen' => $gameData['fen'],
+                            'turn' => $gameData['turn'],
+                            'moves' => $gameData['moves'] ?? [],
+                            'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
+                            'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
+                            'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
+                            'result' => $existingGame->result,
+                            'termination' => $existingGame->termination,
+                            'my_color' => $existingGame->getPlayerColor($user->id),
+                            'legal_moves' => $gameData['legalMoves'] ?? [],
+                            'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
                         ],
-                        'black_player' => [
-                            'id' => $existingGame->blackPlayer->id,
-                            'name' => $existingGame->blackPlayer->name,
-                        ],
-                        'status' => $existingGame->status,
-                        'time_control' => $existingGame->time_control,
-                        'initial_time_ms' => $existingGame->initial_time_ms,
-                        'increment_ms' => $existingGame->increment_ms,
-                        'moves' => [], // No longer stored in DB, always empty array
-                        'result' => $existingGame->result,
-                        'termination' => $existingGame->termination,
-                        'my_color' => $existingGame->getPlayerColor($user->id),
-                        'legal_moves' => $legalMoves,
-                    ],
-                ]);
+                    ]);
+                }
             }
 
             // Cancel any existing seeks for this user before creating a new one
@@ -206,9 +224,11 @@ class GameController
                         \Illuminate\Support\Facades\Log::info('Game created in microservice', ['game_id' => $game->id]);
                     } else {
                         \Illuminate\Support\Facades\Log::error('Failed to create game in microservice: ' . $microserviceResponse->body());
+                        return response()->json(['message' => 'Chess microservice is currently unavailable. Please try again later.'], 503);
                     }
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error('Microservice create-game error: ' . $e->getMessage());
+                    return response()->json(['message' => 'Chess microservice is currently unavailable. Please try again later.'], 503);
                 }
 
                 try {
@@ -324,34 +344,47 @@ class GameController
                 ->first();
 
             if ($existingGame) {
-                // Time management handled by microservice
-                $legalMoves = []; // Legal moves will come from microservice
+                // Get real game state from microservice
+                $gameData = $this->fetchGameState($existingGame);
 
-                return response()->json([
-                    'message' => 'You already have an active game',
-                    'game_id' => $existingGame->id,
-                    'matched' => true,
-                    'existing_game' => [
-                        'id' => $existingGame->id,
-                        'white_player' => [
-                            'id' => $existingGame->whitePlayer->id,
-                            'name' => $existingGame->whitePlayer->name,
+                if (!$gameData) {
+                    // Try to proceed if it was just a ghost game
+                    return $this->joinSeek($request, $seekId);
+                }
+
+                if ($existingGame->status === 'active') {
+                    return response()->json([
+                        'message' => 'You already have an active game',
+                        'game_id' => $existingGame->id,
+                        'matched' => true,
+                        'existing_game' => [
+                            'id' => $existingGame->id,
+                            'white_player' => [
+                                'id' => $existingGame->whitePlayer->id,
+                                'name' => $existingGame->whitePlayer->name,
+                            ],
+                            'black_player' => [
+                                'id' => $existingGame->blackPlayer->id,
+                                'name' => $existingGame->blackPlayer->name,
+                            ],
+                            'status' => $existingGame->status,
+                            'time_control' => $existingGame->time_control,
+                            'initial_time_ms' => $existingGame->initial_time_ms,
+                            'increment_ms' => $existingGame->increment_ms,
+                            'fen' => $gameData['fen'],
+                            'turn' => $gameData['turn'],
+                            'moves' => $gameData['moves'] ?? [],
+                            'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
+                            'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
+                            'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
+                            'result' => $existingGame->result,
+                            'termination' => $existingGame->termination,
+                            'my_color' => $existingGame->getPlayerColor($user->id),
+                            'legal_moves' => $gameData['legalMoves'] ?? [],
+                            'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
                         ],
-                        'black_player' => [
-                            'id' => $existingGame->blackPlayer->id,
-                            'name' => $existingGame->blackPlayer->name,
-                        ],
-                        'status' => $existingGame->status,
-                        'time_control' => $existingGame->time_control,
-                        'initial_time_ms' => $existingGame->initial_time_ms,
-                        'increment_ms' => $existingGame->increment_ms,
-                        'result' => $existingGame->result,
-                        'moves' => [], // No longer stored in DB, always empty array
-                        'termination' => $existingGame->termination,
-                        'my_color' => $existingGame->getPlayerColor($user->id),
-                        'legal_moves' => $legalMoves,
-                    ],
-                ]);
+                    ]);
+                }
             }
 
             $opponentUser = $seek->user;
@@ -409,9 +442,11 @@ class GameController
                     \Illuminate\Support\Facades\Log::info('Game created in microservice', ['game_id' => $game->id]);
                 } else {
                     \Illuminate\Support\Facades\Log::error('Failed to create game in microservice: ' . $microserviceResponse->body());
+                    return response()->json(['message' => 'Chess microservice is currently unavailable. Please try again later.'], 503);
                 }
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Microservice create-game error: ' . $e->getMessage());
+                return response()->json(['message' => 'Chess microservice is currently unavailable. Please try again later.'], 503);
             }
 
             try {
@@ -451,8 +486,12 @@ class GameController
             return response()->json(['message' => 'Not authorized to view this game'], 403);
         }
 
-        // Time management handled by microservice
-        $legalMoves = []; // Legal moves will come from microservice
+        // Get real game state from microservice
+        $gameData = $this->fetchGameState($game);
+
+        if (!$gameData) {
+            return response()->json(['message' => 'Game state is no longer available.'], 410);
+        }
 
         return response()->json([
             'game' => [
@@ -469,225 +508,20 @@ class GameController
                 'time_control' => $game->time_control,
                 'initial_time_ms' => $game->initial_time_ms,
                 'increment_ms' => $game->increment_ms,
-                'moves' => [], // No longer stored in DB, always empty array
+                'fen' => $gameData['fen'],
+                'turn' => $gameData['turn'],
+                'moves' => $gameData['moves'] ?? [],
+                'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
+                'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
+                'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
                 'result' => $game->result,
                 'termination' => $game->termination,
                 'my_color' => $game->getPlayerColor($user->id),
-                'legal_moves' => $legalMoves,
+                'legal_moves' => $gameData['legalMoves'] ?? [],
+                'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
 
             ],
         ]);
-    }
-
-
-
-    /**
-     * Play a move - proxy to microservice.
-     */
-    public function move(Request $request, string $gameId): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'move' => 'required|string|regex:/^[a-h][1-8][a-h][1-8][qrnb]?$/',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => 'Invalid move format. Use UCI notation, e.g. "e2e4".'], 422);
-        }
-
-        $user = $request->user();
-        $uciMove = $request->input('move');
-
-        // Check if game exists in DB (basic validation)
-        $game = Game::find($gameId);
-        if (!$game) {
-            return response()->json(['message' => 'Game not found'], 404);
-        }
-
-        if (!$game->isPlayer($user->id)) {
-            return response()->json(['message' => 'You are not a player in this game'], 403);
-        }
-
-        // Proxy to microservice for all game logic
-        try {
-            $response = Http::timeout(10)->post($this->microserviceUrl . '/api/move', [
-                'gameId' => $gameId,
-                'userId' => $user->id,
-                'move' => $uciMove,
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-
-                    // Update local game state for database persistence
-                    if ($game && isset($data['status'])) {
-                        $updateData = [
-                            'status' => $data['status'],
-                        ];
-
-                    if ($data['status'] === 'completed') {
-                        $updateData['result'] = $data['result'];
-                        $updateData['termination'] = $data['termination'];
-                        // Broadcast game ended via Laravel events
-                        broadcast(new GameEnded($game));
-                    }
-
-                    $game->update($updateData);
-                }
-
-                return response()->json($data);
-            }
-
-            return response()->json(['message' => $response->body()], $response->status());
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Microservice proxy error: ' . $e->getMessage());
-            return response()->json(['message' => 'Service temporarily unavailable'], 503);
-        }
-    }
-
-    /**
-     * Resign from a game - proxy to microservice.
-     */
-    public function resign(Request $request, string $gameId): JsonResponse
-    {
-        $user = $request->user();
-
-        // Proxy to microservice
-        try {
-            $response = Http::timeout(10)->post($this->microserviceUrl . '/api/resign', [
-                'gameId' => $gameId,
-                'userId' => $user->id,
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-
-                // Update local game state
-                $game = Game::find($gameId);
-                if ($game) {
-                    $game->update([
-                        'status' => 'completed',
-                        'result' => $data['result'] ?? null,
-                        'termination' => 'resignation',
-                    ]);
-
-                    broadcast(new GameEnded($game));
-                }
-
-                return response()->json($data);
-            }
-
-            return response()->json(['message' => $response->body()], $response->status());
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Microservice proxy error: ' . $e->getMessage());
-            return response()->json(['message' => 'Service temporarily unavailable'], 503);
-        }
-    }
-
-    /**
-     * Abort a game before any move has been made.
-     */
-    public function abort(Request $request, string $gameId): JsonResponse
-    {
-        $game = Game::find($gameId);
-        if (!$game) {
-            return response()->json(['message' => 'Game not found'], 404);
-        }
-
-        $user = $request->user();
-
-        if (!$game->isActive()) {
-            return response()->json(['message' => 'Game is not active'], 422);
-        }
-
-        if (!$game->isPlayer($user->id)) {
-            return response()->json(['message' => 'You are not a player in this game'], 403);
-        }
-
-        $moves = $game->moves ?? [];
-        if (count($moves) > 0) {
-            return response()->json(['message' => 'Cannot abort after a move has been made. Use resign instead.'], 422);
-        }
-
-        $game->update([
-            'status' => 'aborted',
-            'result' => null,
-            'termination' => 'aborted',
-        ]);
-
-        broadcast(new GameEnded($game));
-
-        return response()->json([
-            'message' => 'Game aborted',
-            'termination' => 'aborted',
-        ]);
-    }
-
-    /**
-     * Offer, accept, or decline a draw - proxy to microservice.
-     */
-    public function draw(Request $request, string $gameId): JsonResponse
-    {
-        $user = $request->user();
-        $action = $request->input('action', 'offer');
-
-        // Proxy to microservice
-        try {
-            $response = Http::timeout(10)->post($this->microserviceUrl . '/api/draw', [
-                'gameId' => $gameId,
-                'userId' => $user->id,
-                'action' => $action,
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-
-                // Update local game state if needed
-                $game = Game::find($gameId);
-                if ($game && isset($data['result'])) {
-                    $game->update([
-                        'status' => 'completed',
-                        'result' => $data['result'],
-                        'termination' => $data['termination'] ?? 'agreement',
-                        'draw_offered_by' => null,
-                        'draw_offered_at' => null,
-                    ]);
-
-                    broadcast(new GameEnded($game));
-                }
-
-                return response()->json($data);
-            }
-
-            return response()->json(['message' => $response->body()], $response->status());
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Microservice proxy error: ' . $e->getMessage());
-            return response()->json(['message' => 'Service temporarily unavailable'], 503);
-        }
-    }
-
-    /**
-     * Request clock synchronization - proxy to microservice.
-     */
-    public function syncClock(Request $request, string $gameId): JsonResponse
-    {
-        $user = $request->user();
-
-        // Proxy to microservice
-        try {
-            $response = Http::timeout(10)->post($this->microserviceUrl . '/api/sync-clock', [
-                'gameId' => $gameId,
-                'userId' => $user->id,
-            ]);
-
-            if ($response->successful()) {
-                return response()->json($response->json());
-            }
-
-            return response()->json(['message' => $response->body()], $response->status());
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Microservice proxy error: ' . $e->getMessage());
-            return response()->json(['message' => 'Service temporarily unavailable'], 503);
-        }
     }
 
     /**
@@ -706,20 +540,16 @@ class GameController
                 })
                 ->first();
 
-            $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
-                ->where('status', 'active')
-                ->where(function ($q) use ($user) {
-                    $q->where('white_player_id', $user->id)
-                      ->orWhere('black_player_id', $user->id);
-                })
-                ->first();
-
             if (!$game) {
                 return response()->json(['game' => null]);
             }
 
-            // Time management handled by microservice
-            $legalMoves = []; // Legal moves will come from microservice
+            // Get real game state from microservice
+            $gameData = $this->fetchGameState($game);
+
+            if (!$gameData) {
+                return response()->json(['game' => null]);
+            }
 
             return response()->json([
                 'game' => [
@@ -736,11 +566,18 @@ class GameController
                     'time_control' => $game->time_control,
                     'initial_time_ms' => $game->initial_time_ms,
                     'increment_ms' => $game->increment_ms,
-                    'moves' => [], // No longer stored in DB, always empty array
+                    'fen' => $gameData['fen'],
+                    'turn' => $gameData['turn'],
+                    'moves' => $gameData['moves'] ?? [],
+                    'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
+                    'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
+                    'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
                     'result' => $game->result,
                     'termination' => $game->termination,
                     'my_color' => $game->getPlayerColor($user->id),
-                    'legal_moves' => $legalMoves,
+                    'legal_moves' => $gameData['legalMoves'] ?? [],
+                    'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
+                    'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
 
                 ],
             ]);
@@ -755,30 +592,132 @@ class GameController
     }
 
     /**
-     * Player heartbeat to indicate they're still connected.
+     * Resign from the game.
      */
-    public function heartbeat(Request $request, string $gameId): JsonResponse
+    public function resign(Request $request, string $gameId): JsonResponse
     {
-        $game = Game::find($gameId);
-        if (!$game) {
-            return response()->json(['message' => 'Game not found'], 404);
-        }
-
         $user = $request->user();
+        $response = Http::timeout(5)->post($this->microserviceUrl . '/api/resign', [
+            'gameId' => $gameId,
+            'userId' => $user->id
+        ]);
 
-        if (!$game->isPlayer($user->id)) {
-            return response()->json(['message' => 'Not authorized'], 403);
+        if ($response->successful()) {
+            return response()->json($response->json());
         }
 
-        $playerColor = $game->getPlayerColor($user->id);
-        
-        $updateField = $playerColor === 'white' ? 'white_last_heartbeat_at' : 'black_last_heartbeat_at';
-        $game->update([$updateField => now()]);
-
-
-
-        return response()->json(['message' => 'Heartbeat recorded']);
+        return response()->json(['message' => 'Action failed'], $response->status());
     }
 
+    /**
+     * Handle draw actions (offer, accept, decline).
+     */
+    public function draw(Request $request, string $gameId): JsonResponse
+    {
+        $user = $request->user();
+        $action = $request->input('action');
 
+        $response = Http::timeout(5)->post($this->microserviceUrl . '/api/draw', [
+            'gameId' => $gameId,
+            'userId' => $user->id,
+            'action' => $action
+        ]);
+
+        if ($response->successful()) {
+            return response()->json($response->json());
+        }
+
+        return response()->json(['message' => 'Action failed'], $response->status());
+    }
+
+    /**
+     * Abort the game.
+     */
+    public function abort(Request $request, string $gameId): JsonResponse
+    {
+        $user = $request->user();
+        $response = Http::timeout(5)->post($this->microserviceUrl . '/api/abort', [
+            'gameId' => $gameId,
+            'userId' => $user->id
+        ]);
+
+        if ($response->successful()) {
+            return response()->json($response->json());
+        }
+
+        return response()->json(['message' => 'Action failed'], $response->status());
+    }
+
+    /**
+     * Explicitly sync the clock.
+     */
+    public function syncClock(Request $request, string $gameId): JsonResponse
+    {
+        $game = Game::find($gameId);
+        if (!$game) return response()->json(['message' => 'Not found'], 404);
+        
+        $gameData = $this->fetchGameState($game);
+        return response()->json($gameData);
+    }
+
+    /**
+     * Helper to fetch game state from microservice and handle synchronization.
+     */
+    private function fetchGameState(Game $game): ?array
+    {
+        try {
+            $url = $this->microserviceUrl . '/api/games/' . $game->id;
+            $response = Http::timeout(5)->get($url);
+
+            if ($response->successful()) {
+                $gameData = $response->json();
+                
+                // Authoritative Sync: If microservice says game is done (completed/aborted), update Laravel DB
+                $isFinished = in_array($gameData['status'] ?? '', ['completed', 'aborted']);
+                if ($isFinished && $game->status !== $gameData['status']) {
+                    $game->update([
+                        'status' => $gameData['status'],
+                        'result' => $gameData['result'] ?? null,
+                        'termination' => $gameData['termination'] ?? null
+                    ]);
+                    
+                    // Trigger broadcast for frontend
+                    broadcast(new \App\Events\GameEnded($game));
+                }
+                
+                return $gameData;
+            }
+
+            if ($response->status() === 404) {
+                \Illuminate\Support\Facades\Log::warning('Game missing from microservice. Marking as abandoned in DB.', [
+                    'game_id' => $game->id
+                ]);
+                
+                // End the game in DB as it's no longer in the microservice's memory
+                $game->update([
+                    'status' => 'completed',
+                    'result' => null,
+                    'termination' => 'abandoned'
+                ]);
+                
+                return null;
+            }
+
+            \Illuminate\Support\Facades\Log::error('Microservice error: ' . $response->status(), [
+                'url' => $url,
+                'body' => $response->body()
+            ]);
+            
+            throw new \Exception('Microservice returned error ' . $response->status());
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Microservice communication failed: ' . $e->getMessage(), [
+                'game_id' => $game->id
+            ]);
+            
+            abort(response()->json([
+                'message' => 'Chess microservice is currently unavailable. Please try again later.',
+                'debug' => app()->environment('local') ? $e->getMessage() : null
+            ], 503));
+        }
+    }
 }
