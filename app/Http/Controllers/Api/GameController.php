@@ -18,9 +18,12 @@ use Illuminate\Support\Facades\Http;
 
 class GameController
 {
-    private const MICROSERVICE_URL = env('CHESS_MICROSERVICE_URL', 'http://localhost:3006');
+    private string $microserviceUrl;
 
-    public function __construct() {}
+    public function __construct()
+    {
+        $this->microserviceUrl = env('CHESS_MICROSERVICE_URL', 'http://localhost:3006');
+    }
 
     /**
      * Parse a time control string (e.g., "600+5") into initial time and increment in ms.
@@ -181,7 +184,7 @@ class GameController
 
                 // Create game in microservice
                 try {
-                    $microserviceResponse = Http::timeout(5)->post(self::MICROSERVICE_URL . '/api/create-game', [
+                    $microserviceResponse = Http::timeout(5)->post($this->microserviceUrl . '/api/create-game', [
                         'gameId' => $game->id,
                         'whitePlayer' => [
                             'userId' => $whiteId,
@@ -383,7 +386,7 @@ class GameController
 
             // Create game in microservice
             try {
-                $microserviceResponse = Http::timeout(5)->post(self::MICROSERVICE_URL . '/api/create-game', [
+                $microserviceResponse = Http::timeout(5)->post($this->microserviceUrl . '/api/create-game', [
                     'gameId' => $game->id,
                     'whitePlayer' => [
                         'userId' => $whiteId,
@@ -503,7 +506,7 @@ class GameController
 
         // Proxy to microservice for all game logic
         try {
-            $response = Http::timeout(10)->post(self::MICROSERVICE_URL . '/api/move', [
+            $response = Http::timeout(10)->post($this->microserviceUrl . '/api/move', [
                 'gameId' => $gameId,
                 'userId' => $user->id,
                 'move' => $uciMove,
@@ -547,7 +550,7 @@ class GameController
 
         // Proxy to microservice
         try {
-            $response = Http::timeout(10)->post(self::MICROSERVICE_URL . '/api/resign', [
+            $response = Http::timeout(10)->post($this->microserviceUrl . '/api/resign', [
                 'gameId' => $gameId,
                 'userId' => $user->id,
             ]);
@@ -626,7 +629,7 @@ class GameController
 
         // Proxy to microservice
         try {
-            $response = Http::timeout(10)->post(self::MICROSERVICE_URL . '/api/draw', [
+            $response = Http::timeout(10)->post($this->microserviceUrl . '/api/draw', [
                 'gameId' => $gameId,
                 'userId' => $user->id,
                 'action' => $action,
@@ -668,7 +671,7 @@ class GameController
 
         // Proxy to microservice
         try {
-            $response = Http::timeout(10)->post(self::MICROSERVICE_URL . '/api/sync-clock', [
+            $response = Http::timeout(10)->post($this->microserviceUrl . '/api/sync-clock', [
                 'gameId' => $gameId,
                 'userId' => $user->id,
             ]);
