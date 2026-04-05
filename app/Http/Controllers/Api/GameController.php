@@ -91,6 +91,7 @@ class GameController
                         'time_control' => $existingGame->time_control,
                         'initial_time_ms' => $existingGame->initial_time_ms,
                         'increment_ms' => $existingGame->increment_ms,
+                        'moves' => [], // No longer stored in DB, always empty array
                         'result' => $existingGame->result,
                         'termination' => $existingGame->termination,
                         'my_color' => $existingGame->getPlayerColor($user->id),
@@ -345,6 +346,7 @@ class GameController
                         'initial_time_ms' => $existingGame->initial_time_ms,
                         'increment_ms' => $existingGame->increment_ms,
                         'result' => $existingGame->result,
+                        'moves' => [], // No longer stored in DB, always empty array
                         'termination' => $existingGame->termination,
                         'my_color' => $existingGame->getPlayerColor($user->id),
                         'legal_moves' => $legalMoves,
@@ -467,6 +469,7 @@ class GameController
                 'time_control' => $game->time_control,
                 'initial_time_ms' => $game->initial_time_ms,
                 'increment_ms' => $game->increment_ms,
+                'moves' => [], // No longer stored in DB, always empty array
                 'result' => $game->result,
                 'termination' => $game->termination,
                 'my_color' => $game->getPlayerColor($user->id),
@@ -733,6 +736,7 @@ class GameController
                     'time_control' => $game->time_control,
                     'initial_time_ms' => $game->initial_time_ms,
                     'increment_ms' => $game->increment_ms,
+                    'moves' => [], // No longer stored in DB, always empty array
                     'result' => $game->result,
                     'termination' => $game->termination,
                     'my_color' => $game->getPlayerColor($user->id),
