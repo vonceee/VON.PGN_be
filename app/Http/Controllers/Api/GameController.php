@@ -22,7 +22,7 @@ class GameController
 
     public function __construct()
     {
-        $this->microserviceUrl = env('CHESS_MICROSERVICE_URL', 'http://localhost:3006');
+        $this->microserviceUrl = env('CHESS_MICROSERVICE_URL', 'https://von-pgn-microservice.onrender.com');
     }
 
     /**
