@@ -19,10 +19,15 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:4200')],
+    'allowed_origins' => [
+        env('FRONTEND_URL', 'http://localhost:4200'),
+        'https://vonchess.net',
+        'https://www.vonchess.net'
+    ],
 
     'allowed_origins_patterns' => [
         '/^https?:\/\/(www\.)?vonchess\.net$/i',
+        '/^https?:\/\/(www\.)?onrender\.com$/i',
     ],
 
     'allowed_headers' => ['*'],

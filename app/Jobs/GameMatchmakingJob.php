@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Events\GameMatched;
 use App\Models\Game;
 use App\Models\GameSeek;
-use App\Services\ClockService;
+
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -24,6 +24,21 @@ class GameMatchmakingJob implements ShouldQueue
     public function __construct(
         private string $timeControl,
     ) {}
+
+    /**
+     * Parse a time control string (e.g., "600+5") into initial time and increment in ms.
+     */
+    private function parseTimeControl(string $timeControl): array
+    {
+        $parts = explode('+', $timeControl);
+        $baseSeconds = (int) ($parts[0] ?? 600);
+        $incrementSeconds = (int) ($parts[1] ?? 0);
+
+        return [
+            'initial_time_ms' => $baseSeconds * 1000,
+            'increment_ms' => $incrementSeconds * 1000,
+        ];
+    }
 
     public function handle(): void
     {
@@ -58,7 +73,7 @@ class GameMatchmakingJob implements ShouldQueue
                 $whiteId = rand(0, 1) ? $player1->id : $player2->id;
                 $blackId = $whiteId === $player1->id ? $player2->id : $player1->id;
 
-                $timeData = ClockService::parseTimeControl($this->timeControl);
+                $timeData = $this->parseTimeControl($this->timeControl);
 
                 $game = Game::create([
                     'white_player_id' => $whiteId,
@@ -67,11 +82,6 @@ class GameMatchmakingJob implements ShouldQueue
                     'time_control' => $this->timeControl,
                     'initial_time_ms' => $timeData['initial_time_ms'],
                     'increment_ms' => $timeData['increment_ms'],
-                    'white_time_remaining_ms' => $timeData['initial_time_ms'],
-                    'black_time_remaining_ms' => $timeData['initial_time_ms'],
-                    'last_move_timestamp' => now(),
-                    'turn' => 'white',
-                    'moves' => [],
                     'white_elo' => $player1->progress?->puzzle_rating ?? 1200,
                     'black_elo' => $player2->progress?->puzzle_rating ?? 1200,
                 ]);

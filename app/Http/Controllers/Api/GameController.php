@@ -169,10 +169,8 @@ class GameController
                     'time_control' => $timeControl,
                     'initial_time_ms' => $timeData['initial_time_ms'],
                     'increment_ms' => $timeData['increment_ms'],
-                    'white_time_remaining_ms' => $timeData['initial_time_ms'],
-                    'black_time_remaining_ms' => $timeData['initial_time_ms'],
-                    'turn' => 'white',
-                    'moves' => [],
+
+
                     'white_elo' => $user->progress?->puzzle_rating ?? 1200,
                     'black_elo' => $opponentUser->progress?->puzzle_rating ?? 1200,
                     'white_last_heartbeat_at' => now(),
@@ -377,10 +375,6 @@ class GameController
                 'time_control' => $timeControl,
                 'initial_time_ms' => $timeData['initial_time_ms'],
                 'increment_ms' => $timeData['increment_ms'],
-                'white_time_remaining_ms' => $timeData['initial_time_ms'],
-                'black_time_remaining_ms' => $timeData['initial_time_ms'],
-                'turn' => 'white',
-                'moves' => [],
                 'white_elo' => $user->progress?->puzzle_rating ?? 1200,
                 'black_elo' => $opponentUser->progress?->puzzle_rating ?? 1200,
                 'white_last_heartbeat_at' => now(),
@@ -518,14 +512,11 @@ class GameController
             if ($response->successful()) {
                 $data = $response->json();
 
-                // Update local game state for database persistence
-                if ($game && isset($data['status'])) {
-                    $updateData = [
-                        'current_fen' => $data['fen'] ?? $game->current_fen,
-                        'moves' => array_merge($game->moves ?? [], [$uciMove]),
-                        'turn' => $data['turn'] ?? $game->turn,
-                        'status' => $data['status'],
-                    ];
+                    // Update local game state for database persistence
+                    if ($game && isset($data['status'])) {
+                        $updateData = [
+                            'status' => $data['status'],
+                        ];
 
                     if ($data['status'] === 'completed') {
                         $updateData['result'] = $data['result'];
