@@ -18,22 +18,11 @@ class Game extends Model
         'time_control',
         'initial_time_ms',
         'increment_ms',
-        'initial_fen',
-        'current_fen',
-        'white_time_remaining_ms',
-        'black_time_remaining_ms',
-        'last_move_timestamp',
-        'white_first_move_at',
-        'black_first_move_at',
-        'clock_start_at',
-        'turn',
-        'moves',
         'result',
         'termination',
         'white_elo',
         'black_elo',
-        'draw_offered_by',
-        'draw_offered_at',
+        // Keep heartbeat fields for basic connection tracking
         'white_last_heartbeat_at',
         'black_last_heartbeat_at',
     ];
@@ -41,19 +30,10 @@ class Game extends Model
     protected function casts(): array
     {
         return [
-            'moves' => 'array',
-            'last_move_timestamp' => 'datetime',
-            'white_first_move_at' => 'datetime',
-            'black_first_move_at' => 'datetime',
-            'clock_start_at' => 'datetime',
-            'draw_offered_at' => 'datetime',
-            'white_time_remaining_ms' => 'integer',
-            'black_time_remaining_ms' => 'integer',
             'initial_time_ms' => 'integer',
             'increment_ms' => 'integer',
             'white_elo' => 'integer',
             'black_elo' => 'integer',
-            'draw_offered_by' => 'integer',
             'white_last_heartbeat_at' => 'datetime',
             'black_last_heartbeat_at' => 'datetime',
         ];
@@ -104,71 +84,14 @@ class Game extends Model
         return $this->status === 'active';
     }
 
-    public function getTimeRemainingForColor(string $color): int
-    {
-        return $color === 'white'
-            ? $this->white_time_remaining_ms
-            : $this->black_time_remaining_ms;
-    }
-
-    public function clearDrawOffer(): void
-    {
-        $this->update([
-            'draw_offered_by' => null,
-            'draw_offered_at' => null,
-        ]);
-    }
-
-    public function hasActiveDrawOffer(): bool
-    {
-        return $this->draw_offered_by !== null && $this->draw_offered_at !== null;
-    }
-
-    public function isDrawOfferOnCooldown(int $userId): bool
-    {
-        if (!$this->draw_offered_at) {
-            return false;
-        }
-
-        return $this->draw_offered_at->addSeconds(30)->isFuture();
-    }
-
-    public function hasBothFirstMoves(): bool
-    {
-        return $this->white_first_move_at !== null && $this->black_first_move_at !== null;
-    }
-
+    // Keep basic heartbeat methods for connection tracking
     public function isPlayerAway(string $color): bool
     {
         if ($color === 'white') {
-            return $this->white_last_heartbeat_at !== null 
+            return $this->white_last_heartbeat_at !== null
                 && $this->white_last_heartbeat_at->diffInSeconds(now()) > 30;
         }
-        return $this->black_last_heartbeat_at !== null 
-            && $this->black_last_heartbeat_at->diffInSeconds(now()) > 30;
-    }
-
-    public function getAwayCountdownSeconds(string $color): ?int
-    {
-        if ($color === 'white') {
-            if (!$this->white_last_heartbeat_at) return null;
-            $awaySeconds = $this->white_last_heartbeat_at->diffInSeconds(now());
-            $remaining = 30 - $awaySeconds;
-            return $remaining > 0 ? $remaining : 0;
-        }
-        if (!$this->black_last_heartbeat_at) return null;
-        $awaySeconds = $this->black_last_heartbeat_at->diffInSeconds(now());
-        $remaining = 30 - $awaySeconds;
-        return $remaining > 0 ? $remaining : 0;
-    }
-
-    public function hasAbandoned(string $color): bool
-    {
-        if ($color === 'white') {
-            return $this->white_last_heartbeat_at !== null 
-                && $this->white_last_heartbeat_at->diffInSeconds(now()) > 30;
-        }
-        return $this->black_last_heartbeat_at !== null 
+        return $this->black_last_heartbeat_at !== null
             && $this->black_last_heartbeat_at->diffInSeconds(now()) > 30;
     }
 }

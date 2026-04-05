@@ -3,18 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Events\GameEnded;
-use App\Events\MovePlayed;
-use App\Events\ClockSync;
-use App\Events\DrawOffered;
-use App\Events\PlayerAbsent;
-use App\Events\PlayerReturned;
 use App\Events\SeekCreated;
 use App\Events\SeekRemoved;
 use App\Jobs\CheckGameTimeJob;
 use App\Models\Game;
 use App\Models\GameSeek;
-use App\Services\ChessService;
-use App\Services\ClockService;
+
+
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,12 +18,24 @@ use Illuminate\Support\Facades\Http;
 
 class GameController
 {
-    private const MICROSERVICE_URL = 'http://localhost:3006'; // Adjust as needed
+    private const MICROSERVICE_URL = env('CHESS_MICROSERVICE_URL', 'http://localhost:3006');
 
-    public function __construct(
-        private ChessService $chessService,
-        private ClockService $clockService,
-    ) {}
+    public function __construct() {}
+
+    /**
+     * Parse a time control string (e.g., "600+5") into initial time and increment in ms.
+     */
+    private function parseTimeControl(string $timeControl): array
+    {
+        $parts = explode('+', $timeControl);
+        $baseSeconds = (int) ($parts[0] ?? 600);
+        $incrementSeconds = (int) ($parts[1] ?? 0);
+
+        return [
+            'initial_time_ms' => $baseSeconds * 1000,
+            'increment_ms' => $incrementSeconds * 1000,
+        ];
+    }
 
     /**
      * Join the matchmaking queue for a specific time control.
@@ -60,8 +67,8 @@ class GameController
                 ->first();
 
             if ($existingGame) {
-                $clockTimes = $this->clockService->getEffectiveTimes($existingGame);
-                $legalMoves = $this->chessService->getLegalMoves($existingGame->current_fen);
+                // Time management handled by microservice
+                $legalMoves = []; // Legal moves will come from microservice
 
                 return response()->json([
                     'message' => 'You already have an active game',
@@ -81,19 +88,10 @@ class GameController
                         'time_control' => $existingGame->time_control,
                         'initial_time_ms' => $existingGame->initial_time_ms,
                         'increment_ms' => $existingGame->increment_ms,
-                        'fen' => $existingGame->current_fen,
-                        'turn' => $existingGame->turn,
-                        'moves' => $existingGame->moves ?? [],
-                        'white_time_remaining_ms' => $clockTimes['white_time_remaining_ms'],
-                        'black_time_remaining_ms' => $clockTimes['black_time_remaining_ms'],
-                        'server_timestamp' => $clockTimes['server_timestamp'],
                         'result' => $existingGame->result,
                         'termination' => $existingGame->termination,
                         'my_color' => $existingGame->getPlayerColor($user->id),
                         'legal_moves' => $legalMoves,
-                        'draw_offered_by' => $existingGame->draw_offered_by,
-                        'draw_offered_at' => $existingGame->draw_offered_at?->toIso8601String(),
-                        'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
                     ],
                 ]);
             }
@@ -162,7 +160,7 @@ class GameController
                 $whiteId = rand(0, 1) ? $user->id : $opponentUser->id;
                 $blackId = $whiteId === $user->id ? $opponentUser->id : $user->id;
 
-                $timeData = ClockService::parseTimeControl($timeControl);
+                $timeData = $this->parseTimeControl($timeControl);
 
                 $game = Game::create([
                     'white_player_id' => $whiteId,
@@ -324,8 +322,8 @@ class GameController
                 ->first();
 
             if ($existingGame) {
-                $clockTimes = $this->clockService->getEffectiveTimes($existingGame);
-                $legalMoves = $this->chessService->getLegalMoves($existingGame->current_fen);
+                // Time management handled by microservice
+                $legalMoves = []; // Legal moves will come from microservice
 
                 return response()->json([
                     'message' => 'You already have an active game',
@@ -345,19 +343,10 @@ class GameController
                         'time_control' => $existingGame->time_control,
                         'initial_time_ms' => $existingGame->initial_time_ms,
                         'increment_ms' => $existingGame->increment_ms,
-                        'fen' => $existingGame->current_fen,
-                        'turn' => $existingGame->turn,
-                        'moves' => $existingGame->moves ?? [],
-                        'white_time_remaining_ms' => $clockTimes['white_time_remaining_ms'],
-                        'black_time_remaining_ms' => $clockTimes['black_time_remaining_ms'],
-                        'server_timestamp' => $clockTimes['server_timestamp'],
                         'result' => $existingGame->result,
                         'termination' => $existingGame->termination,
                         'my_color' => $existingGame->getPlayerColor($user->id),
                         'legal_moves' => $legalMoves,
-                        'draw_offered_by' => $existingGame->draw_offered_by,
-                        'draw_offered_at' => $existingGame->draw_offered_at?->toIso8601String(),
-                        'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
                     ],
                 ]);
             }
@@ -379,7 +368,7 @@ class GameController
             $whiteId = rand(0, 1) ? $user->id : $opponentUser->id;
             $blackId = $whiteId === $user->id ? $opponentUser->id : $user->id;
 
-            $timeData = ClockService::parseTimeControl($timeControl);
+            $timeData = $this->parseTimeControl($timeControl);
 
             $game = Game::create([
                 'white_player_id' => $whiteId,
@@ -463,18 +452,8 @@ class GameController
             return response()->json(['message' => 'Not authorized to view this game'], 403);
         }
 
-        try {
-            $clockTimes = $this->clockService->getEffectiveTimes($game);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('getEffectiveTimes failed: ' . $e->getMessage(), ['game_id' => $gameId]);
-            $clockTimes = [
-                'white_time_remaining_ms' => $game->white_time_remaining_ms,
-                'black_time_remaining_ms' => $game->black_time_remaining_ms,
-                'server_timestamp' => now()->toISOString(),
-            ];
-        }
-
-        $legalMoves = $game->isActive() ? $this->chessService->getLegalMoves($game->current_fen) : [];
+        // Time management handled by microservice
+        $legalMoves = []; // Legal moves will come from microservice
 
         return response()->json([
             'game' => [
@@ -491,41 +470,16 @@ class GameController
                 'time_control' => $game->time_control,
                 'initial_time_ms' => $game->initial_time_ms,
                 'increment_ms' => $game->increment_ms,
-                'fen' => $game->current_fen,
-                'turn' => $game->turn,
-                'moves' => $game->moves ?? [],
-                'white_time_remaining_ms' => $clockTimes['white_time_remaining_ms'],
-                'black_time_remaining_ms' => $clockTimes['black_time_remaining_ms'],
-                'server_timestamp' => $clockTimes['server_timestamp'],
                 'result' => $game->result,
                 'termination' => $game->termination,
                 'my_color' => $game->getPlayerColor($user->id),
                 'legal_moves' => $legalMoves,
-                'draw_offered_by' => $game->draw_offered_by,
-                'draw_offered_at' => $game->draw_offered_at?->toIso8601String(),
-                'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
-                'opponent_away_countdown' => $this->getOpponentAwayCountdown($game, $user->id),
+
             ],
         ]);
     }
 
-    private function getOpponentAwayCountdown(Game $game, int $userId): ?int
-    {
-        if (!$game->isActive()) return null;
-        
-        $myColor = $game->getPlayerColor($userId);
-        $opponentColor = $myColor === 'white' ? 'black' : 'white';
-        
-        $opponentField = $opponentColor === 'white' ? 'white_last_heartbeat_at' : 'black_last_heartbeat_at';
-        
-        if (!$game->$opponentField) return null;
-        
-        $awaySeconds = $game->$opponentField->diffInSeconds(now());
-        if ($awaySeconds <= 30) {
-            return 30 - $awaySeconds;
-        }
-        return 0;
-    }
+
 
     /**
      * Play a move - proxy to microservice.
@@ -767,30 +721,8 @@ class GameController
                 return response()->json(['game' => null]);
             }
 
-            try {
-                $clockTimes = $this->clockService->getEffectiveTimes($game);
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('activeGame getEffectiveTimes failed: ' . $e->getMessage(), [
-                    'game_id' => $game->id,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-                $clockTimes = [
-                    'white_time_remaining_ms' => $game->white_time_remaining_ms,
-                    'black_time_remaining_ms' => $game->black_time_remaining_ms,
-                    'server_timestamp' => now()->toISOString(),
-                ];
-            }
-
-            try {
-                $legalMoves = $this->chessService->getLegalMoves($game->current_fen);
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('activeGame getLegalMoves failed: ' . $e->getMessage(), [
-                    'game_id' => $game->id,
-                    'fen' => $game->current_fen,
-                    'trace' => $e->getTraceAsString(),
-                ]);
-                $legalMoves = [];
-            }
+            // Time management handled by microservice
+            $legalMoves = []; // Legal moves will come from microservice
 
             return response()->json([
                 'game' => [
@@ -807,20 +739,11 @@ class GameController
                     'time_control' => $game->time_control,
                     'initial_time_ms' => $game->initial_time_ms,
                     'increment_ms' => $game->increment_ms,
-                    'fen' => $game->current_fen,
-                    'turn' => $game->turn,
-                    'moves' => $game->moves ?? [],
-                    'white_time_remaining_ms' => $clockTimes['white_time_remaining_ms'],
-                    'black_time_remaining_ms' => $clockTimes['black_time_remaining_ms'],
-                    'server_timestamp' => $clockTimes['server_timestamp'],
                     'result' => $game->result,
                     'termination' => $game->termination,
                     'my_color' => $game->getPlayerColor($user->id),
                     'legal_moves' => $legalMoves,
-                    'draw_offered_by' => $game->draw_offered_by,
-                    'draw_offered_at' => $game->draw_offered_at?->toIso8601String(),
-                    'buffer_seconds_remaining' => $clockTimes['buffer_seconds_remaining'] ?? 0,
-                    'opponent_away_countdown' => $this->getOpponentAwayCountdown($game, $user->id),
+
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -854,56 +777,10 @@ class GameController
         $updateField = $playerColor === 'white' ? 'white_last_heartbeat_at' : 'black_last_heartbeat_at';
         $game->update([$updateField => now()]);
 
-        $this->checkAndBroadcastAbsence($game, $playerColor, false);
+
 
         return response()->json(['message' => 'Heartbeat recorded']);
     }
 
-    /**
-     * Check for abandoned players and broadcast updates.
-     */
-    private function checkAndBroadcastAbsence(Game $game, string $justReturnedColor, bool $checkOnly = false): void
-    {
-        $opponentColor = $justReturnedColor === 'white' ? 'black' : 'white';
-        
-        $justReturnedField = $justReturnedColor === 'white' ? 'white_last_heartbeat_at' : 'black_last_heartbeat_at';
-        $opponentField = $opponentColor === 'white' ? 'white_last_heartbeat_at' : 'black_last_heartbeat_at';
 
-        $opponentAway = $game->$opponentField !== null 
-            && $game->$opponentField->diffInSeconds(now()) > 30;
-
-        $justReturnedAway = $game->$justReturnedField !== null 
-            && $game->$justReturnedField->diffInSeconds(now()) > 30;
-
-        if ($justReturnedAway) {
-            broadcast(new PlayerReturned($game, $justReturnedColor));
-        }
-
-        if ($opponentAway && $game->isActive()) {
-            $awaySeconds = $game->$opponentField->diffInSeconds(now());
-            $countdown = max(0, 30 - $awaySeconds);
-
-            if ($awaySeconds > 30 && !$checkOnly) {
-                $opponentId = $opponentColor === 'white' ? $game->white_player_id : $game->black_player_id;
-                $winnerColor = $opponentColor === 'white' ? 'black' : 'white';
-                $winnerId = $winnerColor === 'white' ? $game->white_player_id : $game->black_player_id;
-
-                $game->update([
-                    'status' => 'completed',
-                    'result' => $winnerColor === 'white' ? '1-0' : '0-1',
-                    'termination' => 'abandoned',
-                ]);
-
-                broadcast(new GameEnded($game));
-
-                \Illuminate\Support\Facades\Log::info('Player abandoned', [
-                    'game_id' => $game->id,
-                    'abandoned_player_id' => $opponentId,
-                    'winner_id' => $winnerId,
-                ]);
-            } else {
-                broadcast(new PlayerAbsent($game, $opponentColor, $countdown));
-            }
-        }
-    }
 }
