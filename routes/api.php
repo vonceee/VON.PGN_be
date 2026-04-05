@@ -23,6 +23,8 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TournamentBookmarkController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\LichessProxyController;
+use App\Http\Controllers\Api\CoachApplicationController;
+use App\Http\Controllers\Api\Admin\CoachApplicationController as AdminCoachApplicationController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -80,6 +82,13 @@ Route::get('/lessons/{slug}', [CourseController::class, 'getLesson']);
 Route::get('/lichess/pgn', [LichessProxyController::class, 'pgn']);
 
 Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
+
+// Public route for submitting coach applications
+Route::post('/coach-applications', [CoachApplicationController::class, 'store'])
+    ->middleware('throttle:5,60'); // Rate limiting
+
+// Check if current user has submitted an application
+Route::middleware('auth:sanctum')->get('/coach-applications/my-status', [CoachApplicationController::class, 'myStatus']);
 
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournaments/bookmarks', [TournamentBookmarkController::class, 'index'])
@@ -152,5 +161,12 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::apiResource('tournaments', AdminTournamentController::class);
     Route::post('resolve-maps-url', [MapsUrlResolverController::class, 'resolve']);
     Route::post('users/{id}/toggle-verified-organizer', [UserProfileController::class, 'toggleVerifiedOrganizer']);
+
+    // Coach applications management
+    Route::get('/coach-applications', [AdminCoachApplicationController::class, 'index']);
+    Route::get('/coach-applications/{id}', [AdminCoachApplicationController::class, 'show']);
+    Route::post('/coach-applications/{id}/approve', [AdminCoachApplicationController::class, 'approve']);
+    Route::post('/coach-applications/{id}/reject', [AdminCoachApplicationController::class, 'reject']);
+    Route::delete('/coach-applications/{id}', [AdminCoachApplicationController::class, 'destroy']);
 });
 
