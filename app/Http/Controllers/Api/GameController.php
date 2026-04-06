@@ -666,7 +666,7 @@ class GameController
     private function fetchGameState(Game $game): ?array
     {
         $url = $this->microserviceUrl . '/api/games/' . $game->id;
-        $maxRetries = 3;
+        $maxRetries = 5;
         $lastError = null;
         
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
@@ -677,7 +677,9 @@ class GameController
                     'url' => $url
                 ]);
                 
-                $response = Http::timeout($attempt === 1 ? 5 : 8)->get($url);
+                // Longer timeouts for cold-start: 5s, 10s, 15s, 15s, 15s
+                $timeout = $attempt < 4 ? $attempt * 5 : 15;
+                $response = Http::timeout($timeout)->get($url);
 
                 if ($response->successful()) {
                     $gameData = $response->json();
@@ -688,7 +690,7 @@ class GameController
                         $game->update([
                             'status' => $gameData['status'],
                             'result' => $gameData['result'] ?? null,
-                            'termination' => $gameData['termination'] ?? null
+                            'termination' => $gameData['termination'] ?? null,
                         ]);
                         
                         // Trigger broadcast for frontend
@@ -733,8 +735,8 @@ class GameController
                 ]);
                 
                 if ($attempt < $maxRetries) {
-                    // Exponential backoff: 1s, 2s, 3s
-                    usleep($attempt * 1000000);
+                    // Longer backoff for cold-start: 2s, 4s, 6s, 8s (total wait: 20s)
+                    usleep($attempt * 2000000);
                 }
                 
             } catch (\Exception $e) {
@@ -754,13 +756,13 @@ class GameController
         throw new \Symfony\Component\HttpKernel\Exception\HttpException(503, 'Chess microservice is currently unavailable. Please try again later.');
     }
     
-    /**
-     * Call microservice endpoint with retry logic for cold-start scenarios.
-     */
+/**
+      * Call microservice endpoint with retry logic for cold-start scenarios.
+      */
     private function callMicroserviceWithRetry(string $endpoint, array $data, string $method = 'POST'): bool
     {
         $url = $this->microserviceUrl . $endpoint;
-        $maxRetries = 3;
+        $maxRetries = 5;
         $lastError = null;
         
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
@@ -771,9 +773,11 @@ class GameController
                     'method' => $method
                 ]);
                 
+                // Longer timeouts for cold-start: 5s, 10s, 15s, 15s, 15s
+                $timeout = $attempt < 4 ? $attempt * 5 : 15;
                 $response = $method === 'POST' 
-                    ? Http::timeout($attempt === 1 ? 5 : 8)->post($url, $data)
-                    : Http::timeout($attempt === 1 ? 5 : 8)->get($url);
+                    ? Http::timeout($timeout)->post($url, $data)
+                    : Http::timeout($timeout)->get($url);
 
                 if ($response->successful()) {
                     return true;
@@ -796,7 +800,8 @@ class GameController
                 ]);
                 
                 if ($attempt < $maxRetries) {
-                    usleep($attempt * 1000000);
+                    // Longer backoff for cold-start: 2s, 4s, 6s, 8s (total wait: 20s)
+                    usleep($attempt * 2000000);
                 }
                 
             } catch (\Exception $e) {

@@ -50,8 +50,6 @@ class UserProfileResource extends JsonResource
                 'lastActiveLessonId' => $this->progress->last_active_lesson_id,
                 'totalPuzzlesSolved' => $this->progress->total_puzzles_solved ?? 0,
                 'currentStreakDays' => $this->progress->current_streak_days ?? 0,
-                'experiencePoints' => $this->progress->experience_points ?? 0,
-                'currentLevel' => $this->progress->current_level ?? 1,
                 'puzzleRating' => $this->progress->puzzle_rating ?? 1200,
                 'puzzleStreak' => $this->progress->puzzle_streak ?? 0,
 

@@ -14,8 +14,6 @@ class ProgressController extends Controller
         $user = $request->user();
         $progress = $user->progress;
 
-        $leveledUp = $progress->gainExperience(10);
-
         if ($request->has('lesson_id')) {
             $completed = $progress->completed_lesson_ids ?? [];
             if (!in_array($request->lesson_id, $completed)) {
@@ -30,9 +28,7 @@ class ProgressController extends Controller
 
         return response()->json([
             'message' => 'Lecture completed!',
-            'leveled_up' => $leveledUp,
-            'gained_xp' => 10,
-            'new_badges' => $newBadges, // Return new badges to the frontend
+            'new_badges' => $newBadges,
             'user' => new UserProfileResource($user->load(['preferences', 'progress', 'badges']))
         ]);
     }

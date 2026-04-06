@@ -22,7 +22,6 @@ class Game extends Model
         'termination',
         'white_elo',
         'black_elo',
-        // Keep heartbeat fields for basic connection tracking
         'white_last_heartbeat_at',
         'black_last_heartbeat_at',
     ];

@@ -48,7 +48,6 @@ class TacticsController extends Controller
         $puzzle = Puzzle::find($request->puzzle_id);
 
         $ratingChange = $request->success ? 15 : -10;
-        $xpEarned = $request->success ? 110 : 0;
 
         $progress = $user->progress;
         if (!$progress) {
@@ -73,21 +72,11 @@ class TacticsController extends Controller
 
         $progress->save();
 
-        /**
-         * Update XP
-         */
-        $leveledUp = false;
-        if ($xpEarned > 0) {
-            $leveledUp = $progress->gainExperience($xpEarned);
-        }
-
         return response()->json([
             'success' => true,
             'new_rating' => $progress->puzzle_rating,
             'rating_change' => $ratingChange,
             'new_streak' => $newStreak,
-            'xp_earned' => $xpEarned,
-            'leveled_up' => $leveledUp,
         ]);
     }
 
