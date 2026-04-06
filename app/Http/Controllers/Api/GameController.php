@@ -201,35 +201,30 @@ class GameController
 
                 \Illuminate\Support\Facades\Log::info('Game created', ['game_id' => $game->id]);
 
-                // Create game in microservice
-                try {
-                    $microserviceResponse = Http::timeout(5)->post($this->microserviceUrl . '/api/create-game', [
-                        'gameId' => $game->id,
-                        'whitePlayer' => [
-                            'userId' => $whiteId,
-                            'socketId' => '', // Will be set when players connect
-                            'name' => $whiteId === $user->id ? $user->name : $opponentUser->name
-                        ],
-                        'blackPlayer' => [
-                            'userId' => $blackId,
-                            'socketId' => '', // Will be set when players connect
-                            'name' => $blackId === $user->id ? $user->name : $opponentUser->name
-                        ],
-                        'timeControl' => $timeControl,
-                        'initialTimeMs' => $timeData['initial_time_ms'],
-                        'incrementMs' => $timeData['increment_ms']
-                    ]);
+                // Create game in microservice with retries for cold-start
+                $created = $this->callMicroserviceWithRetry('/api/create-game', [
+                    'gameId' => $game->id,
+                    'whitePlayer' => [
+                        'userId' => $whiteId,
+                        'socketId' => '', // Will be set when players connect
+                        'name' => $whiteId === $user->id ? $user->name : $opponentUser->name
+                    ],
+                    'blackPlayer' => [
+                        'userId' => $blackId,
+                        'socketId' => '', // Will be set when players connect
+                        'name' => $blackId === $user->id ? $user->name : $opponentUser->name
+                    ],
+                    'timeControl' => $timeControl,
+                    'initialTimeMs' => $timeData['initial_time_ms'],
+                    'incrementMs' => $timeData['increment_ms']
+                ], 'POST');
 
-                    if ($microserviceResponse->successful()) {
-                        \Illuminate\Support\Facades\Log::info('Game created in microservice', ['game_id' => $game->id]);
-                    } else {
-                        \Illuminate\Support\Facades\Log::error('Failed to create game in microservice: ' . $microserviceResponse->body());
-                        return response()->json(['message' => 'Chess microservice is currently unavailable. Please try again later.'], 503);
-                    }
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error('Microservice create-game error: ' . $e->getMessage());
+                if (!$created) {
+                    \Illuminate\Support\Facades\Log::error('Failed to create game in microservice after retries', ['game_id' => $game->id]);
                     return response()->json(['message' => 'Chess microservice is currently unavailable. Please try again later.'], 503);
                 }
+                
+                \Illuminate\Support\Facades\Log::info('Game created in microservice', ['game_id' => $game->id]);
 
                 try {
                     broadcast(new \App\Events\GameMatched($game));
@@ -662,62 +657,160 @@ class GameController
 
     /**
      * Helper to fetch game state from microservice and handle synchronization.
+     * Includes retries for cold-start scenarios where microservice is waking up.
      */
     private function fetchGameState(Game $game): ?array
     {
-        try {
-            $url = $this->microserviceUrl . '/api/games/' . $game->id;
-            $response = Http::timeout(5)->get($url);
-
-            if ($response->successful()) {
-                $gameData = $response->json();
+        $url = $this->microserviceUrl . '/api/games/' . $game->id;
+        $maxRetries = 3;
+        $lastError = null;
+        
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                \Illuminate\Support\Facades\Log::info('Fetching game state from microservice', [
+                    'game_id' => $game->id,
+                    'attempt' => $attempt,
+                    'url' => $url
+                ]);
                 
-                // Authoritative Sync: If microservice says game is done (completed/aborted), update Laravel DB
-                $isFinished = in_array($gameData['status'] ?? '', ['completed', 'aborted']);
-                if ($isFinished && $game->status !== $gameData['status']) {
-                    $game->update([
-                        'status' => $gameData['status'],
-                        'result' => $gameData['result'] ?? null,
-                        'termination' => $gameData['termination'] ?? null
+                $response = Http::timeout($attempt === 1 ? 5 : 8)->get($url);
+
+                if ($response->successful()) {
+                    $gameData = $response->json();
+                    
+                    // Authoritative Sync: If microservice says game is done (completed/aborted), update Laravel DB
+                    $isFinished = in_array($gameData['status'] ?? '', ['completed', 'aborted']);
+                    if ($isFinished && $game->status !== $gameData['status']) {
+                        $game->update([
+                            'status' => $gameData['status'],
+                            'result' => $gameData['result'] ?? null,
+                            'termination' => $gameData['termination'] ?? null
+                        ]);
+                        
+                        // Trigger broadcast for frontend
+                        broadcast(new \App\Events\GameEnded($game));
+                    }
+                    
+                    return $gameData;
+                }
+
+                if ($response->status() === 404) {
+                    \Illuminate\Support\Facades\Log::warning('Game missing from microservice. Marking as abandoned in DB.', [
+                        'game_id' => $game->id
                     ]);
                     
-                    // Trigger broadcast for frontend
-                    broadcast(new \App\Events\GameEnded($game));
+                    // End the game in DB as it's no longer in the microservice's memory
+                    $game->update([
+                        'status' => 'completed',
+                        'result' => null,
+                        'termination' => 'abandoned'
+                    ]);
+                    
+                    return null;
+                }
+
+                // Non-502 error - fail immediately
+                \Illuminate\Support\Facades\Log::error('Microservice returnedHTTP error', [
+                    'game_id' => $game->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'url' => $url
+                ]);
+                
+                throw new \Exception('Microservice returned HTTP ' . $response->status());
+                
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                // Connection errors (502, 503, timeout, connection refused) - retry
+                $lastError = $e->getMessage();
+                \Illuminate\Support\Facades\Log::warning('Microservice connection failed (attempt ' . $attempt . '/' . $maxRetries . ')', [
+                    'game_id' => $game->id,
+                    'error' => $e->getMessage(),
+                    'url' => $url
+                ]);
+                
+                if ($attempt < $maxRetries) {
+                    // Exponential backoff: 1s, 2s, 3s
+                    usleep($attempt * 1000000);
                 }
                 
-                return $gameData;
+            } catch (\Exception $e) {
+                // Other errors - fail immediately
+                throw $e;
             }
-
-            if ($response->status() === 404) {
-                \Illuminate\Support\Facades\Log::warning('Game missing from microservice. Marking as abandoned in DB.', [
-                    'game_id' => $game->id
-                ]);
-                
-                // End the game in DB as it's no longer in the microservice's memory
-                $game->update([
-                    'status' => 'completed',
-                    'result' => null,
-                    'termination' => 'abandoned'
-                ]);
-                
-                return null;
-            }
-
-            \Illuminate\Support\Facades\Log::error('Microservice error: ' . $response->status(), [
-                'url' => $url,
-                'body' => $response->body()
-            ]);
-            
-            throw new \Exception('Microservice returned error ' . $response->status());
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Microservice communication failed: ' . $e->getMessage(), [
-                'game_id' => $game->id
-            ]);
-            
-            abort(response()->json([
-                'message' => 'Chess microservice is currently unavailable. Please try again later.',
-                'debug' => app()->environment('local') ? $e->getMessage() : null
-            ], 503));
         }
+        
+        // All retries exhausted
+        \Illuminate\Support\Facades\Log::error('Microservice communication failed after retries', [
+            'game_id' => $game->id,
+            'last_error' => $lastError,
+            'url' => $url
+        ]);
+        
+        abort(response()->json([
+            'message' => 'Chess microservice is currently unavailable. Please try again later.',
+            'debug' => app()->environment('local') ? $lastError : null
+        ], 503));
+    }
+    
+    /**
+     * Call microservice endpoint with retry logic for cold-start scenarios.
+     */
+    private function callMicroserviceWithRetry(string $endpoint, array $data, string $method = 'POST'): bool
+    {
+        $url = $this->microserviceUrl . $endpoint;
+        $maxRetries = 3;
+        $lastError = null;
+        
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                \Illuminate\Support\Facades\Log::info('Calling microservice', [
+                    'endpoint' => $endpoint,
+                    'attempt' => $attempt,
+                    'method' => $method
+                ]);
+                
+                $response = $method === 'POST' 
+                    ? Http::timeout($attempt === 1 ? 5 : 8)->post($url, $data)
+                    : Http::timeout($attempt === 1 ? 5 : 8)->get($url);
+
+                if ($response->successful()) {
+                    return true;
+                }
+
+                // Non-connection error - fail immediately
+                \Illuminate\Support\Facades\Log::error('Microservice returned HTTP error', [
+                    'endpoint' => $endpoint,
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+                
+                return false;
+                
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $lastError = $e->getMessage();
+                \Illuminate\Support\Facades\Log::warning('Microservice connection failed (attempt ' . $attempt . '/' . $maxRetries . ')', [
+                    'endpoint' => $endpoint,
+                    'error' => $e->getMessage()
+                ]);
+                
+                if ($attempt < $maxRetries) {
+                    usleep($attempt * 1000000);
+                }
+                
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Microservice call failed', [
+                    'endpoint' => $endpoint,
+                    'error' => $e->getMessage()
+                ]);
+                return false;
+            }
+        }
+        
+        \Illuminate\Support\Facades\Log::error('Microservice call failed after retries', [
+            'endpoint' => $endpoint,
+            'last_error' => $lastError
+        ]);
+        
+        return false;
     }
 }
