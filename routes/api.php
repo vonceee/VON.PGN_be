@@ -82,6 +82,7 @@ Route::get('/lessons/{slug}', [CourseController::class, 'getLesson']);
 Route::get('/lichess/pgn', [LichessProxyController::class, 'pgn']);
 
 Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
+Route::get('/tactics/leaderboard', [TacticsController::class, 'leaderboard']);
 
 // Public route for submitting coach applications
 Route::post('/coach-applications', [CoachApplicationController::class, 'store'])

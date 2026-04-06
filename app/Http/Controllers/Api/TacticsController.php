@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Puzzle;
+use App\Models\UserProgress;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class TacticsController extends Controller
 {
@@ -85,6 +88,81 @@ class TacticsController extends Controller
             'new_streak' => $newStreak,
             'xp_earned' => $xpEarned,
             'leveled_up' => $leveledUp,
+        ]);
+    }
+
+    public function leaderboard(Request $request)
+    {
+        $limit = 10;
+        $cacheKey = 'tactics_leaderboard:' . app()->environment();
+        $cacheDuration = 1800; // 30 minutes
+
+        $cachedData = Cache::remember($cacheKey, $cacheDuration, function () use ($limit) {
+            // Top 10 by Rating
+            $topRating = UserProgress::with('user:id,name,email')
+                ->orderBy('puzzle_rating', 'desc')
+                ->limit($limit)
+                ->get()
+                ->map(function ($item, $index) {
+                    return [
+                        'rank' => $index + 1,
+                        'user_id' => $item->user_id,
+                        'username' => $item->user->name,
+                        'score' => $item->puzzle_rating,
+                    ];
+                });
+
+            // Top 10 by Streak
+            $topStreak = UserProgress::with('user:id,name,email')
+                ->orderBy('puzzle_streak', 'desc')
+                ->limit($limit)
+                ->get()
+                ->map(function ($item, $index) {
+                    return [
+                        'rank' => $index + 1,
+                        'user_id' => $item->user_id,
+                        'username' => $item->user->name,
+                        'score' => $item->puzzle_streak,
+                    ];
+                });
+
+            return ['rating' => $topRating, 'streak' => $topStreak];
+        });
+
+        $topRating = collect($cachedData['rating']);
+        $topStreak = collect($cachedData['streak']);
+
+        $user = $request->user('sanctum');
+        $myRatingStats = null;
+        $myStreakStats = null;
+
+        if ($user) {
+            $userProgress = $user->progress ?? $user->progress()->firstOrCreate([]);
+            
+            // Calculate Rating Rank
+            $ratingRank = UserProgress::where('puzzle_rating', '>', $userProgress->puzzle_rating)->count() + 1;
+            $myRatingStats = [
+                'rank' => $ratingRank,
+                'score' => $userProgress->puzzle_rating,
+                'in_top' => $ratingRank <= $limit
+            ];
+
+            // Calculate Streak Rank
+            $streakRank = UserProgress::where('puzzle_streak', '>', $userProgress->puzzle_streak)->count() + 1;
+            $myStreakStats = [
+                'rank' => $streakRank,
+                'score' => $userProgress->puzzle_streak,
+                'in_top' => $streakRank <= $limit
+            ];
+        }
+
+        return response()->json([
+            'rating' => $topRating,
+            'streak' => $topStreak,
+            'my_stats' => [
+                'rating' => $myRatingStats,
+                'streak' => $myStreakStats,
+            ]
         ]);
     }
 }
