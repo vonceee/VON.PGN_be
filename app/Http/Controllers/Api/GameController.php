@@ -248,6 +248,8 @@ class GameController
                 'time_control' => $timeControl,
                 'matched' => false,
             ]);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return response()->json(['message' => $e->getMessage()], 503);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('seek FAILED: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
@@ -572,10 +574,12 @@ class GameController
                     'my_color' => $game->getPlayerColor($user->id),
                     'legal_moves' => $gameData['legalMoves'] ?? [],
                     'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
-                    'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
 
                 ],
             ]);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            // Return proper 503 for microservice unavailability
+            return response()->json(['message' => $e->getMessage()], 503);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('activeGame FAILED: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
@@ -746,10 +750,8 @@ class GameController
             'url' => $url
         ]);
         
-        abort(response()->json([
-            'message' => 'Chess microservice is currently unavailable. Please try again later.',
-            'debug' => app()->environment('local') ? $lastError : null
-        ], 503));
+        // Throw a specific exception so callers can handle it and return proper 503
+        throw new \Symfony\Component\HttpKernel\Exception\HttpException(503, 'Chess microservice is currently unavailable. Please try again later.');
     }
     
     /**
