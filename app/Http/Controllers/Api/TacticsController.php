@@ -45,27 +45,43 @@ class TacticsController extends Controller
         if (!$user)
             return response()->json(['error' => 'Unauthorized'], 401);
 
-        $puzzle = Puzzle::find($request->puzzle_id);
-
-        $ratingChange = $request->success ? 15 : -10;
-
-        $progress = $user->progress;
-        if (!$progress) {
-            $progress = $user->progress()->create();
-        }
+        $puzzle = Puzzle::findOrFail($request->puzzle_id);
+        $progress = $user->progress()->firstOrCreate([]);
 
         /**
-         * Update Rating
+         * Dynamic Elo Rating Calculation
          */
-        $currentRating = $progress->puzzle_rating ?? 1200;
-        $newRating = $currentRating + $ratingChange;
-        if ($newRating < 400)
-            $newRating = 400;
-        $progress->puzzle_rating = $newRating;
+        $uRating = $progress->puzzle_rating ?? 1200;
+        $uRD = $progress->puzzle_rating_deviation ?? 350;
+        $pRating = $puzzle->rating;
+
+        // 1. Calculate Expected Score (Elo formula)
+        // 400 is the standard Elo 'scale' constant. 
+        // 0.5 = matched, >0.5 = user is favorite (puzzle is easier), <0.5 = puzzle is harder
+        $expectedScore = 1 / (1 + pow(10, ($pRating - $uRating) / 400));
+        $actualScore = $request->success ? 1 : 0;
+
+        // 2. Dynamic K-Factor based on User Rating Deviation (RD)
+        // Newer users (high RD) gain/lose more points to reach their true skill faster.
+        // Scale kFactor from ~50 (at 350 RD) down to ~12 (at 50 RD).
+        $kFactor = ($uRD / 350) * 38 + 12;
+        
+        $ratingChange = (int) round($kFactor * ($actualScore - $expectedScore));
+
+        // 3. Guaranteed minimums to ensure puzzle progression feels rewarding
+        if ($request->success && $ratingChange < 2) $ratingChange = 2; // Always at least +2
+        if (!$request->success && $ratingChange > -2) $ratingChange = -2; // Always at least -2
 
         /**
-         * Update Streak
+         * Update Rating & Stats
          */
+        $progress->puzzle_rating = max(400, $uRating + $ratingChange);
+        
+        // Slightly decrease deviation (user becomes more 'established') 
+        // until it hits a floor of 50.
+        $progress->puzzle_rating_deviation = max(50, $uRD - 2);
+
+        // Update Streak
         $currentStreak = $progress->puzzle_streak ?? 0;
         $newStreak = $request->success ? $currentStreak + 1 : 0;
         $progress->puzzle_streak = $newStreak;

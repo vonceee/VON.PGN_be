@@ -4,13 +4,18 @@ set -e
 echo "Running migrations..."
 php artisan migrate --force
 
-# Clear active games since microservice restarts fresh and loses in-memory game state.
-# This prevents 502 errors when seeking with stale game data.
+# Grant admin access to vonchess.official@gmail.com
+echo "Granting admin access..."
+php artisan tinker --execute="App\Models\User::where('email', 'vonchess.official@gmail.com')->update(['is_admin' => true]);"
+
+# Clear active games since microservice restarts fresh
 echo "Clearing stale active games..."
 php artisan tinker --execute="DB::table('games')->where('status', 'active')->update(['status' => 'abandoned', 'termination' => 'microservice_restart']);"
 
-# echo "Seeding puzzles..."
-# php artisan db:seed --class=PuzzleSeeder --force
+# Refresh puzzle database for a clean slate with 10k items
+echo "Refreshing puzzle database..."
+php artisan tinker --execute="DB::table('puzzles')->truncate();"
+php artisan db:seed --class=PuzzleSeeder --force
 
 echo "Clearing caches..."
 php artisan config:cache

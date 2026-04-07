@@ -43,6 +43,11 @@ class PuzzleSeeder extends Seeder
                     'moves'  => $p['moves'],
                     'rating' => $p['rating'],
                     'themes' => $p['themes'],
+                    'game_url' => $p['game_url'] ?? null,
+                    'opening_tags' => $p['opening_tags'] ?? null,
+                    'popularity' => $p['popularity'] ?? null,
+                    'nb_plays' => $p['nb_plays'] ?? null,
+                    'rating_deviation' => $p['rating_deviation'] ?? null,
                 ]
             );
             $imported++;
@@ -56,16 +61,16 @@ class PuzzleSeeder extends Seeder
         $this->command?->info('Importing puzzles from Lichess CSV...');
 
         $bands = [
-            ['min' => 0,    'max' => 600,   'count' => 150],
-            ['min' => 600,  'max' => 800,   'count' => 200],
-            ['min' => 800,  'max' => 1000,  'count' => 250],
-            ['min' => 1000, 'max' => 1200,  'count' => 300],
-            ['min' => 1200, 'max' => 1400,  'count' => 300],
-            ['min' => 1400, 'max' => 1600,  'count' => 250],
-            ['min' => 1600, 'max' => 1800,  'count' => 200],
-            ['min' => 1800, 'max' => 2000,  'count' => 150],
-            ['min' => 2000, 'max' => 2300,  'count' => 120],
-            ['min' => 2300, 'max' => 9999,  'count' => 80],
+            ['min' => 0,    'max' => 600,   'count' => 600],
+            ['min' => 600,  'max' => 800,   'count' => 1000],
+            ['min' => 800,  'max' => 1000,  'count' => 1200],
+            ['min' => 1000, 'max' => 1200,  'count' => 1500],
+            ['min' => 1200, 'max' => 1400,  'count' => 1500],
+            ['min' => 1400, 'max' => 1600,  'count' => 1200],
+            ['min' => 1600, 'max' => 1800,  'count' => 1000],
+            ['min' => 1800, 'max' => 2000,  'count' => 800],
+            ['min' => 2000, 'max' => 2300,  'count' => 700],
+            ['min' => 2300, 'max' => 9999,  'count' => 500],
         ];
 
         $handle = fopen($csvPath, 'r');
@@ -79,6 +84,9 @@ class PuzzleSeeder extends Seeder
         $popIdx    = $colIndex['Popularity'] ?? null;
         $playsIdx  = $colIndex['NbPlays'];
         $themesIdx = $colIndex['Themes'];
+        $gameUrlIdx = $colIndex['GameUrl'] ?? null;
+        $openingTagsIdx = $colIndex['OpeningTags'] ?? null;
+        $ratingDevIdx = $colIndex['RatingDeviation'] ?? null;
 
         $candidates = [];
         foreach ($bands as $i => $band) {
@@ -103,6 +111,11 @@ class PuzzleSeeder extends Seeder
                         'rating' => $rating,
                         'themes' => $row[$themesIdx],
                         'score'  => $score,
+                        'game_url' => $gameUrlIdx !== null ? ($row[$gameUrlIdx] ?? null) : null,
+                        'opening_tags' => $openingTagsIdx !== null ? ($row[$openingTagsIdx] ?? null) : null,
+                        'popularity' => $popIdx !== null ? ((int) $row[$popIdx]) : null,
+                        'nb_plays' => $plays,
+                        'rating_deviation' => $ratingDevIdx !== null ? ((int) $row[$ratingDevIdx]) : null,
                     ];
 
                     if (count($candidates[$i]) < $band['count']) {
@@ -137,6 +150,11 @@ class PuzzleSeeder extends Seeder
                         'moves'  => $p['moves'],
                         'rating' => $p['rating'],
                         'themes' => $p['themes'],
+                        'game_url' => $p['game_url'] ?? null,
+                        'opening_tags' => $p['opening_tags'] ?? null,
+                        'popularity' => $p['popularity'] ?? null,
+                        'nb_plays' => $p['nb_plays'] ?? null,
+                        'rating_deviation' => $p['rating_deviation'] ?? null,
                     ]
                 );
                 $imported++;

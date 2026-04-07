@@ -16,16 +16,16 @@ if (!file_exists($csvPath)) {
 }
 
 $bands = [
-    ['min' => 0,    'max' => 600,   'count' => 150],
-    ['min' => 600,  'max' => 800,   'count' => 200],
-    ['min' => 800,  'max' => 1000,  'count' => 250],
-    ['min' => 1000, 'max' => 1200,  'count' => 300],
-    ['min' => 1200, 'max' => 1400,  'count' => 300],
-    ['min' => 1400, 'max' => 1600,  'count' => 250],
-    ['min' => 1600, 'max' => 1800,  'count' => 200],
-    ['min' => 1800, 'max' => 2000,  'count' => 150],
-    ['min' => 2000, 'max' => 2300,  'count' => 120],
-    ['min' => 2300, 'max' => 9999,  'count' => 80],
+    ['min' => 0,    'max' => 600,   'count' => 600],
+    ['min' => 600,  'max' => 800,   'count' => 1000],
+    ['min' => 800,  'max' => 1000,  'count' => 1200],
+    ['min' => 1000, 'max' => 1200,  'count' => 1500],
+    ['min' => 1200, 'max' => 1400,  'count' => 1500],
+    ['min' => 1400, 'max' => 1600,  'count' => 1200],
+    ['min' => 1600, 'max' => 1800,  'count' => 1000],
+    ['min' => 1800, 'max' => 2000,  'count' => 800],
+    ['min' => 2000, 'max' => 2300,  'count' => 700],
+    ['min' => 2300, 'max' => 9999,  'count' => 500],
 ];
 
 echo "Reading CSV...\n";
@@ -38,9 +38,12 @@ $idIdx    = $colIndex['PuzzleId'];
 $fenIdx   = $colIndex['FEN'];
 $movesIdx = $colIndex['Moves'];
 $ratingIdx = $colIndex['Rating'];
+$ratingDevIdx = $colIndex['RatingDeviation'];
 $popIdx   = $colIndex['Popularity'] ?? null;
 $playsIdx = $colIndex['NbPlays'];
 $themesIdx = $colIndex['Themes'];
+$gameUrlIdx = $colIndex['GameUrl'] ?? null;
+$openingTagsIdx = $colIndex['OpeningTags'] ?? null;
 
 $candidates = [];
 foreach ($bands as $i => $band) {
@@ -69,7 +72,12 @@ while (($row = fgetcsv($handle)) !== false) {
                 'fen'    => $row[$fenIdx],
                 'moves'  => $row[$movesIdx],
                 'rating' => $rating,
+                'rating_deviation' => isset($row[$ratingDevIdx]) ? (int) $row[$ratingDevIdx] : null,
                 'themes' => $row[$themesIdx],
+                'popularity' => isset($row[$popIdx]) ? (int) $row[$popIdx] : null,
+                'nb_plays' => $plays,
+                'game_url' => $row[$gameUrlIdx] ?? null,
+                'opening_tags' => $row[$openingTagsIdx] ?? null,
                 'score'  => $score,
             ];
 
