@@ -135,6 +135,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/game/{gameId}/resign', [GameController::class, 'resign']);
     Route::post('/game/{gameId}/draw', [GameController::class, 'draw']);
     Route::post('/game/{gameId}/abort', [GameController::class, 'abort']);
+    Route::get('/games/archived/{gameId}', [GameController::class, 'showArchived']);
+    Route::get('/games/history', [GameController::class, 'history']);
     Route::post('/game/{gameId}/sync-clock', [GameController::class, 'syncClock']);
 
     // User tournament management

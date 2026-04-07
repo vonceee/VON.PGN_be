@@ -20,6 +20,7 @@ class Game extends Model
         'increment_ms',
         'result',
         'termination',
+        'moves',
         'white_elo',
         'black_elo',
         'white_rd',
@@ -37,6 +38,7 @@ class Game extends Model
         return [
             'initial_time_ms' => 'integer',
             'increment_ms' => 'integer',
+            'moves' => 'array',
             'white_elo' => 'integer',
             'black_elo' => 'integer',
             'white_rd' => 'integer',

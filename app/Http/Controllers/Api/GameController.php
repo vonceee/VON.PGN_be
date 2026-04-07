@@ -917,7 +917,8 @@ class GameController
 
         \Illuminate\Support\Facades\Log::info('Received game completion report', [
             'game_id' => $gameId,
-            'payload' => $request->all()
+            'status' => $request->input('status'),
+            'termination' => $request->input('termination'),
         ]);
 
         $validator = Validator::make($request->all(), [
@@ -928,6 +929,7 @@ class GameController
             'rating_changes.white' => 'integer',
             'rating_changes.black' => 'integer',
             'new_ratings' => 'nullable|array',
+            'moves' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -954,6 +956,7 @@ class GameController
                 'termination' => $request->input('termination'),
                 'white_rating_change' => $ratingChanges['white'] ?? null,
                 'black_rating_change' => $ratingChanges['black'] ?? null,
+                'moves' => $request->input('moves'),
             ]);
 
             // Update user ratings if it was a ranked game (status=completed)
@@ -966,11 +969,14 @@ class GameController
                 $whiteRdColumn = "{$category}_rd";
                 $whiteGamesColumn = "{$category}_games";
                 
+                // Update Black Player
+                $blackUser = $game->blackPlayer;
+
                 \Illuminate\Support\Facades\Log::info('Updating ratings', [
                     'game_id' => $game->id,
                     'category' => $category,
                     'white_change' => $newRatings['white']['rating'] - ($whiteUser->$whiteRatingColumn ?? 1500),
-                    'black_change' => $newRatings['black']['rating'] - ($blackUser->$whiteRatingColumn ?? 1500)
+                    'black_change' => $newRatings['black']['rating'] - ($blackUser->{"{$category}_rating"} ?? 1500)
                 ]);
 
                 $whiteUser->update([
@@ -1090,6 +1096,45 @@ class GameController
         return response()->json([
             'game_id' => $game->id,
             'message' => 'Rematch game created'
+        ]);
+    }
+
+    /**
+     * Get game history for the authenticated user.
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        $games = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
+            ->where(function($q) use ($user) {
+                $q->where('white_player_id', $user->id)
+                  ->orWhere('black_player_id', $user->id);
+            })
+            ->whereIn('status', ['completed', 'aborted'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return response()->json($games);
+    }
+
+    /**
+     * Get an archived game for review.
+     */
+    public function showArchived(Request $request, string $gameId): JsonResponse
+    {
+        $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])->find($gameId);
+
+        if (!$game) {
+            return response()->json(['message' => 'Game not found'], 404);
+        }
+
+        if ($game->status === 'active') {
+            return response()->json(['message' => 'Game is still active'], 400);
+        }
+
+        return response()->json([
+            'game' => $game
         ]);
     }
 }
