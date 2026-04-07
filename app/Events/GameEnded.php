@@ -31,6 +31,8 @@ class GameEnded implements ShouldBroadcastNow
             'status' => $this->game->status,
             'result' => $this->game->result,
             'termination' => $this->game->termination,
+            'white_rating_change' => $this->game->white_rating_change,
+            'black_rating_change' => $this->game->black_rating_change,
         ];
     }
 }

@@ -76,33 +76,4 @@ class UserProfileController extends Controller
             'verified_organizer' => $user->verified_organizer,
         ]);
     }
-
-    public function updateRating(Request $request)
-    {
-        $request->validate([
-            'category' => 'required|in:bullet,blitz,rapid',
-            'rating' => 'required|integer|min:100|max:3500',
-            'rd' => 'required|integer|min:30|max:350',
-        ]);
-
-        $user = $request->user();
-        $category = $request->input('category');
-        $rating = $request->input('rating');
-        $rd = $request->input('rd');
-
-        $gamesColumn = $category . '_games';
-        $ratingColumn = $category . '_rating';
-        $rdColumn = $category . '_rd';
-
-        $user->update([
-            $ratingColumn => $rating,
-            $rdColumn => $rd,
-            $gamesColumn => ($user->$gamesColumn ?? 0) + 1,
-            'last_game_at' => now(),
-        ]);
-
-        $user->load(['preferences', 'progress', 'badges']);
-
-        return new UserProfileResource($user);
-    }
 }

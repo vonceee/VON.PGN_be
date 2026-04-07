@@ -26,6 +26,37 @@ class GameMatchmakingJob implements ShouldQueue
     ) {}
 
     /**
+     * Get the rating category and values for a user based on time control.
+     */
+    private function getRatingData($user): array
+    {
+        $parts = explode('+', $this->timeControl);
+        $baseSeconds = (int) ($parts[0] ?? 600);
+        $incrementSeconds = (int) ($parts[1] ?? 0);
+        $totalTime = $baseSeconds + ($incrementSeconds * 40); // Standard heuristic
+
+        if ($totalTime < 180) {
+            return [
+                'rating' => $user->bullet_rating ?? 1500,
+                'rd' => $user->bullet_rd ?? 350,
+                'vol' => 0.06, // Default volatility for new users
+            ];
+        } elseif ($totalTime < 600) {
+            return [
+                'rating' => $user->blitz_rating ?? 1500,
+                'rd' => $user->blitz_rd ?? 350,
+                'vol' => 0.06,
+            ];
+        } else {
+            return [
+                'rating' => $user->rapid_rating ?? 1500,
+                'rd' => $user->rapid_rd ?? 350,
+                'vol' => 0.06,
+            ];
+        }
+    }
+
+    /**
      * Parse a time control string (e.g., "600+5") into initial time and increment in ms.
      */
     private function parseTimeControl(string $timeControl): array
@@ -72,6 +103,12 @@ class GameMatchmakingJob implements ShouldQueue
 
                 $whiteId = rand(0, 1) ? $player1->id : $player2->id;
                 $blackId = $whiteId === $player1->id ? $player2->id : $player1->id;
+                
+                $whitePlayer = $whiteId === $player1->id ? $player1 : $player2;
+                $blackPlayer = $blackId === $player1->id ? $player1 : $player2;
+
+                $whiteRatingData = $this->getRatingData($whitePlayer);
+                $blackRatingData = $this->getRatingData($blackPlayer);
 
                 $timeData = $this->parseTimeControl($this->timeControl);
 
@@ -82,8 +119,12 @@ class GameMatchmakingJob implements ShouldQueue
                     'time_control' => $this->timeControl,
                     'initial_time_ms' => $timeData['initial_time_ms'],
                     'increment_ms' => $timeData['increment_ms'],
-                    'white_elo' => $player1->progress?->puzzle_rating ?? 1200,
-                    'black_elo' => $player2->progress?->puzzle_rating ?? 1200,
+                    'white_elo' => $whiteRatingData['rating'],
+                    'black_elo' => $blackRatingData['rating'],
+                    'white_rd' => $whiteRatingData['rd'],
+                    'black_rd' => $blackRatingData['rd'],
+                    'white_vol' => $whiteRatingData['vol'],
+                    'black_vol' => $blackRatingData['vol'],
                 ]);
 
                 broadcast(new GameMatched($game));

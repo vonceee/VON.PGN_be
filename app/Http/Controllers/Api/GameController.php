@@ -61,7 +61,8 @@ class GameController
 
             $timeControl = $request->input('time_control');
             $user = $request->user();
-            $elo = $user->progress?->puzzle_rating ?? 1200;
+            $ratingData = $this->getRatingData($user, $timeControl);
+            $elo = $ratingData['rating'];
 
             \Illuminate\Support\Facades\Log::info('seek called', ['user_id' => $user->id, 'time_control' => $timeControl]);
 
@@ -184,6 +185,12 @@ class GameController
 
                 $timeData = $this->parseTimeControl($timeControl);
 
+                $whitePlayer = $whiteId === $user->id ? $user : $opponentUser;
+                $blackPlayer = $blackId === $user->id ? $user : $opponentUser;
+
+                $whiteRatingData = $this->getRatingData($whitePlayer, $timeControl);
+                $blackRatingData = $this->getRatingData($blackPlayer, $timeControl);
+
                 $game = Game::create([
                     'white_player_id' => $whiteId,
                     'black_player_id' => $blackId,
@@ -191,10 +198,12 @@ class GameController
                     'time_control' => $timeControl,
                     'initial_time_ms' => $timeData['initial_time_ms'],
                     'increment_ms' => $timeData['increment_ms'],
-
-
-                    'white_elo' => $user->progress?->puzzle_rating ?? 1200,
-                    'black_elo' => $opponentUser->progress?->puzzle_rating ?? 1200,
+                    'white_elo' => $whiteRatingData['rating'],
+                    'black_elo' => $blackRatingData['rating'],
+                    'white_rd' => $whiteRatingData['rd'],
+                    'black_rd' => $blackRatingData['rd'],
+                    'white_vol' => $whiteRatingData['vol'],
+                    'black_vol' => $blackRatingData['vol'],
                     'white_last_heartbeat_at' => now(),
                     'black_last_heartbeat_at' => now(),
                 ]);
@@ -206,13 +215,19 @@ class GameController
                     'gameId' => $game->id,
                     'whitePlayer' => [
                         'userId' => $whiteId,
-                        'socketId' => '', // Will be set when players connect
-                        'name' => $whiteId === $user->id ? $user->name : $opponentUser->name
+                        'socketId' => '', 
+                        'name' => $whiteId === $user->id ? $user->name : $opponentUser->name,
+                        'rating' => $whiteRatingData['rating'],
+                        'rd' => $whiteRatingData['rd'],
+                        'vol' => $whiteRatingData['vol']
                     ],
                     'blackPlayer' => [
                         'userId' => $blackId,
-                        'socketId' => '', // Will be set when players connect
-                        'name' => $blackId === $user->id ? $user->name : $opponentUser->name
+                        'socketId' => '', 
+                        'name' => $blackId === $user->id ? $user->name : $opponentUser->name,
+                        'rating' => $blackRatingData['rating'],
+                        'rd' => $blackRatingData['rd'],
+                        'vol' => $blackRatingData['vol']
                     ],
                     'timeControl' => $timeControl,
                     'initialTimeMs' => $timeData['initial_time_ms'],
@@ -386,7 +401,8 @@ class GameController
 
             $opponentUser = $seek->user;
             $timeControl = $seek->time_control;
-            $elo = $user->progress?->puzzle_rating ?? 1200;
+            $ratingData = $this->getRatingData($user, $timeControl);
+            $elo = $ratingData['rating'];
 
             // Delete the accepted seek
             $seek->delete();
@@ -403,6 +419,12 @@ class GameController
 
             $timeData = $this->parseTimeControl($timeControl);
 
+            $whitePlayer = $whiteId === $user->id ? $user : $opponentUser;
+            $blackPlayer = $blackId === $user->id ? $user : $opponentUser;
+
+            $whiteRatingData = $this->getRatingData($whitePlayer, $timeControl);
+            $blackRatingData = $this->getRatingData($blackPlayer, $timeControl);
+
             $game = Game::create([
                 'white_player_id' => $whiteId,
                 'black_player_id' => $blackId,
@@ -410,8 +432,12 @@ class GameController
                 'time_control' => $timeControl,
                 'initial_time_ms' => $timeData['initial_time_ms'],
                 'increment_ms' => $timeData['increment_ms'],
-                'white_elo' => $user->progress?->puzzle_rating ?? 1200,
-                'black_elo' => $opponentUser->progress?->puzzle_rating ?? 1200,
+                'white_elo' => $whiteRatingData['rating'],
+                'black_elo' => $blackRatingData['rating'],
+                'white_rd' => $whiteRatingData['rd'],
+                'black_rd' => $blackRatingData['rd'],
+                'white_vol' => $whiteRatingData['vol'],
+                'black_vol' => $blackRatingData['vol'],
                 'white_last_heartbeat_at' => now(),
                 'black_last_heartbeat_at' => now(),
             ]);
@@ -422,13 +448,19 @@ class GameController
                     'gameId' => $game->id,
                     'whitePlayer' => [
                         'userId' => $whiteId,
-                        'socketId' => '', // Will be set when players connect
-                        'name' => $whiteId === $user->id ? $user->name : $opponentUser->name
+                        'socketId' => '', 
+                        'name' => $whiteId === $user->id ? $user->name : $opponentUser->name,
+                        'rating' => $whiteRatingData['rating'],
+                        'rd' => $whiteRatingData['rd'],
+                        'vol' => $whiteRatingData['vol']
                     ],
                     'blackPlayer' => [
                         'userId' => $blackId,
-                        'socketId' => '', // Will be set when players connect
-                        'name' => $blackId === $user->id ? $user->name : $opponentUser->name
+                        'socketId' => '', 
+                        'name' => $blackId === $user->id ? $user->name : $opponentUser->name,
+                        'rating' => $blackRatingData['rating'],
+                        'rd' => $blackRatingData['rd'],
+                        'vol' => $blackRatingData['vol']
                     ],
                     'timeControl' => $timeControl,
                     'initialTimeMs' => $timeData['initial_time_ms'],
@@ -496,10 +528,12 @@ class GameController
                 'white_player' => [
                     'id' => $game->whitePlayer->id,
                     'name' => $game->whitePlayer->name,
+                    'rating' => $game->white_elo,
                 ],
                 'black_player' => [
                     'id' => $game->blackPlayer->id,
                     'name' => $game->blackPlayer->name,
+                    'rating' => $game->black_elo,
                 ],
                 'status' => $game->status,
                 'time_control' => $game->time_control,
@@ -513,6 +547,8 @@ class GameController
                 'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
                 'result' => $game->result,
                 'termination' => $game->termination,
+                'white_rating_change' => $game->white_rating_change,
+                'black_rating_change' => $game->black_rating_change,
                 'my_color' => $game->getPlayerColor($user->id),
                 'legal_moves' => $gameData['legalMoves'] ?? [],
                 'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
@@ -554,10 +590,12 @@ class GameController
                     'white_player' => [
                         'id' => $game->whitePlayer->id,
                         'name' => $game->whitePlayer->name,
+                        'rating' => $game->white_elo,
                     ],
                     'black_player' => [
                         'id' => $game->blackPlayer->id,
                         'name' => $game->blackPlayer->name,
+                        'rating' => $game->black_elo,
                     ],
                     'status' => $game->status,
                     'time_control' => $game->time_control,
@@ -571,6 +609,8 @@ class GameController
                     'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
                     'result' => $game->result,
                     'termination' => $game->termination,
+                    'white_rating_change' => $game->white_rating_change,
+                    'black_rating_change' => $game->black_rating_change,
                     'my_color' => $game->getPlayerColor($user->id),
                     'legal_moves' => $gameData['legalMoves'] ?? [],
                     'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
@@ -694,7 +734,11 @@ class GameController
                         ]);
                         
                         // Trigger broadcast for frontend
-                        broadcast(new \App\Events\GameEnded($game));
+                        try {
+                            broadcast(new \App\Events\GameEnded($game));
+                        } catch (\Throwable $e) {
+                            \Illuminate\Support\Facades\Log::warning('GameEnded broadcast failed in fetchGameState: ' . $e->getMessage());
+                        }
                     }
                     
                     return $gameData;
@@ -819,5 +863,233 @@ class GameController
         ]);
         
         return false;
+    }
+
+    /**
+     * Get the rating category and values for a user based on time control.
+     */
+    private function getRatingData($user, string $timeControl): array
+    {
+        $parts = explode('+', $timeControl);
+        $baseSeconds = (int) ($parts[0] ?? 600);
+        $incrementSeconds = (int) ($parts[1] ?? 0);
+        $totalTime = $baseSeconds + ($incrementSeconds * 40);
+
+        if ($totalTime < 180) {
+            return [
+                'category' => 'bullet',
+                'rating' => $user->bullet_rating ?? 1500,
+                'rd' => $user->bullet_rd ?? 350,
+                'vol' => 0.06,
+            ];
+        } elseif ($totalTime < 600) {
+            return [
+                'category' => 'blitz',
+                'rating' => $user->blitz_rating ?? 1500,
+                'rd' => $user->blitz_rd ?? 350,
+                'vol' => 0.06,
+            ];
+        } else {
+            return [
+                'category' => 'rapid',
+                'rating' => $user->rapid_rating ?? 1500,
+                'rd' => $user->rapid_rd ?? 350,
+                'vol' => 0.06,
+            ];
+        }
+    }
+
+    /**
+     * Internal API for the chess microservice to report a completed game.
+     */
+    public function completeGameInternal(Request $request, string $gameId): JsonResponse
+    {
+        // Security check
+        $secret = $request->header('X-Internal-Secret');
+        if ($secret !== config('services.chess.internal_secret')) {
+            \Illuminate\Support\Facades\Log::warning('Unauthorized internal request!', [
+                'game_id' => $gameId,
+                'header' => $secret,
+                'ip' => $request->ip()
+            ]);
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        \Illuminate\Support\Facades\Log::info('Received game completion report', [
+            'game_id' => $gameId,
+            'payload' => $request->all()
+        ]);
+
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|string|in:completed,aborted',
+            'result' => 'nullable|string',
+            'termination' => 'nullable|string',
+            'rating_changes' => 'nullable|array',
+            'rating_changes.white' => 'integer',
+            'rating_changes.black' => 'integer',
+            'new_ratings' => 'nullable|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Invalid data', 'errors' => $validator->errors()], 422);
+        }
+
+        $game = Game::with(['whitePlayer', 'blackPlayer'])->find($gameId);
+        if (!$game) {
+            return response()->json(['message' => 'Game not found'], 404);
+        }
+
+        if ($game->status !== 'active') {
+             return response()->json(['message' => 'Game already finalized'], 409);
+        }
+
+        DB::transaction(function () use ($request, $game) {
+            $status = $request->input('status');
+            $ratingChanges = $request->input('rating_changes');
+            $newRatings = $request->input('new_ratings');
+
+            $game->update([
+                'status' => $status,
+                'result' => $request->input('result'),
+                'termination' => $request->input('termination'),
+                'white_rating_change' => $ratingChanges['white'] ?? null,
+                'black_rating_change' => $ratingChanges['black'] ?? null,
+            ]);
+
+            // Update user ratings if it was a ranked game (status=completed)
+            if ($status === 'completed' && $ratingChanges && $newRatings) {
+                $category = $this->getRatingData($game->whitePlayer, $game->time_control)['category'];
+                
+                // Update White Player
+                $whiteUser = $game->whitePlayer;
+                $whiteRatingColumn = "{$category}_rating";
+                $whiteRdColumn = "{$category}_rd";
+                $whiteGamesColumn = "{$category}_games";
+                
+                \Illuminate\Support\Facades\Log::info('Updating ratings', [
+                    'game_id' => $game->id,
+                    'category' => $category,
+                    'white_change' => $newRatings['white']['rating'] - ($whiteUser->$whiteRatingColumn ?? 1500),
+                    'black_change' => $newRatings['black']['rating'] - ($blackUser->$whiteRatingColumn ?? 1500)
+                ]);
+
+                $whiteUser->update([
+                    $whiteRatingColumn => $newRatings['white']['rating'],
+                    $whiteRdColumn => $newRatings['white']['rd'],
+                    $whiteGamesColumn => ($whiteUser->$whiteGamesColumn ?? 0) + 1,
+                    'last_game_at' => now(),
+                ]);
+
+                // Update Black Player
+                $blackUser = $game->blackPlayer;
+                $blackRatingColumn = "{$category}_rating";
+                $blackRdColumn = "{$category}_rd";
+                $blackGamesColumn = "{$category}_games";
+                
+                $blackUser->update([
+                    $blackRatingColumn => $newRatings['black']['rating'],
+                    $blackRdColumn => $newRatings['black']['rd'],
+                    $blackGamesColumn => ($blackUser->$blackGamesColumn ?? 0) + 1,
+                    'last_game_at' => now(),
+                ]);
+            }
+
+            \Illuminate\Support\Facades\Log::info('Game finalized successfully in Laravel', ['game_id' => $game->id]);
+
+            try {
+                broadcast(new \App\Events\GameEnded($game));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('GameEnded (internal) broadcast failed: ' . $e->getMessage());
+            }
+        });
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Internal endpoint for the microservice to create a new game (rematch).
+     */
+    public function createGameInternal(Request $request)
+    {
+        // 1. Verify internal secret
+        $secret = $request->header('X-Internal-Secret');
+        if ($secret !== config('services.chess.internal_secret')) {
+            return response()->json(['message' => 'Unauthorized internal request'], 401);
+        }
+
+        $validated = $request->validate([
+            'white_id' => 'required|exists:users,id',
+            'black_id' => 'required|exists:users,id',
+            'time_control' => 'required|string',
+        ]);
+
+        $whiteId = $validated['white_id'];
+        $blackId = $validated['black_id'];
+        $timeControl = $validated['time_control'];
+
+        $whitePlayer = \App\Models\User::find($whiteId);
+        $blackPlayer = \App\Models\User::find($blackId);
+
+        $timeData = $this->parseTimeControl($timeControl);
+        $whiteRatingData = $this->getRatingData($whitePlayer, $timeControl);
+        $blackRatingData = $this->getRatingData($blackPlayer, $timeControl);
+
+        $game = \App\Models\Game::create([
+            'white_player_id' => $whiteId,
+            'black_player_id' => $blackId,
+            'status' => 'active',
+            'time_control' => $timeControl,
+            'initial_time_ms' => $timeData['initial_time_ms'],
+            'increment_ms' => $timeData['increment_ms'],
+            'white_elo' => $whiteRatingData['rating'],
+            'black_elo' => $blackRatingData['rating'],
+            'white_rd' => $whiteRatingData['rd'],
+            'black_rd' => $blackRatingData['rd'],
+            'white_vol' => $whiteRatingData['vol'],
+            'black_vol' => $blackRatingData['vol'],
+            'white_last_heartbeat_at' => now(),
+            'black_last_heartbeat_at' => now(),
+        ]);
+
+        // Notify microservice to initialize the game state
+        $created = $this->callMicroserviceWithRetry('/api/create-game', [
+            'gameId' => $game->id,
+            'whitePlayer' => [
+                'userId' => $whiteId,
+                'socketId' => '', 
+                'name' => $whitePlayer->name,
+                'rating' => $whiteRatingData['rating'],
+                'rd' => $whiteRatingData['rd'],
+                'vol' => $whiteRatingData['vol']
+            ],
+            'blackPlayer' => [
+                'userId' => $blackId,
+                'socketId' => '', 
+                'name' => $blackPlayer->name,
+                'rating' => $blackRatingData['rating'],
+                'rd' => $blackRatingData['rd'],
+                'vol' => $blackRatingData['vol']
+            ],
+            'timeControl' => $timeControl,
+            'initialTimeMs' => $timeData['initial_time_ms'],
+            'incrementMs' => $timeData['increment_ms']
+        ], 'POST');
+
+        if (!$created) {
+            $game->delete();
+            return response()->json(['message' => 'Failed to initialize game in microservice'], 503);
+        }
+
+        // Broadcast MatchFound to both players
+        try {
+            broadcast(new \App\Events\GameMatched($game));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Rematch GameMatched broadcast failed: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'game_id' => $game->id,
+            'message' => 'Rematch game created'
+        ]);
     }
 }

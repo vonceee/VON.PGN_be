@@ -51,4 +51,8 @@ return [
         'token' => env('LICHESS_TOKEN'),
     ],
 
+    'chess' => [
+        'internal_secret' => env('INTERNAL_SECRET', 'v0n_ch3ss_s3cr3t_2026'),
+    ],
+
 ];
