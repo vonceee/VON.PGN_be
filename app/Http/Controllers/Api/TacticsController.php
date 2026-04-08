@@ -103,8 +103,8 @@ class TacticsController extends Controller
         $cacheDuration = 1800; // 30 minutes
 
         $cachedData = Cache::remember($cacheKey, $cacheDuration, function () use ($limit) {
-            // Top 10 by Rating
-            $topRating = UserProgress::with('user:id,name,email')
+            // Top 10 by Tactics Rating
+            $topTacticsRating = UserProgress::with('user:id,name,email')
                 ->orderBy('puzzle_rating', 'desc')
                 ->limit($limit)
                 ->get()
@@ -117,7 +117,7 @@ class TacticsController extends Controller
                     ];
                 });
 
-            // Top 10 by Streak
+            // Top 10 by Tactics Streak
             $topStreak = UserProgress::with('user:id,name,email')
                 ->orderBy('puzzle_streak', 'desc')
                 ->limit($limit)
@@ -131,25 +131,76 @@ class TacticsController extends Controller
                     ];
                 });
 
-            return ['rating' => $topRating, 'streak' => $topStreak];
+            // Top 10 by Bullet Rating
+            $topBulletRating = \App\Models\User::orderBy('bullet_rating', 'desc')
+                ->limit($limit)
+                ->get(['id', 'name', 'bullet_rating'])
+                ->map(function ($item, $index) {
+                    return [
+                        'rank' => $index + 1,
+                        'user_id' => $item->id,
+                        'username' => $item->name,
+                        'score' => $item->bullet_rating,
+                    ];
+                });
+
+            // Top 10 by Blitz Rating
+            $topBlitzRating = \App\Models\User::orderBy('blitz_rating', 'desc')
+                ->limit($limit)
+                ->get(['id', 'name', 'blitz_rating'])
+                ->map(function ($item, $index) {
+                    return [
+                        'rank' => $index + 1,
+                        'user_id' => $item->id,
+                        'username' => $item->name,
+                        'score' => $item->blitz_rating,
+                    ];
+                });
+
+            // Top 10 by Rapid Rating
+            $topRapidRating = \App\Models\User::orderBy('rapid_rating', 'desc')
+                ->limit($limit)
+                ->get(['id', 'name', 'rapid_rating'])
+                ->map(function ($item, $index) {
+                    return [
+                        'rank' => $index + 1,
+                        'user_id' => $item->id,
+                        'username' => $item->name,
+                        'score' => $item->rapid_rating,
+                    ];
+                });
+
+            return [
+                'tactics_rating' => $topTacticsRating,
+                'streak' => $topStreak,
+                'bullet_rating' => $topBulletRating,
+                'blitz_rating' => $topBlitzRating,
+                'rapid_rating' => $topRapidRating
+            ];
         });
 
-        $topRating = collect($cachedData['rating']);
+        $topTacticsRating = collect($cachedData['tactics_rating']);
         $topStreak = collect($cachedData['streak']);
+        $topBulletRating = collect($cachedData['bullet_rating']);
+        $topBlitzRating = collect($cachedData['blitz_rating']);
+        $topRapidRating = collect($cachedData['rapid_rating']);
 
         $user = $request->user('sanctum');
-        $myRatingStats = null;
+        $myTacticsRatingStats = null;
         $myStreakStats = null;
+        $myBulletRatingStats = null;
+        $myBlitzRatingStats = null;
+        $myRapidRatingStats = null;
 
         if ($user) {
             $userProgress = $user->progress ?? $user->progress()->firstOrCreate([]);
-            
-            // Calculate Rating Rank
-            $ratingRank = UserProgress::where('puzzle_rating', '>', $userProgress->puzzle_rating)->count() + 1;
-            $myRatingStats = [
-                'rank' => $ratingRank,
+
+            // Calculate Tactics Rating Rank
+            $tacticsRatingRank = UserProgress::where('puzzle_rating', '>', $userProgress->puzzle_rating)->count() + 1;
+            $myTacticsRatingStats = [
+                'rank' => $tacticsRatingRank,
                 'score' => $userProgress->puzzle_rating,
-                'in_top' => $ratingRank <= $limit
+                'in_top' => $tacticsRatingRank <= $limit
             ];
 
             // Calculate Streak Rank
@@ -159,14 +210,44 @@ class TacticsController extends Controller
                 'score' => $userProgress->puzzle_streak,
                 'in_top' => $streakRank <= $limit
             ];
+
+            // Calculate Bullet Rating Rank
+            $bulletRatingRank = \App\Models\User::where('bullet_rating', '>', $user->bullet_rating ?? 1500)->count() + 1;
+            $myBulletRatingStats = [
+                'rank' => $bulletRatingRank,
+                'score' => $user->bullet_rating ?? 1500,
+                'in_top' => $bulletRatingRank <= $limit
+            ];
+
+            // Calculate Blitz Rating Rank
+            $blitzRatingRank = \App\Models\User::where('blitz_rating', '>', $user->blitz_rating ?? 1500)->count() + 1;
+            $myBlitzRatingStats = [
+                'rank' => $blitzRatingRank,
+                'score' => $user->blitz_rating ?? 1500,
+                'in_top' => $blitzRatingRank <= $limit
+            ];
+
+            // Calculate Rapid Rating Rank
+            $rapidRatingRank = \App\Models\User::where('rapid_rating', '>', $user->rapid_rating ?? 1500)->count() + 1;
+            $myRapidRatingStats = [
+                'rank' => $rapidRatingRank,
+                'score' => $user->rapid_rating ?? 1500,
+                'in_top' => $rapidRatingRank <= $limit
+            ];
         }
 
         return response()->json([
-            'rating' => $topRating,
+            'tactics_rating' => $topTacticsRating,
             'streak' => $topStreak,
+            'bullet_rating' => $topBulletRating,
+            'blitz_rating' => $topBlitzRating,
+            'rapid_rating' => $topRapidRating,
             'my_stats' => [
-                'rating' => $myRatingStats,
+                'tactics_rating' => $myTacticsRatingStats,
                 'streak' => $myStreakStats,
+                'bullet_rating' => $myBulletRatingStats,
+                'blitz_rating' => $myBlitzRatingStats,
+                'rapid_rating' => $myRapidRatingStats,
             ]
         ]);
     }
