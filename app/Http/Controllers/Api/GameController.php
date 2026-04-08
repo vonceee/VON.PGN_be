@@ -511,9 +511,10 @@ class GameController
             return response()->json(['message' => 'Game not found'], 404);
         }
 
-        if (!$game->isPlayer($user->id)) {
-            return response()->json(['message' => 'Not authorized to view this game'], 403);
-        }
+        // Spectators are allowed to view the game
+        // if (!$game->isPlayer($user->id)) {
+        //     return response()->json(['message' => 'Not authorized to view this game'], 403);
+        // }
 
         // Get real game state from microservice
         $gameData = $this->fetchGameState($game);
