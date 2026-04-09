@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\LichessProxyController;
 use App\Http\Controllers\Api\CoachApplicationController;
 use App\Http\Controllers\Api\Admin\CoachApplicationController as AdminCoachApplicationController;
+use App\Http\Controllers\Api\BroadcastController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -96,6 +97,14 @@ Route::get('/tournaments/bookmarks', [TournamentBookmarkController::class, 'inde
     ->middleware('auth:sanctum');
 Route::get('/tournaments/{slug}', [TournamentController::class, 'show']);
 Route::get('/users/{id}/tournaments', [TournamentController::class, 'userTournaments']);
+
+// Broadcast routes (read-only)
+Route::get('/broadcasts', [BroadcastController::class, 'index'])->middleware('throttle:100,1');
+Route::get('/broadcasts/{identifier}', [BroadcastController::class, 'show'])->middleware('throttle:100,1');
+Route::get('/broadcasts/{broadcastId}/live', [BroadcastController::class, 'live'])->middleware('throttle:300,1');
+Route::get('/broadcasts/{broadcastId}/leaderboard', [BroadcastController::class, 'leaderboard'])->middleware('throttle:100,1');
+Route::match(['get', 'options'], '/broadcasts/{broadcastId}/stream', [BroadcastController::class, 'stream'])->middleware('throttle:1000,1'); // High limit for SSE
+Route::get('/broadcasts/round/{roundId}/pgn', [BroadcastController::class, 'roundPgnById']);
 
 // PayMongo webhook (no auth - verified by PayMongo signature)
 Route::post('/webhooks/paymongo', [PaymentController::class, 'webhook']);

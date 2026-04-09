@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
+        // Apply CORS globally to all routes
+        $middleware->append(\App\Http\Middleware\CorsMiddleware::class);
         $middleware->api(prepend: [
             \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         ]);
