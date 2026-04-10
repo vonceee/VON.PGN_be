@@ -25,7 +25,7 @@ use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\LichessProxyController;
 use App\Http\Controllers\Api\CoachApplicationController;
 use App\Http\Controllers\Api\Admin\CoachApplicationController as AdminCoachApplicationController;
-use App\Http\Controllers\Api\BroadcastController;
+use App\Http\Controllers\Api\MatchmakingController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -98,13 +98,6 @@ Route::get('/tournaments/bookmarks', [TournamentBookmarkController::class, 'inde
 Route::get('/tournaments/{slug}', [TournamentController::class, 'show']);
 Route::get('/users/{id}/tournaments', [TournamentController::class, 'userTournaments']);
 
-// Broadcast routes (read-only)
-Route::get('/broadcasts', [BroadcastController::class, 'index'])->middleware('throttle:100,1');
-Route::get('/broadcasts/{identifier}', [BroadcastController::class, 'show'])->middleware('throttle:100,1');
-Route::get('/broadcasts/{broadcastId}/live', [BroadcastController::class, 'live'])->middleware('throttle:300,1');
-Route::get('/broadcasts/{broadcastId}/leaderboard', [BroadcastController::class, 'leaderboard'])->middleware('throttle:100,1');
-Route::match(['get', 'options'], '/broadcasts/{broadcastId}/stream', [BroadcastController::class, 'stream'])->middleware('throttle:1000,1'); // High limit for SSE
-Route::get('/broadcasts/round/{roundId}/pgn', [BroadcastController::class, 'roundPgnById']);
 
 // PayMongo webhook (no auth - verified by PayMongo signature)
 Route::post('/webhooks/paymongo', [PaymentController::class, 'webhook']);
@@ -134,11 +127,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chat/status', [ChatController::class, 'updateStatus']);
     Route::get('/chat/unread', [ChatController::class, 'unreadCount']);
 
-    // Game routes
-    Route::get('/seeks', [GameController::class, 'seeks']);
-    Route::post('/seeks/{seekId}/join', [GameController::class, 'joinSeek']);
-    Route::post('/game/seek', [GameController::class, 'seek']);
-    Route::post('/game/seek/cancel', [GameController::class, 'cancelSeek']);
+    // Matchmaking routes
+    Route::get('/seeks', [MatchmakingController::class, 'index']);
+    Route::post('/seeks/{seekId}/join', [MatchmakingController::class, 'joinSeek']);
+    Route::post('/game/seek', [MatchmakingController::class, 'seek']);
+    Route::post('/game/seek/cancel', [MatchmakingController::class, 'cancelSeek']);
     Route::get('/game/active', [GameController::class, 'activeGame']);
     Route::get('/game/{gameId}', [GameController::class, 'show']);
     Route::post('/game/{gameId}/resign', [GameController::class, 'resign']);

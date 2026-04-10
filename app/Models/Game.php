@@ -107,4 +107,33 @@ class Game extends Model
         return $this->black_last_heartbeat_at !== null
             && $this->black_last_heartbeat_at->diffInSeconds(now()) > 30;
     }
+
+    /**
+     * Format game data for frontend display.
+     */
+    public function toDisplayArray(int $userId): array
+    {
+        return [
+            'id' => $this->id,
+            'white_player' => $this->whitePlayer ? [
+                'id' => $this->whitePlayer->id,
+                'name' => $this->whitePlayer->name,
+                'rating' => $this->white_elo
+            ] : null,
+            'black_player' => $this->blackPlayer ? [
+                'id' => $this->blackPlayer->id,
+                'name' => $this->blackPlayer->name,
+                'rating' => $this->black_elo
+            ] : null,
+            'status' => $this->status,
+            'time_control' => $this->time_control,
+            'initial_time_ms' => $this->initial_time_ms,
+            'increment_ms' => $this->increment_ms,
+            'result' => $this->result,
+            'termination' => $this->termination,
+            'moves' => $this->moves ?? [],
+            'my_color' => $this->getPlayerColor($userId),
+            'created_at' => $this->created_at->toIso8601String(),
+        ];
+    }
 }

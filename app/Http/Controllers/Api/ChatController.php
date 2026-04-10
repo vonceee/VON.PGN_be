@@ -2,10 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\MessageRead;
-use App\Events\MessageSent;
-use App\Events\TypingIndicator;
-use App\Events\UserStatusChanged;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ConversationResource;
 use App\Http\Resources\MessageResource;
@@ -155,7 +151,6 @@ class ChatController extends Controller
 
         $message->load('sender');
 
-        broadcast(new MessageSent($message))->toOthers();
 
         return response()->json([
             'data' => new MessageResource($message),
@@ -189,7 +184,6 @@ class ChatController extends Controller
                     ->where('status', '!=', 'read')
                     ->update(['status' => 'read']);
 
-                broadcast(new MessageRead($conversation->id, $user->id, $lastReadMessageId));
             }
         });
 
@@ -208,12 +202,6 @@ class ChatController extends Controller
 
         $isTyping = $request->boolean('is_typing', true);
 
-        broadcast(new TypingIndicator(
-            $conversation->id,
-            $user->id,
-            $user->name,
-            $isTyping,
-        ));
 
         return response()->json(['ok' => true]);
     }
@@ -228,11 +216,6 @@ class ChatController extends Controller
             'last_seen_at' => $isOnline ? null : now(),
         ]);
 
-        broadcast(new UserStatusChanged(
-            $user->id,
-            $isOnline,
-            $isOnline ? null : now()->toISOString(),
-        ));
 
         return response()->json(['ok' => true]);
     }

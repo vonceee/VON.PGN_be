@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Events\GameMatched;
 use App\Models\Game;
 use App\Models\GameSeek;
 
@@ -127,7 +126,6 @@ class GameMatchmakingJob implements ShouldQueue
                     'black_vol' => $blackRatingData['vol'],
                 ]);
 
-                broadcast(new GameMatched($game));
 
                 Log::info("Game matched: {$game->id} - {$player1->name} vs {$player2->name}");
 
