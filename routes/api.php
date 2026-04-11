@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\LichessProxyController;
 use App\Http\Controllers\Api\CoachApplicationController;
 use App\Http\Controllers\Api\Admin\CoachApplicationController as AdminCoachApplicationController;
 use App\Http\Controllers\Api\MatchmakingController;
+use App\Http\Controllers\Api\StudyController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -154,6 +155,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Tournament bookmark routes
     Route::post('/tournaments/{slug}/bookmark', [TournamentBookmarkController::class, 'toggle']);
+
+    // Study routes
+    Route::get('/studies', [StudyController::class, 'index']);
+    Route::post('/studies', [StudyController::class, 'store']);
+    Route::get('/studies/{study}', [StudyController::class, 'show']);
+    Route::put('/studies/{study}', [StudyController::class, 'update']);
+    Route::delete('/studies/{study}', [StudyController::class, 'destroy']);
+    Route::post('/studies/{study}/chapters', [StudyController::class, 'addChapter']);
+    Route::put('/studies/{study}/chapters/{chapter}', [StudyController::class, 'updateChapter']);
+    Route::delete('/studies/{study}/chapters/{chapter}', [StudyController::class, 'deleteChapter']);
 });
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {

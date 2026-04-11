@@ -141,16 +141,27 @@ class GameController
      */
     public function completeGameInternal(Request $request, string $gameId): JsonResponse
     {
+
         if ($request->header('X-Internal-Secret') !== config('services.chess.internal_secret')) {
              return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $game = Game::with(['whitePlayer', 'blackPlayer'])->find($gameId);
-        if (!$game || $game->status !== 'active') {
-            return response()->json(['message' => 'Invalid game state'], 409);
+        
+        if (!$game) {
+            return response()->json(['message' => 'Game not found'], 404);
         }
 
-        DB::transaction(function () use ($request, $game) {
+
+        // If game is already completed/aborted, we check if it already has rating changes saved.
+        // If it doesn't have rating changes but we have them now, we should proceed to update!
+        if ($game->status !== 'active') {
+            if ($game->white_rating_change !== null || $game->status === 'aborted') {
+                return response()->json(['success' => true, 'already_processed' => true]);
+            }
+        }
+
+        DB::transaction(function () use ($request, $game, $gameId) {
             $status = $request->input('status');
             $ratingChanges = $request->input('rating_changes');
             $newRatings = $request->input('new_ratings');
@@ -167,7 +178,6 @@ class GameController
             if ($status === 'completed' && $ratingChanges && $newRatings) {
                 $this->updatePlayerRatings($game, $newRatings);
             }
-
         });
 
         return response()->json(['success' => true]);
@@ -242,15 +252,22 @@ class GameController
 
     private function updatePlayerRatings(Game $game, array $newRatings): void
     {
-        $category = $this->getRatingData($game->whitePlayer, $game->time_control)['category'];
+        $ratingData = $this->getRatingData($game->whitePlayer, $game->time_control);
+        $category = $ratingData['category'];
         
-        foreach (['white' => $game->whitePlayer, 'black' => $game->blackPlayer] as $key => $user) {
-            $user->update([
-                "{$category}_rating" => $newRatings[$key]['rating'],
-                "{$category}_rd" => $newRatings[$key]['rd'],
-                "{$category}_games" => ($user->{"{$category}_games"} ?? 0) + 1,
-                'last_game_at' => now(),
-            ]);
+
+        try {
+            foreach (['white' => $game->whitePlayer, 'black' => $game->blackPlayer] as $key => $user) {
+                $oldRating = $user->{"{$category}_rating"};
+                $user->update([
+                    "{$category}_rating" => $newRatings[$key]['rating'],
+                    "{$category}_rd" => $newRatings[$key]['rd'],
+                    "{$category}_games" => ($user->{"{$category}_games"} ?? 0) + 1,
+                    'last_game_at' => now(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error("[Game] Failed to update player ratings: " . $e->getMessage());
         }
     }
 
@@ -266,7 +283,16 @@ class GameController
     private function getRatingData($user, string $timeControl): array
     {
         $parts = explode('+', $timeControl);
-        $totalTime = (int)($parts[0] ?? 600) + ((int)($parts[1] ?? 0) * 40);
+        $initial = (int)($parts[0] ?? 600);
+        $inc = (int)($parts[1] ?? 0);
+        
+        // If the initial time is > 3600, it's almost certainly milliseconds (since 3600s = 1 hour)
+        if ($initial > 3600) {
+            $initial = $initial / 1000;
+            $inc = $inc / 1000;
+        }
+
+        $totalTime = $initial + ($inc * 40);
         $category = $totalTime < 180 ? 'bullet' : ($totalTime < 600 ? 'blitz' : 'rapid');
 
         return [
