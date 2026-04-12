@@ -40,6 +40,7 @@ class Tournament extends Model
         'standings',
         'created_by',
         'view_count',
+        'poster_settings',
     ];
 
     protected $casts = [
@@ -56,6 +57,7 @@ class Tournament extends Model
         'schedule' => 'array',
         'standings' => 'array',
         'view_count' => 'integer',
+        'poster_settings' => 'array',
     ];
 
     public function scopeUpcoming($query)

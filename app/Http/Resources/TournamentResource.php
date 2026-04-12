@@ -41,6 +41,7 @@ class TournamentResource extends JsonResource
             'schedule' => $this->schedule,
             'winner' => $this->winner,
             'standings' => $this->standings,
+            'poster_settings' => $this->poster_settings,
             'viewCount' => $this->view_count ?? 0,
             'createdAt' => $this->created_at?->toIso8601String(),
             'creator' => $this->whenLoaded('creator', function () {

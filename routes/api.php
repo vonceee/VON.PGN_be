@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TournamentBookmarkController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\LichessProxyController;
+use App\Http\Controllers\Api\MediaProxyController;
 use App\Http\Controllers\Api\CoachApplicationController;
 use App\Http\Controllers\Api\Admin\CoachApplicationController as AdminCoachApplicationController;
 use App\Http\Controllers\Api\MatchmakingController;
@@ -99,6 +100,10 @@ Route::get('/tournaments/bookmarks', [TournamentBookmarkController::class, 'inde
 Route::get('/tournaments/{slug}', [TournamentController::class, 'show']);
 Route::get('/users/{id}/tournaments', [TournamentController::class, 'userTournaments']);
 
+// Media Proxy (Public with CORS)
+Route::get('/media/{type}/{filename}', [MediaProxyController::class, 'serve'])
+    ->where('filename', '.*');
+
 
 // PayMongo webhook (no auth - verified by PayMongo signature)
 Route::post('/webhooks/paymongo', [PaymentController::class, 'webhook']);
@@ -148,6 +153,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my/tournaments/{id}', [UserTournamentController::class, 'show']);
     Route::put('/my/tournaments/{id}', [UserTournamentController::class, 'update']);
     Route::delete('/my/tournaments/{id}', [UserTournamentController::class, 'destroy']);
+    Route::post('/my/tournaments/media', [UserTournamentController::class, 'uploadMedia']);
 
     // Payment routes
     Route::post('/payments/checkout', [PaymentController::class, 'createCheckout']);
@@ -172,6 +178,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::apiResource('chapters', AdminChapterController::class);
     Route::apiResource('lessons', AdminLessonController::class);
     Route::apiResource('tournaments', AdminTournamentController::class);
+    Route::post('tournaments/media', [AdminTournamentController::class, 'uploadMedia']);
     Route::post('resolve-maps-url', [MapsUrlResolverController::class, 'resolve']);
     Route::post('users/{id}/toggle-verified-organizer', [UserProfileController::class, 'toggleVerifiedOrganizer']);
 

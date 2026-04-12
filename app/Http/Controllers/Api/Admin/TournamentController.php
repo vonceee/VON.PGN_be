@@ -70,6 +70,7 @@ class TournamentController extends Controller
             'schedule' => 'nullable|array',
             'winner' => 'nullable|string|max:255',
             'standings' => 'nullable|array',
+            'poster_settings' => 'nullable|array',
         ]);
 
         if (empty($validated['slug'])) {
@@ -133,6 +134,7 @@ class TournamentController extends Controller
             'schedule' => 'nullable|array',
             'winner' => 'nullable|string|max:255',
             'standings' => 'nullable|array',
+            'poster_settings' => 'nullable|array',
         ]);
 
         if (empty($validated['slug']) && isset($validated['name'])) {
@@ -159,5 +161,29 @@ class TournamentController extends Controller
         $tournament->delete();
 
         return response()->json(['message' => 'Tournament deleted']);
+    }
+    public function uploadMedia(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|image|max:10240', // 10MB max
+            'type' => 'required|string|in:background,logo',
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $type = $request->input('type');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            
+            // Subfolder based on type
+            $folder = 'tournaments/' . ($type === 'background' ? 'backgrounds' : 'logos');
+            $path = $file->storeAs($folder, $filename, 'public');
+            
+            // Return Proxy URL with CORS support
+            $url = url('/api/media/' . $type . '/' . $filename);
+            
+            return response()->json(['url' => $url]);
+        }
+
+        return response()->json(['message' => 'No file uploaded'], 400);
     }
 }
