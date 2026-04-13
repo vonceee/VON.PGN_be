@@ -28,6 +28,10 @@ use App\Http\Controllers\Api\CoachApplicationController;
 use App\Http\Controllers\Api\Admin\CoachApplicationController as AdminCoachApplicationController;
 use App\Http\Controllers\Api\MatchmakingController;
 use App\Http\Controllers\Api\StudyController;
+use App\Http\Controllers\Api\ArenaController;
+use App\Http\Controllers\Api\UserArenaController;
+use App\Http\Controllers\Api\AcademyEnrollmentController;
+use App\Http\Controllers\Api\Admin\AcademyEnrollmentController as AdminAcademyEnrollmentController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -100,10 +104,22 @@ Route::get('/tournaments/bookmarks', [TournamentBookmarkController::class, 'inde
 Route::get('/tournaments/{slug}', [TournamentController::class, 'show']);
 Route::get('/users/{id}/tournaments', [TournamentController::class, 'userTournaments']);
 
+// Arena routes
+Route::get('/arenas', [ArenaController::class, 'index']);
+Route::get('/arenas/{slug}', [ArenaController::class, 'show']);
+
 // Media Proxy (Public with CORS)
 Route::get('/media/{type}/{filename}', [MediaProxyController::class, 'serve'])
     ->where('filename', '.*');
+// Academy Enrollment
+Route::post('/academy/enroll', [AcademyEnrollmentController::class, 'store'])
+    ->middleware('throttle:5,60');
 
+
+
+// Academy Enrollment
+Route::post('/academy/enroll', [AcademyEnrollmentController::class, 'store'])
+    ->middleware('throttle:5,60');
 
 // PayMongo webhook (no auth - verified by PayMongo signature)
 Route::post('/webhooks/paymongo', [PaymentController::class, 'webhook']);
@@ -155,6 +171,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/my/tournaments/{id}', [UserTournamentController::class, 'destroy']);
     Route::post('/my/tournaments/media', [UserTournamentController::class, 'uploadMedia']);
 
+    // User arena management
+    Route::get('/my/arenas', [UserArenaController::class, 'index']);
+    Route::post('/my/arenas', [UserArenaController::class, 'store']);
+    Route::get('/my/arenas/{id}', [UserArenaController::class, 'show']);
+    Route::put('/my/arenas/{id}', [UserArenaController::class, 'update']);
+    Route::delete('/my/arenas/{id}', [UserArenaController::class, 'destroy']);
+
     // Payment routes
     Route::post('/payments/checkout', [PaymentController::class, 'createCheckout']);
     Route::get('/payments/history', [PaymentController::class, 'history']);
@@ -188,9 +211,16 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/coach-applications/{id}/approve', [AdminCoachApplicationController::class, 'approve']);
     Route::post('/coach-applications/{id}/reject', [AdminCoachApplicationController::class, 'reject']);
     Route::delete('/coach-applications/{id}', [AdminCoachApplicationController::class, 'destroy']);
+
+    // Academy Enrollments management
+    Route::get('/academy/enrollments', [AdminAcademyEnrollmentController::class, 'index']);
+    Route::get('/academy/enrollments/{id}', [AdminAcademyEnrollmentController::class, 'show']);
+    Route::put('/academy/enrollments/{id}', [AdminAcademyEnrollmentController::class, 'update']);
+    Route::delete('/academy/enrollments/{id}', [AdminAcademyEnrollmentController::class, 'destroy']);
 });
 
 // Internal microservice routes
-Route::post('/internal/game/{gameId}/complete', [GameController::class, 'completeGameInternal']);
-Route::post('/internal/game/create', [GameController::class, 'createGameInternal']);
-
+    Route::post('/internal/game/{gameId}/complete', [GameController::class, 'completeGameInternal']);
+    Route::post('/internal/game/create', [GameController::class, 'createGameInternal']);
+    Route::post('/internal/arena/match', [GameController::class, 'createArenaMatchInternal']);
+    Route::post('/internal/arena/{id}/finalize', [ArenaController::class, 'finalizeArenaInternal']);

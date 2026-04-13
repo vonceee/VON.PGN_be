@@ -31,6 +31,7 @@ class Game extends Model
         'black_rating_change',
         'white_last_heartbeat_at',
         'black_last_heartbeat_at',
+        'arena_id',
     ];
 
     protected function casts(): array
@@ -133,6 +134,7 @@ class Game extends Model
             'termination' => $this->termination,
             'moves' => $this->moves ?? [],
             'my_color' => $this->getPlayerColor($userId),
+            'arena_id' => $this->arena_id,
             'created_at' => $this->created_at->toIso8601String(),
         ];
     }

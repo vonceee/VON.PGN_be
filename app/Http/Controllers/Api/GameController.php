@@ -234,6 +234,45 @@ class GameController
         return response()->json(['game_id' => $game->id, 'message' => 'Rematch game created']);
     }
 
+    /**
+     * Internal endpoint for the microservice to register a new Arena match.
+     */
+    public function createArenaMatchInternal(Request $request): JsonResponse
+    {
+        if ($request->header('X-Internal-Secret') !== config('services.chess.internal_secret')) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $whitePlayer = \App\Models\User::findOrFail($request->white_id);
+        $blackPlayer = \App\Models\User::findOrFail($request->black_id);
+        $timeControl = $request->time_control || '3+0';
+        $arenaId = $request->arena_id;
+
+        $timeData = $this->parseTimeControl($timeControl);
+        $whiteRating = $this->getRatingData($whitePlayer, $timeControl);
+        $blackRating = $this->getRatingData($blackPlayer, $timeControl);
+
+        $game = Game::create([
+            'white_player_id' => $whitePlayer->id,
+            'black_player_id' => $blackPlayer->id,
+            'status' => 'active',
+            'time_control' => $timeControl,
+            'initial_time_ms' => $timeData['initial_time_ms'],
+            'increment_ms' => $timeData['increment_ms'],
+            'white_elo' => $whiteRating['rating'],
+            'black_elo' => $blackRating['rating'],
+            'white_rd' => $whiteRating['rd'],
+            'black_rd' => $blackRating['rd'],
+            'white_vol' => $whiteRating['vol'],
+            'black_vol' => $blackRating['vol'],
+            'white_last_heartbeat_at' => now(),
+            'black_last_heartbeat_at' => now(),
+            'arena_id' => $arenaId
+        ]);
+
+        return response()->json(['game_id' => $game->id, 'message' => 'Arena match registered']);
+    }
+
     public function history(Request $request): JsonResponse
     {
         $user = $request->user();
