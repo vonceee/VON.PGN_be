@@ -47,7 +47,7 @@ class GameController
                     'moves' => $gameData['moves'] ?? [],
                     'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
                     'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
-                    'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
+                    'server_timestamp' => $gameData['serverTimestamp'] ?? null,
                     'legal_moves' => $gameData['legalMoves'] ?? [],
                     'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
                 ]),
@@ -84,7 +84,7 @@ class GameController
                     'moves' => $gameData['moves'] ?? [],
                     'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
                     'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
-                    'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
+                    'server_timestamp' => $gameData['serverTimestamp'] ?? null,
                     'legal_moves' => $gameData['legalMoves'] ?? [],
                     'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
                 ]),
@@ -256,7 +256,7 @@ class GameController
 
         $whitePlayer = \App\Models\User::findOrFail($request->white_id);
         $blackPlayer = \App\Models\User::findOrFail($request->black_id);
-        $timeControl = $request->time_control || '3+0';
+        $timeControl = $request->input('time_control', '3+0');
         $arenaId = $request->arena_id;
 
         $timeData = $this->parseTimeControl($timeControl);

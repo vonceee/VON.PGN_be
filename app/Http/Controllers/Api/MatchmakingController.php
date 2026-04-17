@@ -68,7 +68,7 @@ class MatchmakingController
                         'moves' => $gameData['moves'] ?? [],
                         'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
                         'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
-                        'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
+                        'server_timestamp' => $gameData['serverTimestamp'] ?? null,
                         'my_color' => $existingGame->getPlayerColor($user->id),
                         'legal_moves' => $gameData['legalMoves'] ?? [],
                         'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
@@ -256,6 +256,7 @@ class MatchmakingController
             'message' => 'Match found!',
             'game_id' => $game->id,
             'matched' => true,
+            'game' => $game->load(['whitePlayer:id,name', 'blackPlayer:id,name'])
         ]);
     }
 
