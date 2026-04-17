@@ -112,7 +112,7 @@ class Game extends Model
     /**
      * Format game data for frontend display.
      */
-    public function toDisplayArray(int $userId): array
+    public function toDisplayArray(?int $userId): array
     {
         return [
             'id' => $this->id,

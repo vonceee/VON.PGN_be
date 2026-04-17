@@ -26,25 +26,36 @@ class GameController
     public function show(Request $request, string $gameId): JsonResponse
     {
         $user = $request->user();
+
+        // Prevent PostgreSQL crashes with invalid UUID formats
+        if (!\Illuminate\Support\Str::isUuid($gameId)) {
+            return response()->json(['message' => 'Invalid game ID format'], 400);
+        }
+
         $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])->find($gameId);
 
         if (!$game) return response()->json(['message' => 'Game not found'], 404);
 
-        $gameData = $this->microservice->fetchGameState($game);
-        if (!$gameData) return response()->json(['message' => 'Game state unavailable'], 410);
+        try {
+            $gameData = $this->microservice->fetchGameState($game);
+            if (!$gameData) return response()->json(['message' => 'Game state unavailable'], 410);
 
-        return response()->json([
-            'game' => array_merge($game->toDisplayArray($user->id), [
-                'fen' => $gameData['fen'],
-                'turn' => $gameData['turn'],
-                'moves' => $gameData['moves'] ?? [],
-                'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
-                'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
-                'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
-                'legal_moves' => $gameData['legalMoves'] ?? [],
-                'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
-            ]),
-        ]);
+            return response()->json([
+                'game' => array_merge($game->toDisplayArray($user?->id), [
+                    'fen' => $gameData['fen'],
+                    'turn' => $gameData['turn'],
+                    'moves' => $gameData['moves'] ?? [],
+                    'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
+                    'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
+                    'server_timestamp' => $gameData['serverTimestamp'] ?? now()->toIso8601String(),
+                    'legal_moves' => $gameData['legalMoves'] ?? [],
+                    'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
+                ]),
+            ]);
+        } catch (\Exception $e) {
+            Log::error("[GameController] Failed to fetch game state: " . $e->getMessage());
+            return response()->json(['message' => 'Could not retrieve live game state'], 503);
+        }
     }
 
     /**
