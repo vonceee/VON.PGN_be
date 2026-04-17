@@ -7,6 +7,7 @@ use App\Http\Resources\TournamentResource;
 use App\Models\Tournament;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class TournamentController extends Controller
@@ -145,9 +146,46 @@ class TournamentController extends Controller
             $validated['slug'] = $this->generateUniqueSlug($validated['slug'], $tournament->id);
         }
 
+        // Detect and cleanup replaced media
+        if (isset($validated['poster_settings'])) {
+            $this->cleanupReplacedMedia($tournament, $validated['poster_settings']);
+        }
+
         $tournament->update($validated);
 
         return new TournamentResource($tournament);
+    }
+
+    private function cleanupReplacedMedia(Tournament $tournament, array $newPs)
+    {
+        $oldPs = $tournament->poster_settings;
+        if (!$oldPs) return;
+        if (is_string($oldPs)) {
+            $oldPs = json_decode($oldPs, true);
+        }
+        if (!$oldPs) return;
+
+        // Cleanup custom poster if replaced
+        if (!empty($oldPs['customPosterUrl']) && 
+            (!isset($newPs['customPosterUrl']) || $newPs['customPosterUrl'] !== $oldPs['customPosterUrl'])) {
+            $this->deleteMediaByUrl($oldPs['customPosterUrl']);
+        }
+
+        // Cleanup background if replaced
+        if (!empty($oldPs['backgroundImage']) && 
+            (!isset($newPs['backgroundImage']) || $newPs['backgroundImage'] !== $oldPs['backgroundImage'])) {
+            $this->deleteMediaByUrl($oldPs['backgroundImage']);
+        }
+
+        // Cleanup logos if removed
+        if (!empty($oldPs['logos']) && is_array($oldPs['logos'])) {
+            $newLogos = $newPs['logos'] ?? [];
+            foreach ($oldPs['logos'] as $oldLogo) {
+                if (!in_array($oldLogo, $newLogos)) {
+                    $this->deleteMediaByUrl($oldLogo);
+                }
+            }
+        }
     }
 
     public function destroy(Request $request, $id)
@@ -158,15 +196,65 @@ class TournamentController extends Controller
             throw new AccessDeniedHttpException('You do not have permission to delete this tournament.');
         }
 
+        // Cleanup media before deleting
+        $this->cleanupTournamentMedia($tournament);
+
         $tournament->delete();
 
         return response()->json(['message' => 'Tournament deleted']);
+    }
+
+    private function cleanupTournamentMedia(Tournament $tournament)
+    {
+        $ps = $tournament->poster_settings;
+        if (!$ps) return;
+
+        if (is_string($ps)) {
+            $ps = json_decode($ps, true);
+        }
+
+        if (!$ps) return;
+
+        // Delete background
+        if (!empty($ps['backgroundImage'])) {
+            $this->deleteMediaByUrl($ps['backgroundImage']);
+        }
+        if (!empty($ps['background_image'])) { // snake_case check
+            $this->deleteMediaByUrl($ps['background_image']);
+        }
+
+        // Delete custom poster
+        if (!empty($ps['customPosterUrl'])) {
+            $this->deleteMediaByUrl($ps['customPosterUrl']);
+        }
+
+        // Delete logos
+        if (!empty($ps['logos']) && is_array($ps['logos'])) {
+            foreach ($ps['logos'] as $logoUrl) {
+                $this->deleteMediaByUrl($logoUrl);
+            }
+        }
+    }
+
+    private function deleteMediaByUrl(string $url)
+    {
+        // Only delete if it's an internal URL pointing to our media API
+        if (str_contains($url, '/api/media/')) {
+            $parts = explode('/api/media/', $url);
+            if (count($parts) > 1) {
+                $path = $parts[1]; // e.g. "posters/filename.png"
+                $fullPath = "tournaments/{$path}";
+                if (Storage::disk('public')->exists($fullPath)) {
+                    Storage::disk('public')->delete($fullPath);
+                }
+            }
+        }
     }
     public function uploadMedia(Request $request)
     {
         $request->validate([
             'file' => 'required|image|max:10240', // 10MB max
-            'type' => 'required|string|in:background,logo',
+            'type' => 'required|string|in:background,logo,poster',
         ]);
 
         if ($request->hasFile('file')) {
@@ -174,12 +262,18 @@ class TournamentController extends Controller
             $type = $request->input('type');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
             
-            // Subfolder based on type
-            $folder = 'tournaments/' . ($type === 'background' ? 'backgrounds' : 'logos');
+            $folderMap = [
+                'background' => 'backgrounds',
+                'logo' => 'logos',
+                'poster' => 'posters'
+            ];
+
+            $subFolder = $folderMap[$type] ?? 'misc';
+            $folder = 'tournaments/' . $subFolder;
             $path = $file->storeAs($folder, $filename, 'public');
             
             // Return Proxy URL with CORS support
-            $url = url('/api/media/' . $type . '/' . $filename);
+            $url = url('/api/media/' . $subFolder . '/' . $filename);
             
             return response()->json(['url' => $url]);
         }
