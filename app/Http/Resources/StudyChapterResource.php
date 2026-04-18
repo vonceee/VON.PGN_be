@@ -14,13 +14,23 @@ class StudyChapterResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Synthesizing a root node for Lichess compatibility
+        $root = [
+            'id' => '',
+            'ply' => 0,
+            'fen' => $this->initial_fen,
+            'children' => $this->moves ?? []
+        ];
+
         return [
-            'id' => $this->id,
-            'study_id' => $this->study_id,
+            'id' => (string)$this->id,
+            'study_id' => (string)$this->study_id,
             'name' => $this->name,
             'initial_fen' => $this->initial_fen,
             'current_fen' => $this->current_fen,
-            'moves' => $this->moves,
+            'moves' => $this->moves ?? [],
+            'treeParts' => [$root], // Lichess expects an array where the first item is root
+            'tags' => [], // PGN tags
             'order' => $this->order,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

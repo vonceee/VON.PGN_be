@@ -19,6 +19,7 @@ class StudyResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'visibility' => $this->visibility,
+            'user_id' => $this->user_id, // ADDED THIS
             'owner' => [
                 'id' => $this->owner->id,
                 'name' => $this->owner->name,
