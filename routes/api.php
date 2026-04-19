@@ -188,6 +188,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Study routes
     Route::get('/studies', [StudyController::class, 'index']);
     Route::post('/studies', [StudyController::class, 'store']);
+    Route::post('/studies/{study}/import-pgn', [StudyController::class, 'importPgn']);
+    Route::get('/studies/{study}/export-pgn', [StudyController::class, 'exportPgn']);
     Route::get('/studies/{study}', [StudyController::class, 'show']);
     Route::put('/studies/{study}', [StudyController::class, 'update']);
     Route::delete('/studies/{study}', [StudyController::class, 'destroy']);
