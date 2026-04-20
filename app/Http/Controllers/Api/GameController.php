@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Game;
+use App\Models\GameSeek;
+use App\Models\User;
 use App\Services\ChessMicroservice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -72,7 +74,20 @@ class GameController
                 })
                 ->first();
 
-            if (!$game) return response()->json(['game' => null]);
+            if (!$game) {
+                // FALLBACK: If no active game, check if we should match with a bot
+                $seek = GameSeek::where('user_id', $user->id)->first();
+                if ($seek && $seek->created_at->diffInSeconds(now()) > 15) {
+                    $bot = User::where('is_bot', true)->inRandomOrder()->first();
+                    if ($bot) {
+                        Log::info("[Matchmaking] Fallback bot match for user {$user->id}");
+                        $seek->delete();
+                        return $this->initializeBotGame($user, $bot, $seek->time_control);
+                    }
+                }
+                
+                return response()->json(['game' => null]);
+            }
 
             $gameData = $this->microservice->fetchGameState($game);
             if (!$gameData) return response()->json(['game' => null]);
@@ -298,6 +313,72 @@ class GameController
     {
         $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])->findOrFail($gameId);
         return response()->json(['game' => $game]);
+    }
+
+    private function initializeBotGame($user, $bot, string $timeControl): JsonResponse
+    {
+        // For bots, we can either randomize or just let the human be white
+        $whiteId = rand(0, 1) ? $user->id : $bot->id;
+        $blackId = $whiteId === $user->id ? $bot->id : $user->id;
+
+        $timeData = $this->parseTimeControl($timeControl);
+        $whitePlayer = $whiteId === $user->id ? $user : $bot;
+        $blackPlayer = $blackId === $user->id ? $user : $bot;
+
+        $whiteRating = $this->getRatingData($whitePlayer, $timeControl);
+        $blackRating = $this->getRatingData($blackPlayer, $timeControl);
+
+        $game = Game::create([
+            'white_player_id' => $whiteId,
+            'black_player_id' => $blackId,
+            'status' => 'active',
+            'time_control' => $timeControl,
+            'initial_time_ms' => $timeData['initial_time_ms'],
+            'increment_ms' => $timeData['increment_ms'],
+            'white_elo' => $whiteRating['rating'],
+            'black_elo' => $blackRating['rating'],
+            'white_rd' => $whiteRating['rd'],
+            'black_rd' => $blackRating['rd'],
+            'white_vol' => $whiteRating['vol'],
+            'black_vol' => $blackRating['vol'],
+            'white_last_heartbeat_at' => now(),
+            'black_last_heartbeat_at' => now(),
+        ]);
+
+        $created = $this->microservice->callWithRetry('/api/create-game', [
+            'gameId' => $game->id,
+            'whitePlayer' => [
+                'userId' => $whiteId,
+                'name' => $whitePlayer->name,
+                'isBot' => $whiteId === $bot->id,
+                'rating' => $whiteRating['rating'],
+                'rd' => $whiteRating['rd'],
+                'vol' => $whiteRating['vol']
+            ],
+            'blackPlayer' => [
+                'userId' => $blackId,
+                'name' => $blackPlayer->name,
+                'isBot' => $blackId === $bot->id,
+                'rating' => $blackRating['rating'],
+                'rd' => $blackRating['rd'],
+                'vol' => $blackRating['vol']
+            ],
+            'timeControl' => $timeControl,
+            'initialTimeMs' => $timeData['initial_time_ms'],
+            'incrementMs' => $timeData['increment_ms']
+        ]);
+
+        if (!$created) {
+            $game->delete();
+            return response()->json(['message' => 'Initialization failed'], 503);
+        }
+
+        return response()->json([
+            'message' => 'Match found!',
+            'game_id' => $game->id,
+            'matched' => true,
+            'game' => $game->load(['whitePlayer:id,name', 'blackPlayer:id,name'])
+        ]);
     }
 
     private function updatePlayerRatings(Game $game, array $newRatings): void

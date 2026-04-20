@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Game;
 use App\Models\GameSeek;
+use App\Models\User;
 use App\Services\ChessMicroservice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -106,6 +107,14 @@ class MatchmakingController
 
             if ($matchResult) {
                 return $this->initializeGame($user, $matchResult['opponent'], $timeControl, $matchResult['matchedSeekId']);
+            }
+
+            // FALLBACK: Match with a bot immediately if no human found
+            $bot = User::where('is_bot', true)->inRandomOrder()->first();
+            if ($bot) {
+                Log::info("[Matchmaking] Instant bot match for user {$user->id} with bot {$bot->id}");
+                $seek->delete();
+                return $this->initializeBotGame($user, $bot, $timeControl);
             }
 
             return response()->json([
@@ -281,5 +290,69 @@ class MatchmakingController
         } else {
             return ['category' => 'rapid', 'rating' => $user->rapid_rating ?? 1500, 'rd' => $user->rapid_rd ?? 350, 'vol' => 0.06];
         }
+    }
+    private function initializeBotGame($user, $bot, string $timeControl): JsonResponse
+    {
+        $whiteId = rand(0, 1) ? $user->id : $bot->id;
+        $blackId = $whiteId === $user->id ? $bot->id : $user->id;
+
+        $timeData = $this->parseTimeControl($timeControl);
+        $whitePlayer = $whiteId === $user->id ? $user : $bot;
+        $blackPlayer = $blackId === $user->id ? $user : $bot;
+
+        $whiteRating = $this->getRatingData($whitePlayer, $timeControl);
+        $blackRating = $this->getRatingData($blackPlayer, $timeControl);
+
+        $game = Game::create([
+            'white_player_id' => $whiteId,
+            'black_player_id' => $blackId,
+            'status' => 'active',
+            'time_control' => $timeControl,
+            'initial_time_ms' => $timeData['initial_time_ms'],
+            'increment_ms' => $timeData['increment_ms'],
+            'white_elo' => $whiteRating['rating'],
+            'black_elo' => $blackRating['rating'],
+            'white_rd' => $whiteRating['rd'],
+            'black_rd' => $blackRating['rd'],
+            'white_vol' => $whiteRating['vol'],
+            'black_vol' => $blackRating['vol'],
+            'white_last_heartbeat_at' => now(),
+            'black_last_heartbeat_at' => now(),
+        ]);
+
+        $created = $this->microservice->callWithRetry('/api/create-game', [
+            'gameId' => $game->id,
+            'whitePlayer' => [
+                'userId' => $whiteId,
+                'name' => $whitePlayer->name,
+                'isBot' => $whiteId === $bot->id,
+                'rating' => $whiteRating['rating'],
+                'rd' => $whiteRating['rd'],
+                'vol' => $whiteRating['vol']
+            ],
+            'blackPlayer' => [
+                'userId' => $blackId,
+                'name' => $blackPlayer->name,
+                'isBot' => $blackId === $bot->id,
+                'rating' => $blackRating['rating'],
+                'rd' => $blackRating['rd'],
+                'vol' => $blackRating['vol']
+            ],
+            'timeControl' => $timeControl,
+            'initialTimeMs' => $timeData['initial_time_ms'],
+            'incrementMs' => $timeData['increment_ms']
+        ]);
+
+        if (!$created) {
+            $game->delete();
+            return response()->json(['message' => 'Initialization failed'], 503);
+        }
+
+        return response()->json([
+            'message' => 'Match found!',
+            'game_id' => $game->id,
+            'matched' => true,
+            'game' => $game->load(['whitePlayer:id,name', 'blackPlayer:id,name'])
+        ]);
     }
 }
