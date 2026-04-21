@@ -115,6 +115,8 @@ class MatchmakingController
                 Log::info("[Matchmaking] Instant bot match for user {$user->id} with bot {$bot->id}");
                 $seek->delete();
                 return $this->initializeBotGame($user, $bot, $timeControl);
+            } else {
+                Log::warning("[Matchmaking] No bots found in database for user {$user->id}. Ensure BotUserSeeder has been run.");
             }
 
             return response()->json([

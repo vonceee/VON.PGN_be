@@ -41,7 +41,9 @@ class ChessMicroservice
                 
                 // Longer timeouts for cold-start: 5s, 10s, 15s, 15s, 15s
                 $timeout = $attempt < 4 ? $attempt * 5 : 15;
-                $response = Http::timeout($timeout)->get($url);
+                $response = Http::timeout($timeout)
+                    ->withHeaders(['X-Internal-Secret' => config('services.chess.internal_secret')])
+                    ->get($url);
 
                 if ($response->successful()) {
                     $gameData = $response->json();
@@ -117,8 +119,12 @@ class ChessMicroservice
                 
                 $timeout = $attempt < 4 ? $attempt * 5 : 15;
                 $response = $method === 'POST' 
-                    ? Http::timeout($timeout)->post($url, $data)
-                    : Http::timeout($timeout)->get($url);
+                    ? Http::timeout($timeout)
+                        ->withHeaders(['X-Internal-Secret' => config('services.chess.internal_secret')])
+                        ->post($url, $data)
+                    : Http::timeout($timeout)
+                        ->withHeaders(['X-Internal-Secret' => config('services.chess.internal_secret')])
+                        ->get($url);
 
                 if ($response->successful()) {
                     return true;
