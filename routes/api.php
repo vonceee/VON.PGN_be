@@ -185,12 +185,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Tournament bookmark routes
     Route::post('/tournaments/{slug}/bookmark', [TournamentBookmarkController::class, 'toggle']);
 
-    // Study routes
-    Route::get('/studies', [StudyController::class, 'index']);
+    // Tournament bookmark routes
+    Route::post('/tournaments/{slug}/bookmark', [TournamentBookmarkController::class, 'toggle']);
+});
+
+// Public/Guest accessible Study routes
+Route::get('/studies', [StudyController::class, 'index']);
+Route::get('/studies/{study}', [StudyController::class, 'show']);
+Route::get('/studies/{study}/export-pgn', [StudyController::class, 'exportPgn']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    // Authenticated Study routes
     Route::post('/studies', [StudyController::class, 'store']);
     Route::post('/studies/{study}/import-pgn', [StudyController::class, 'importPgn']);
-    Route::get('/studies/{study}/export-pgn', [StudyController::class, 'exportPgn']);
-    Route::get('/studies/{study}', [StudyController::class, 'show']);
     Route::put('/studies/{study}', [StudyController::class, 'update']);
     Route::delete('/studies/{study}', [StudyController::class, 'destroy']);
     Route::post('/studies/{study}/chapters', [StudyController::class, 'addChapter']);

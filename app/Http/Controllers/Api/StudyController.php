@@ -20,10 +20,10 @@ class StudyController extends Controller
         $query = Study::withCount('chapters')->orderBy('updated_at', 'desc');
 
         if ($request->has('my')) {
+            abort_if(!Auth::check(), 401, 'Authentication required');
             $query->where('user_id', Auth::id());
         } else {
-            $query->where('visibility', 'public')
-                  ->orWhere('user_id', Auth::id());
+            $query->where('visibility', 'public');
         }
 
         return StudyResource::collection($query->paginate(20));
