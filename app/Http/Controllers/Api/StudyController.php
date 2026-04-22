@@ -7,17 +7,24 @@ use App\Models\Study;
 use App\Models\StudyChapter;
 use App\Http\Resources\StudyResource;
 use App\Http\Resources\StudyChapterResource;
+use App\Http\Requests\StoreStudyRequest;
+use App\Http\Requests\UpdateStudyRequest;
+use App\Http\Requests\ImportPgnRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class StudyController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Display a listing of public studies.
      */
     public function index(Request $request)
     {
-        $query = Study::withCount('chapters')->orderBy('updated_at', 'desc');
+        $query = Study::with('owner')->withCount('chapters')->orderBy('updated_at', 'desc');
 
         if ($request->has('my')) {
             abort_if(!Auth::check(), 401, 'Authentication required');
@@ -32,14 +39,8 @@ class StudyController extends Controller
     /**
      * Store a newly created study in storage.
      */
-    public function store(Request $request)
+    public function store(StoreStudyRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'visibility' => 'required|in:public,private,unlisted',
-        ]);
-
         $study = Study::create([
             'user_id' => Auth::id(),
             'name' => $request->name,
@@ -53,7 +54,7 @@ class StudyController extends Controller
             'order' => 1,
         ]);
 
-        return new StudyResource($study->load('chapters'));
+        return new StudyResource($study->load(['owner', 'chapters']));
     }
 
     /**
@@ -61,30 +62,19 @@ class StudyController extends Controller
      */
     public function show(Study $study)
     {
-        // Check visibility
-        if ($study->visibility === 'private' && $study->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('view', $study);
 
-        return new StudyResource($study->load('chapters'));
+        return new StudyResource($study->load(['owner', 'chapters']));
     }
 
     /**
      * Update the specified study in storage.
      */
-    public function update(Request $request, Study $study)
+    public function update(UpdateStudyRequest $request, Study $study)
     {
-        if ($study->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('update', $study);
 
-        $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'visibility' => 'sometimes|required|in:public,private,unlisted',
-        ]);
-
-        $study->update($request->all());
+        $study->update($request->validated());
 
         return new StudyResource($study);
     }
@@ -94,9 +84,7 @@ class StudyController extends Controller
      */
     public function destroy(Study $study)
     {
-        if ($study->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('delete', $study);
 
         $study->delete();
 
@@ -108,9 +96,7 @@ class StudyController extends Controller
      */
     public function addChapter(Request $request, Study $study)
     {
-        if ($study->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('manageChapters', $study);
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -134,9 +120,7 @@ class StudyController extends Controller
      */
     public function updateChapter(Request $request, Study $study, StudyChapter $chapter)
     {
-        if ($study->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('manageChapters', $study);
 
         if ($chapter->study_id !== $study->id) {
             return response()->json(['message' => 'Chapter does not belong to this study'], 404);
@@ -158,9 +142,7 @@ class StudyController extends Controller
      */
     public function deleteChapter(Study $study, StudyChapter $chapter)
     {
-        if ($study->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('manageChapters', $study);
 
         if ($chapter->study_id !== $study->id) {
             return response()->json(['message' => 'Chapter does not belong to this study'], 404);
@@ -174,62 +156,61 @@ class StudyController extends Controller
     /**
      * Import a multi-game PGN into the study.
      */
-    public function importPgn(Request $request, Study $study)
+    public function importPgn(ImportPgnRequest $request, Study $study)
     {
-        if ($study->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $request->validate([
-            'pgn' => 'required|string',
-        ]);
+        $this->authorize('manageChapters', $study);
 
         $pgn = $request->pgn;
         
-        return DB::transaction(function () use ($pgn, $study) {
-            // Normalize newlines
-            $pgn = str_replace("\r\n", "\n", $pgn);
-            
-            // Split PGN by games.
-            $games = preg_split('/\n\n(?=\[)/', trim($pgn));
-            
-            $importedCount = 0;
-            $order = $study->chapters()->max('order') ?? 0;
+        try {
+            return DB::transaction(function () use ($pgn, $study) {
+                // Normalize newlines
+                $pgn = str_replace("\r\n", "\n", $pgn);
+                
+                // Split PGN by games. Improved regex to handle multiple newlines and whitespace.
+                $games = preg_split('/\n\s*\n(?=\[)/', trim($pgn));
+                
+                $importedCount = 0;
+                $order = $study->chapters()->max('order') ?? 0;
 
-            foreach ($games as $gameContent) {
-                if (empty(trim($gameContent))) continue;
+                foreach ($games as $gameContent) {
+                    if (empty(trim($gameContent))) continue;
 
-                // Extract tags
-                $tags = [];
-                preg_match_all('/\[(\w+)\s+"(.*)"\]/', $gameContent, $matches, PREG_SET_ORDER);
-                foreach ($matches as $match) {
-                    $tags[$match[1]] = $match[2];
+                    // Extract tags
+                    $tags = [];
+                    preg_match_all('/\[(\w+)\s+"(.*)"\]/', $gameContent, $matches, PREG_SET_ORDER);
+                    foreach ($matches as $match) {
+                        $tags[$match[1]] = $match[2];
+                    }
+
+                    $name = $tags['ChapterName'] ?? $tags['Event'] ?? ('Chapter ' . ($order + 1));
+                    if (isset($tags['StudyName']) && str_starts_with($name, $tags['StudyName'])) {
+                        $name = trim(str_replace($tags['StudyName'] . ':', '', $name));
+                        if (empty($name)) $name = $tags['ChapterName'] ?? 'Untitled';
+                    }
+
+                    $initialFen = $tags['FEN'] ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+                    $study->chapters()->create([
+                        'name' => $name,
+                        'initial_fen' => $initialFen,
+                        'current_fen' => $initialFen,
+                        'moves' => ['pgn' => $gameContent],
+                        'order' => ++$order,
+                    ]);
+
+                    $importedCount++;
                 }
 
-                $name = $tags['ChapterName'] ?? $tags['Event'] ?? ('Chapter ' . ($order + 1));
-                if (isset($tags['StudyName']) && str_starts_with($name, $tags['StudyName'])) {
-                    $name = trim(str_replace($tags['StudyName'] . ':', '', $name));
-                    if (empty($name)) $name = $tags['ChapterName'] ?? 'Untitled';
-                }
-
-                $initialFen = $tags['FEN'] ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-
-                $study->chapters()->create([
-                    'name' => $name,
-                    'initial_fen' => $initialFen,
-                    'current_fen' => $initialFen,
-                    'moves' => ['pgn' => $gameContent],
-                    'order' => ++$order,
+                return response()->json([
+                    'message' => "Successfully imported {$importedCount} chapters.",
+                    'study' => new StudyResource($study->load(['owner', 'chapters']))
                 ]);
-
-                $importedCount++;
-            }
-
-            return response()->json([
-                'message' => "Successfully imported {$importedCount} chapters.",
-                'study' => new StudyResource($study->load('chapters'))
-            ]);
-        });
+            });
+        } catch (\Exception $e) {
+            Log::error("PGN Import Failed for Study {$study->id}: " . $e->getMessage());
+            return response()->json(['message' => 'Failed to import PGN. Please ensure the format is valid.'], 500);
+        }
     }
 
     /**

@@ -20,11 +20,13 @@ class StudyResource extends JsonResource
             'description' => $this->description,
             'visibility' => $this->visibility,
             'user_id' => $this->user_id, // ADDED THIS
-            'owner' => [
-                'id' => $this->owner->id,
-                'name' => $this->owner->name,
-            ],
-            'chapters_count' => $this->chapters_count ?? $this->chapters()->count(),
+            'owner' => $this->whenLoaded('owner', function() {
+                return [
+                    'id' => $this->owner->id,
+                    'name' => $this->owner->name,
+                ];
+            }),
+            'chapters_count' => $this->chapters_count ?? ($this->relationLoaded('chapters') ? $this->chapters->count() : $this->chapters()->count()),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'chapters' => StudyChapterResource::collection($this->whenLoaded('chapters')),
