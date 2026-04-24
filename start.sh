@@ -4,12 +4,8 @@ set -e
 echo "Running migrations..."
 php artisan migrate --force
 
-echo "Seeding bots..."
-php artisan db:seed --class=BotUserSeeder --force
-
 echo "Clearing caches..."
 php artisan config:cache
-php artisan route:cache
 php artisan view:cache
 
 echo "Starting Apache..."

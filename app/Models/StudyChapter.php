@@ -15,6 +15,7 @@ class StudyChapter extends Model
         'name',
         'initial_fen',
         'current_fen',
+        'orientation',
         'moves',
         'order'
     ];

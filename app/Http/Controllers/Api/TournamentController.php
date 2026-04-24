@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TournamentResource;
 use App\Models\Tournament;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class TournamentController extends Controller
@@ -42,7 +43,17 @@ class TournamentController extends Controller
 
     public function userTournaments(string $id)
     {
-        $tournaments = Tournament::where('created_by', $id)
+        if (is_numeric($id)) {
+            $user = User::find($id);
+        } else {
+            $user = User::where('name', $id)->first();
+        }
+
+        if (!$user) {
+            return response()->json(['data' => []]);
+        }
+
+        $tournaments = Tournament::where('created_by', $user->id)
             ->with('creator')
             ->orderBy('start_date', 'desc')
             ->get();

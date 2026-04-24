@@ -63,14 +63,13 @@ class MatchmakingController
                     'message' => 'You already have an active game',
                     'game_id' => $existingGame->id,
                     'matched' => true,
-                    'existing_game' => array_merge($existingGame->toArray(), [
+                    'existing_game' => array_merge($existingGame->toDisplayArray($user->id), [
                         'fen' => $gameData['fen'],
                         'turn' => $gameData['turn'],
                         'moves' => $gameData['moves'] ?? [],
                         'white_time_remaining_ms' => $gameData['whiteTimeRemainingMs'],
                         'black_time_remaining_ms' => $gameData['blackTimeRemainingMs'],
                         'server_timestamp' => $gameData['serverTimestamp'] ?? null,
-                        'my_color' => $existingGame->getPlayerColor($user->id),
                         'legal_moves' => $gameData['legalMoves'] ?? [],
                         'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
                     ]),
@@ -109,14 +108,17 @@ class MatchmakingController
                 return $this->initializeGame($user, $matchResult['opponent'], $timeControl, $matchResult['matchedSeekId']);
             }
 
-            // FALLBACK: Match with a bot immediately if no human found
-            $bot = User::where('is_bot', true)->inRandomOrder()->first();
-            if ($bot) {
-                Log::info("[Matchmaking] Instant bot match for user {$user->id} with bot {$bot->id}");
-                $seek->delete();
-                return $this->initializeBotGame($user, $bot, $timeControl);
-            } else {
-                Log::warning("[Matchmaking] No bots found in database for user {$user->id}. Ensure BotUserSeeder has been run.");
+            // FALLBACK: Match with a bot if allowed and no human found
+            $allowBot = $request->boolean('allow_bot', false);
+            if ($allowBot) {
+                $bot = User::where('is_bot', true)->inRandomOrder()->first();
+                if ($bot) {
+                    Log::info("[Matchmaking] Bot match for user {$user->id} with bot {$bot->id}");
+                    $seek->delete();
+                    return $this->initializeBotGame($user, $bot, $timeControl);
+                } else {
+                    Log::warning("[Matchmaking] No bots found in database for user {$user->id}. Ensure BotUserSeeder has been run.");
+                }
             }
 
             return response()->json([
@@ -267,7 +269,7 @@ class MatchmakingController
             'message' => 'Match found!',
             'game_id' => $game->id,
             'matched' => true,
-            'game' => $game->load(['whitePlayer:id,name', 'blackPlayer:id,name'])
+            'game' => $game->toDisplayArray($user->id)
         ]);
     }
 
@@ -354,7 +356,7 @@ class MatchmakingController
             'message' => 'Match found!',
             'game_id' => $game->id,
             'matched' => true,
-            'game' => $game->load(['whitePlayer:id,name', 'blackPlayer:id,name'])
+            'game' => $game->toDisplayArray($user->id)
         ]);
     }
 }

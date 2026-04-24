@@ -28,6 +28,7 @@ class StudyChapterResource extends JsonResource
             'name' => $this->name,
             'initial_fen' => $this->initial_fen,
             'current_fen' => $this->current_fen,
+            'orientation' => $this->orientation ?? 'white',
             'moves' => $this->moves ?? [],
             'treeParts' => [$root], // Lichess expects an array where the first item is root
             'tags' => [], // PGN tags

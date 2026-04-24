@@ -101,6 +101,7 @@ class StudyController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'initial_fen' => 'nullable|string',
+            'orientation' => 'nullable|string|in:white,black',
         ]);
 
         $order = $study->chapters()->max('order') + 1;
@@ -109,6 +110,7 @@ class StudyController extends Controller
             'name' => $request->name,
             'initial_fen' => $request->initial_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
             'current_fen' => $request->initial_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            'orientation' => $request->orientation ?? 'white',
             'order' => $order,
         ]);
 
@@ -129,6 +131,7 @@ class StudyController extends Controller
         $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'current_fen' => 'sometimes|required|string',
+            'orientation' => 'sometimes|required|string|in:white,black',
             'moves' => 'sometimes|required|array',
         ]);
 
@@ -208,8 +211,22 @@ class StudyController extends Controller
                 ]);
             });
         } catch (\Exception $e) {
-            Log::error("PGN Import Failed for Study {$study->id}: " . $e->getMessage());
-            return response()->json(['message' => 'Failed to import PGN. Please ensure the format is valid.'], 500);
+            Log::error("PGN Import Failed for Study {$study->id}: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'pgn_length' => strlen($pgn ?? ''),
+            ]);
+            
+            $message = 'Failed to import PGN. Please ensure the format is valid.';
+            $response = ['message' => $message];
+            
+            if (config('app.debug')) {
+                $response['debug'] = [
+                    'exception' => $e->getMessage(),
+                    'file' => $e->getFile() . ':' . $e->getLine(),
+                ];
+            }
+            
+            return response()->json($response, 500);
         }
     }
 
@@ -225,7 +242,7 @@ class StudyController extends Controller
 
         $study->load('chapters');
         $pgn = "";
-        $userName = Auth::user()->name ?? 'Unknown';
+        $userName = Auth::user()?->name ?? 'Unknown';
 
         foreach ($study->chapters as $chapter) {
             $pgn .= "[Event \"" . ($study->name . ": " . $chapter->name) . "\"]\n";

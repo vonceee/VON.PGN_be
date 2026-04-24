@@ -55,7 +55,13 @@ class UserProfileController extends Controller
 
     public function showProfile(string $id)
     {
-        $user = User::with(['preferences', 'progress', 'badges'])->find($id);
+        $userQuery = User::with(['preferences', 'progress', 'badges']);
+
+        if (is_numeric($id)) {
+            $user = $userQuery->find($id);
+        } else {
+            $user = $userQuery->where('name', $id)->first();
+        }
 
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
