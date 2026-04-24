@@ -15,7 +15,6 @@ class StoreStudyRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
             'visibility' => 'required|in:public,private,unlisted',
         ];
     }

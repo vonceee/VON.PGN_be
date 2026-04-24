@@ -15,7 +15,6 @@ class UpdateStudyRequest extends FormRequest
     {
         return [
             'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
             'visibility' => 'sometimes|required|in:public,private,unlisted',
         ];
     }

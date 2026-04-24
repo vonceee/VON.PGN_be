@@ -44,7 +44,6 @@ class StudyController extends Controller
         $study = Study::create([
             'user_id' => Auth::id(),
             'name' => $request->name,
-            'description' => $request->description,
             'visibility' => $request->visibility,
         ]);
 

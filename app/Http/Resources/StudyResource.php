@@ -17,7 +17,6 @@ class StudyResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'description' => $this->description,
             'visibility' => $this->visibility,
             'user_id' => $this->user_id, // ADDED THIS
             'owner' => $this->whenLoaded('owner', function() {
