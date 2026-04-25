@@ -29,6 +29,7 @@ class StudyResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'chapters' => StudyChapterResource::collection($this->whenLoaded('chapters')),
+            'collaborators' => UserProfileResource::collection($this->whenLoaded('collaborators')),
         ];
     }
 }

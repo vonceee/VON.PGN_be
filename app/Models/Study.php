@@ -32,4 +32,12 @@ class Study extends Model
     {
         return $this->hasMany(StudyChapter::class)->orderBy('order');
     }
+
+    /**
+     * Collaborators of the study.
+     */
+    public function collaborators()
+    {
+        return $this->belongsToMany(User::class, 'study_collaborators');
+    }
 }

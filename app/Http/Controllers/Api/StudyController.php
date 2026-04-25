@@ -24,7 +24,7 @@ class StudyController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Study::with('owner')->withCount('chapters')->orderBy('updated_at', 'desc');
+        $query = Study::with(['owner', 'collaborators'])->withCount('chapters')->orderBy('updated_at', 'desc');
 
         if ($request->has('my')) {
             abort_if(!Auth::check(), 401, 'Authentication required');
@@ -63,7 +63,7 @@ class StudyController extends Controller
     {
         $this->authorize('view', $study);
 
-        return new StudyResource($study->load(['owner', 'chapters']));
+        return new StudyResource($study->load(['owner', 'chapters', 'collaborators']));
     }
 
     /**
@@ -276,5 +276,33 @@ class StudyController extends Controller
         return response($pgn)
             ->header('Content-Type', 'application/x-chess-pgn')
             ->header('Content-Disposition', 'attachment; filename="' . str_replace(' ', '_', $study->name) . '.pgn"');
+    }
+
+    /**
+     * Add a collaborator to the study.
+     */
+    public function addCollaborator(Request $request, Study $study)
+    {
+        $this->authorize('update', $study);
+
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $study->collaborators()->syncWithoutDetaching([$request->user_id]);
+
+        return new StudyResource($study->load('collaborators'));
+    }
+
+    /**
+     * Remove a collaborator from the study.
+     */
+    public function removeCollaborator(Study $study, $userId)
+    {
+        $this->authorize('update', $study);
+
+        $study->collaborators()->detach($userId);
+
+        return response()->json(['message' => 'Collaborator removed successfully']);
     }
 }

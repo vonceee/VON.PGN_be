@@ -203,6 +203,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/studies/{study}/chapters', [StudyController::class, 'addChapter']);
     Route::put('/studies/{study}/chapters/{chapter}', [StudyController::class, 'updateChapter']);
     Route::delete('/studies/{study}/chapters/{chapter}', [StudyController::class, 'deleteChapter']);
+    Route::post('/studies/{study}/collaborators', [StudyController::class, 'addCollaborator']);
+    Route::delete('/studies/{study}/collaborators/{userId}', [StudyController::class, 'removeCollaborator']);
 });
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {

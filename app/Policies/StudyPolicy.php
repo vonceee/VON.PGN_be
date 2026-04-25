@@ -35,7 +35,11 @@ class StudyPolicy
             return true;
         }
 
-        return $user->id === $study->user_id;
+        if ($study->visibility === 'private') {
+            return $user->id === $study->user_id || $study->collaborators()->where('user_id', $user->id)->exists();
+        }
+
+        return false;
     }
 
     /**
@@ -67,6 +71,10 @@ class StudyPolicy
      */
     public function manageChapters(User $user, Study $study): bool
     {
-        return $user->id === $study->user_id;
+        if ($user->id === $study->user_id) {
+            return true;
+        }
+
+        return $study->collaborators()->where('user_id', $user->id)->exists();
     }
 }
