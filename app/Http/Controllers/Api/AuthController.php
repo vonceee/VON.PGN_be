@@ -16,6 +16,7 @@ class AuthController extends Controller
         $existingEmail = User::where('email', $request->email)->first();
 
         if ($existingEmail) {
+            \Illuminate\Support\Facades\Log::warning('Registration failed: Email already exists', ['email' => $request->email]);
             throw ValidationException::withMessages([
                 'email' => ['This email is already registered.'],
             ]);
@@ -24,23 +25,29 @@ class AuthController extends Controller
         $existingUsername = User::where('name', $request->username)->first();
 
         if ($existingUsername) {
+            \Illuminate\Support\Facades\Log::warning('Registration failed: Username already taken', ['username' => $request->username]);
             throw ValidationException::withMessages([
                 'username' => ['This username is already taken.'],
             ]);
         }
 
-        $request->validate([
-            'username' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9_-]+$/'],
-            'email' => 'required|string|email|max:255',
-            'password' => [
-                'required',
-                'confirmed',
-                \Illuminate\Validation\Rules\Password::min(8)
-                    ->letters()
-                    ->mixedCase()
-                    ->numbers()
-            ],
-        ]);
+        try {
+            $request->validate([
+                'username' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9_-]+$/'],
+                'email' => 'required|string|email|max:255',
+                'password' => [
+                    'required',
+                    'confirmed',
+                    \Illuminate\Validation\Rules\Password::min(8)
+                        ->letters()
+                        ->mixedCase()
+                        ->numbers()
+                ],
+            ]);
+        } catch (ValidationException $e) {
+            \Illuminate\Support\Facades\Log::warning('Registration validation failed', $e->errors());
+            throw $e;
+        }
 
         $user = User::create([
             'name' => $request->username,
@@ -61,6 +68,8 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        \Illuminate\Support\Facades\Log::info('User registered successfully', ['user_id' => $user->id, 'email' => $user->email]);
+
         return response()->json([
             'message' => 'User successfully registered',
             'access_token' => $token,
@@ -71,20 +80,28 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+            ]);
+        } catch (ValidationException $e) {
+            \Illuminate\Support\Facades\Log::warning('Login validation failed', $e->errors());
+            throw $e;
+        }
         
         $user = User::with(['preferences', 'progress', 'badges'])->where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
+            \Illuminate\Support\Facades\Log::warning('Login failed: Invalid credentials', ['email' => $request->email]);
             throw ValidationException::withMessages([
                 'email' => ['Invalid credentials.'],
             ]);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        \Illuminate\Support\Facades\Log::info('User logged in successfully', ['user_id' => $user->id]);
 
         return response()->json([
             'message' => 'Login successful',
