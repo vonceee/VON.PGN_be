@@ -24,11 +24,12 @@ class StudyController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::guard('sanctum')->user();
         $query = Study::with(['owner', 'collaborators'])->withCount('chapters')->orderBy('updated_at', 'desc');
 
         if ($request->has('my')) {
-            abort_if(!Auth::check(), 401, 'Authentication required');
-            $query->where('user_id', Auth::id());
+            abort_if(!$user, 401, 'Authentication required');
+            $query->where('user_id', $user->id);
         } else {
             $query->where('visibility', 'public');
         }
@@ -61,6 +62,10 @@ class StudyController extends Controller
      */
     public function show(Study $study)
     {
+        if ($user = Auth::guard('sanctum')->user()) {
+            Auth::setUser($user);
+        }
+
         $this->authorize('view', $study);
 
         return new StudyResource($study->load(['owner', 'chapters', 'collaborators']));
@@ -234,14 +239,16 @@ class StudyController extends Controller
      */
     public function exportPgn(Study $study)
     {
+        $user = Auth::guard('sanctum')->user();
+
         // Check visibility
-        if ($study->visibility === 'private' && $study->user_id !== Auth::id()) {
+        if ($study->visibility === 'private' && (!$user || $study->user_id !== $user->id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $study->load('chapters');
         $pgn = "";
-        $userName = Auth::user()?->name ?? 'Unknown';
+        $userName = $user ? $user->name : 'Unknown';
 
         foreach ($study->chapters as $chapter) {
             $pgn .= "[Event \"" . ($study->name . ": " . $chapter->name) . "\"]\n";
