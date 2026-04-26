@@ -175,4 +175,14 @@ class User extends Authenticatable implements MustVerifyEmail
             ],
         ];
     }
+
+    public function whiteActiveGame()
+    {
+        return $this->hasOne(Game::class, 'white_player_id')->where('status', 'active');
+    }
+
+    public function blackActiveGame()
+    {
+        return $this->hasOne(Game::class, 'black_player_id')->where('status', 'active');
+    }
 }

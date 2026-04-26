@@ -27,6 +27,8 @@ class UserProfileResource extends JsonResource
             'verified_organizer' => $this->verified_organizer ?? false,
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'createdAt' => $this->created_at->toIso8601String(),
+            'is_online' => $this->is_online ?? false,
+            'last_seen_at' => $this->last_seen_at?->toIso8601String(),
 
             // Follow stats
             'followers_count' => $this->followers_count ?? 0,
@@ -35,6 +37,9 @@ class UserProfileResource extends JsonResource
 
             // Live Chess Ratings
             'ratings' => $this->getLiveChessRatings(),
+
+            // Active Game Preview
+            'active_game' => $this->getActiveGameData($request),
 
             // Nested Preferences
             'preferences' => [
@@ -64,6 +69,36 @@ class UserProfileResource extends JsonResource
                     ];
                 }),
             ]
+        ];
+    }
+
+    private function getActiveGameData(Request $request): ?array
+    {
+        $game = $this->whiteActiveGame ?: $this->blackActiveGame;
+        if (!$game) return null;
+
+        $microservice = resolve(\App\Services\ChessMicroservice::class);
+        $liveState = null;
+
+        try {
+            $liveState = $microservice->fetchGameState($game);
+        } catch (\Exception $e) {
+            // Silently fail if microservice is down
+        }
+
+        return [
+            'id' => $game->id,
+            'white_player' => [
+                'id' => $game->whitePlayer->id,
+                'name' => $game->whitePlayer->name,
+            ],
+            'black_player' => [
+                'id' => $game->blackPlayer->id,
+                'name' => $game->blackPlayer->name,
+            ],
+            'fen' => $liveState['fen'] ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            'time_control' => $game->time_control,
+            'status' => $game->status,
         ];
     }
 }

@@ -12,7 +12,7 @@ class UserProfileController extends Controller
 {
     public function myProfile(Request $request)
     {
-        $user = User::with(['preferences', 'progress', 'badges'])->find($request->user()->id);
+        $user = User::with(['preferences', 'progress', 'badges', 'whiteActiveGame', 'whiteActiveGame.whitePlayer', 'whiteActiveGame.blackPlayer', 'blackActiveGame', 'blackActiveGame.whitePlayer', 'blackActiveGame.blackPlayer'])->find($request->user()->id);
 
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
@@ -55,7 +55,7 @@ class UserProfileController extends Controller
 
     public function showProfile(string $id)
     {
-        $userQuery = User::with(['preferences', 'progress', 'badges']);
+        $userQuery = User::with(['preferences', 'progress', 'badges', 'whiteActiveGame', 'whiteActiveGame.whitePlayer', 'whiteActiveGame.blackPlayer', 'blackActiveGame', 'blackActiveGame.whitePlayer', 'blackActiveGame.blackPlayer']);
 
         if (is_numeric($id)) {
             $user = $userQuery->find($id);
