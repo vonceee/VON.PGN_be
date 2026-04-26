@@ -29,7 +29,14 @@ class StudyResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'chapters' => StudyChapterResource::collection($this->whenLoaded('chapters')),
-            'collaborators' => UserProfileResource::collection($this->whenLoaded('collaborators')),
+            'collaborators' => $this->whenLoaded('collaborators', function() {
+                return $this->collaborators->map(function($user) {
+                    $userData = (new UserProfileResource($user))->toArray(request());
+                    return array_merge($userData, [
+                        'can_edit' => (bool) ($user->pivot->can_edit ?? true)
+                    ]);
+                });
+            }),
         ];
     }
 }

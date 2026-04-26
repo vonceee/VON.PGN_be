@@ -75,6 +75,9 @@ class StudyPolicy
             return true;
         }
 
-        return $study->collaborators()->where('user_id', $user->id)->exists();
+        return $study->collaborators()
+            ->where('user_id', $user->id)
+            ->wherePivot('can_edit', true)
+            ->exists();
     }
 }

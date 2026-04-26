@@ -38,6 +38,6 @@ class Study extends Model
      */
     public function collaborators()
     {
-        return $this->belongsToMany(User::class, 'study_collaborators');
+        return $this->belongsToMany(User::class, 'study_collaborators')->withPivot('can_edit')->withTimestamps();
     }
 }

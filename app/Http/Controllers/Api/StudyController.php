@@ -131,7 +131,7 @@ class StudyController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'current_fen' => 'sometimes|required|string',
             'orientation' => 'sometimes|required|string|in:white,black',
-            'moves' => 'sometimes|required|array',
+            'moves' => 'sometimes|array|nullable',
         ]);
 
         $chapter->update($request->all());
@@ -304,5 +304,23 @@ class StudyController extends Controller
         $study->collaborators()->detach($userId);
 
         return response()->json(['message' => 'Collaborator removed successfully']);
+    }
+
+    /**
+     * Update collaborator permissions.
+     */
+    public function updateCollaborator(Request $request, Study $study, $userId)
+    {
+        $this->authorize('update', $study);
+
+        $request->validate([
+            'can_edit' => 'required|boolean',
+        ]);
+
+        $study->collaborators()->updateExistingPivot($userId, [
+            'can_edit' => $request->can_edit,
+        ]);
+
+        return new StudyResource($study->load('collaborators'));
     }
 }
