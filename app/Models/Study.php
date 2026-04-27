@@ -40,4 +40,12 @@ class Study extends Model
     {
         return $this->belongsToMany(User::class, 'study_collaborators')->withPivot('can_edit')->withTimestamps();
     }
+
+    /**
+     * Chat messages in the study lobby.
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(StudyMessage::class);
+    }
 }

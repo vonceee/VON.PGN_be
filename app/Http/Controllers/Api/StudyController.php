@@ -330,4 +330,53 @@ class StudyController extends Controller
 
         return new StudyResource($study->load('collaborators'));
     }
+
+    /**
+     * Get chat messages for the study lobby.
+     */
+    public function messages(Study $study)
+    {
+        $this->authorize('view', $study);
+
+        $messages = $study->messages()
+            ->with('user:id,name')
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get()
+            ->reverse()
+            ->values();
+
+        return response()->json($messages);
+    }
+
+    /**
+     * Store a new chat message in the study lobby.
+     */
+    public function sendMessage(Request $request, Study $study)
+    {
+        $this->authorize('view', $study);
+
+        $request->validate([
+            'body' => 'required|string|max:1000',
+        ]);
+
+        $message = $study->messages()->create([
+            'user_id' => Auth::id(),
+            'body' => $request->body,
+        ]);
+
+        return response()->json($message->load('user:id,name'));
+    }
+
+    /**
+     * Clear all chat messages from the study lobby.
+     */
+    public function clearMessages(Study $study)
+    {
+        $this->authorize('update', $study);
+
+        $study->messages()->delete();
+
+        return response()->json(['message' => 'Chat cleared successfully']);
+    }
 }
