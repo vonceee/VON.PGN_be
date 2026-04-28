@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\ChapterController as AdminChapterController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Api\Admin\TournamentController as AdminTournamentController;
+use App\Http\Controllers\Api\Admin\CoachController as AdminCoachController;
+
 
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\MapsUrlResolverController;
@@ -223,6 +225,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::apiResource('chapters', AdminChapterController::class);
     Route::apiResource('lessons', AdminLessonController::class);
     Route::apiResource('tournaments', AdminTournamentController::class);
+    Route::apiResource('coaches', AdminCoachController::class);
+
     Route::post('tournaments/media', [AdminTournamentController::class, 'uploadMedia']);
     Route::post('resolve-maps-url', [MapsUrlResolverController::class, 'resolve']);
     
