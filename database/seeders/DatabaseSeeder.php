@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             MiddlegamePrinciplesSeeder::class,
             EndgamePrinciplesSeeder::class,
             PuzzleSeeder::class,
+            CoachSeeder::class,
         ]);
     }
 }

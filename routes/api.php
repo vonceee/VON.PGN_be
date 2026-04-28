@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\ArenaController;
 use App\Http\Controllers\Api\UserArenaController;
 use App\Http\Controllers\Api\AcademyEnrollmentController;
 use App\Http\Controllers\Api\Admin\AcademyEnrollmentController as AdminAcademyEnrollmentController;
+use App\Http\Controllers\Api\CoachController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -111,6 +112,10 @@ Route::get('/arenas/{slug}', [ArenaController::class, 'show']);
 // Media Proxy (Public with CORS)
 Route::get('/media/{type}/{filename}', [MediaProxyController::class, 'serve'])
     ->where('filename', '.*');
+
+Route::get('/coaches', [CoachController::class, 'index']);
+Route::get('/coaches/{id}', [CoachController::class, 'show']);
+
 // Academy Enrollment
 Route::post('/academy/enroll', [AcademyEnrollmentController::class, 'store'])
     ->middleware('throttle:5,60');
