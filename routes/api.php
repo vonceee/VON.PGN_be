@@ -216,6 +216,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/studies/{study}/messages', [StudyController::class, 'clearMessages']);
 });
 
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     Route::apiResource('courses', AdminCourseController::class);
     Route::apiResource('chapters', AdminChapterController::class);
@@ -223,6 +225,14 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::apiResource('tournaments', AdminTournamentController::class);
     Route::post('tournaments/media', [AdminTournamentController::class, 'uploadMedia']);
     Route::post('resolve-maps-url', [MapsUrlResolverController::class, 'resolve']);
+    
+    // User management
+    Route::get('users', [AdminUserController::class, 'index']);
+    Route::get('users/{id}', [AdminUserController::class, 'show']);
+    Route::post('users/{id}/toggle-admin', [AdminUserController::class, 'toggleAdmin']);
+    Route::post('users/{id}/toggle-organizer', [AdminUserController::class, 'toggleOrganizer']);
+    Route::delete('users/{id}', [AdminUserController::class, 'destroy']);
+    
     Route::post('users/{id}/toggle-verified-organizer', [UserProfileController::class, 'toggleVerifiedOrganizer']);
 
     // Coach applications management
