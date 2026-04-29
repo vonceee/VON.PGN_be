@@ -56,7 +56,9 @@ class CoachController extends Controller
         // Handle File Upload to Cloudinary
         if ($request->hasFile('profile_picture')) {
             $file = $request->file('profile_picture');
-            $result = $file->storeOnCloudinary('coaches');
+            $result = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::upload($file->getRealPath(), [
+                'folder' => 'coaches'
+            ]);
             $validated['profile_picture'] = $result->getSecurePath();
         }
 
@@ -119,7 +121,9 @@ class CoachController extends Controller
             }
 
             $file = $request->file('profile_picture');
-            $result = $file->storeOnCloudinary('coaches');
+            $result = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::upload($file->getRealPath(), [
+                'folder' => 'coaches'
+            ]);
             $validated['profile_picture'] = $result->getSecurePath();
         }
 

@@ -281,7 +281,9 @@ class TournamentController extends Controller
             $subFolder = $folderMap[$type] ?? 'misc';
             $folder = 'tournaments/' . $subFolder;
             
-            $result = $file->storeOnCloudinary($folder);
+            $result = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::upload($file->getRealPath(), [
+                'folder' => $folder
+            ]);
             $url = $result->getSecurePath();
             
             return response()->json(['url' => $url]);
