@@ -53,12 +53,11 @@ class CoachController extends Controller
             }
         }
 
-        // Handle File Upload
+        // Handle File Upload to Cloudinary
         if ($request->hasFile('profile_picture')) {
             $file = $request->file('profile_picture');
-            $filename = $validated['id'] . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('coaches', $filename, 'public');
-            $validated['profile_picture'] = $path;
+            $result = $file->storeOnCloudinary('coaches');
+            $validated['profile_picture'] = $result->getSecurePath();
         }
 
         $coach = Coach::create($validated);
@@ -108,17 +107,20 @@ class CoachController extends Controller
             'social_media' => 'sometimes|required|array',
         ]);
 
-        // Handle File Upload
+        // Handle File Upload to Cloudinary
         if ($request->hasFile('profile_picture')) {
-            // Delete old image if it exists in our storage
-            if ($coach->profile_picture && !Str::startsWith($coach->profile_picture, 'http')) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($coach->profile_picture);
+            // Delete old image if it's a Cloudinary asset
+            if ($coach->profile_picture && str_contains($coach->profile_picture, 'cloudinary.com')) {
+                // Extract public ID from URL
+                $parts = explode('/', $coach->profile_picture);
+                $filename = end($parts);
+                $publicId = 'coaches/' . explode('.', $filename)[0];
+                \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::destroy($publicId);
             }
 
             $file = $request->file('profile_picture');
-            $filename = $coach->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('coaches', $filename, 'public');
-            $validated['profile_picture'] = $path;
+            $result = $file->storeOnCloudinary('coaches');
+            $validated['profile_picture'] = $result->getSecurePath();
         }
 
         $coach->update($validated);
@@ -137,9 +139,12 @@ class CoachController extends Controller
             return response()->json(['message' => 'Coach not found'], 404);
         }
 
-        // Cleanup image
-        if ($coach->profile_picture && !Str::startsWith($coach->profile_picture, 'http')) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($coach->profile_picture);
+        // Cleanup image from Cloudinary if applicable
+        if ($coach->profile_picture && str_contains($coach->profile_picture, 'cloudinary.com')) {
+            $parts = explode('/', $coach->profile_picture);
+            $filename = end($parts);
+            $publicId = 'coaches/' . explode('.', $filename)[0];
+            \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::destroy($publicId);
         }
 
         $coach->delete();

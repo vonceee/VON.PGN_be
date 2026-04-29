@@ -20,7 +20,7 @@ class CoachResource extends JsonResource
             'title' => $this->title,
             'shortInfo' => $this->short_info,
             'fideRating' => $this->fide_rating,
-            'profilePicture' => $this->profile_picture ? (str_starts_with($this->profile_picture, 'http') ? $this->profile_picture : \Illuminate\Support\Facades\Storage::disk('public')->url($this->profile_picture)) : null,
+            'profilePicture' => $this->profile_picture,
             'isAcademyInstructor' => $this->is_academy_instructor,
             'playingExperience' => $this->playing_experience,
             'teachingExperience' => $this->teaching_experience,

@@ -238,7 +238,17 @@ class TournamentController extends Controller
 
     private function deleteMediaByUrl(string $url)
     {
-        // Only delete if it's an internal URL pointing to our media API
+        // Handle Cloudinary deletion
+        if (str_contains($url, 'cloudinary.com')) {
+            $parts = explode('/', $url);
+            $filename = end($parts);
+            $folder = 'tournaments/' . $parts[count($parts) - 2];
+            $publicId = $folder . '/' . explode('.', $filename)[0];
+            \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::destroy($publicId);
+            return;
+        }
+
+        // Fallback for internal URLs pointing to our media API
         if (str_contains($url, '/api/media/')) {
             $parts = explode('/api/media/', $url);
             if (count($parts) > 1) {
@@ -250,6 +260,7 @@ class TournamentController extends Controller
             }
         }
     }
+
     public function uploadMedia(Request $request)
     {
         $request->validate([
@@ -260,7 +271,6 @@ class TournamentController extends Controller
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $type = $request->input('type');
-            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
             
             $folderMap = [
                 'background' => 'backgrounds',
@@ -270,10 +280,9 @@ class TournamentController extends Controller
 
             $subFolder = $folderMap[$type] ?? 'misc';
             $folder = 'tournaments/' . $subFolder;
-            $path = $file->storeAs($folder, $filename, 'public');
             
-            // Return Proxy URL with CORS support
-            $url = url('/api/media/' . $subFolder . '/' . $filename);
+            $result = $file->storeOnCloudinary($folder);
+            $url = $result->getSecurePath();
             
             return response()->json(['url' => $url]);
         }

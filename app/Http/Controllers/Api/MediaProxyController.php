@@ -15,11 +15,11 @@ class MediaProxyController extends Controller
     public function serve(string $type, string $filename)
     {
         // Allowed types based on our upload logic
-        if (!in_array($type, ['backgrounds', 'logos', 'posters'])) {
+        if (!in_array($type, ['backgrounds', 'logos', 'posters', 'coaches'])) {
             abort(404);
         }
 
-        $path = "tournaments/{$type}/{$filename}";
+        $path = ($type === 'coaches') ? "coaches/{$filename}" : "tournaments/{$type}/{$filename}";
 
         if (!Storage::disk('public')->exists($path)) {
             abort(404);
