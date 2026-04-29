@@ -14,13 +14,21 @@ class CoachResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $profilePicture = $this->profile_picture;
+        
+        // If it's a relative path (not a full URL and not a frontend asset), 
+        // transform it to a full storage URL.
+        if ($profilePicture && !str_starts_with($profilePicture, 'http') && !str_starts_with($profilePicture, 'assets')) {
+            $profilePicture = asset('storage/' . ltrim($profilePicture, '/'));
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'title' => $this->title,
             'shortInfo' => $this->short_info,
             'fideRating' => $this->fide_rating,
-            'profilePicture' => $this->profile_picture,
+            'profilePicture' => $profilePicture,
             'isAcademyInstructor' => $this->is_academy_instructor,
             'playingExperience' => $this->playing_experience,
             'teachingExperience' => $this->teaching_experience,

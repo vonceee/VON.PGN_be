@@ -64,7 +64,7 @@ class CoachController extends Controller
                 ]);
                 $validated['profile_picture'] = $result['secure_url'];
                 \Log::info('Cloudinary upload successful', ['url' => $validated['profile_picture']]);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 \Log::error('Cloudinary upload failed', [
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
@@ -143,12 +143,14 @@ class CoachController extends Controller
                 ]);
                 $validated['profile_picture'] = $result['secure_url'];
                 \Log::info('Cloudinary update successful', ['url' => $validated['profile_picture']]);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 \Log::error('Cloudinary update failed', [
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
-                return response()->json(['message' => 'Image upload failed: ' . $e->getMessage()], 500);
+                // Fallback to existing picture if upload fails to avoid 500
+                unset($validated['profile_picture']);
+                \Log::warning('Falling back to existing profile picture due to Cloudinary failure');
             }
         }
 
@@ -170,10 +172,18 @@ class CoachController extends Controller
 
         // Cleanup image from Cloudinary if applicable
         if ($coach->profile_picture && str_contains($coach->profile_picture, 'cloudinary.com')) {
-            $parts = explode('/', $coach->profile_picture);
-            $filename = end($parts);
-            $publicId = 'coaches/' . explode('.', $filename)[0];
-            \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::uploadApi()->destroy($publicId);
+            try {
+                $parts = explode('/', $coach->profile_picture);
+                $filename = end($parts);
+                $publicId = 'coaches/' . explode('.', $filename)[0];
+                \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::uploadApi()->destroy($publicId);
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to delete Cloudinary image during coach deletion', [
+                    'error' => $e->getMessage(),
+                    'coach_id' => $id
+                ]);
+                // We continue deletion even if image cleanup fails
+            }
         }
 
         $coach->delete();
