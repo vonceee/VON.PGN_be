@@ -244,7 +244,7 @@ class TournamentController extends Controller
             $filename = end($parts);
             $folder = 'tournaments/' . $parts[count($parts) - 2];
             $publicId = $folder . '/' . explode('.', $filename)[0];
-            \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::destroy($publicId);
+            \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::uploadApi()->destroy($publicId);
             return;
         }
 
@@ -281,10 +281,10 @@ class TournamentController extends Controller
             $subFolder = $folderMap[$type] ?? 'misc';
             $folder = 'tournaments/' . $subFolder;
             
-            $result = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::upload($file->getRealPath(), [
+            $result = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::uploadApi()->upload($file->getRealPath(), [
                 'folder' => $folder
             ]);
-            $url = $result->getSecurePath();
+            $url = $result['secure_url'];
             
             return response()->json(['url' => $url]);
         }

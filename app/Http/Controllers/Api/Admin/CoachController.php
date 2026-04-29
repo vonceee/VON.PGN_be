@@ -55,11 +55,22 @@ class CoachController extends Controller
 
         // Handle File Upload to Cloudinary
         if ($request->hasFile('profile_picture')) {
-            $file = $request->file('profile_picture');
-            $result = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::upload($file->getRealPath(), [
-                'folder' => 'coaches'
-            ]);
-            $validated['profile_picture'] = $result->getSecurePath();
+            try {
+                $file = $request->file('profile_picture');
+                \Log::info('Attempting Cloudinary upload for new coach', ['size' => $file->getSize()]);
+                
+                $result = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::uploadApi()->upload($file->getRealPath(), [
+                    'folder' => 'coaches'
+                ]);
+                $validated['profile_picture'] = $result['secure_url'];
+                \Log::info('Cloudinary upload successful', ['url' => $validated['profile_picture']]);
+            } catch (\Exception $e) {
+                \Log::error('Cloudinary upload failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json(['message' => 'Image upload failed: ' . $e->getMessage()], 500);
+            }
         }
 
         $coach = Coach::create($validated);
@@ -111,20 +122,34 @@ class CoachController extends Controller
 
         // Handle File Upload to Cloudinary
         if ($request->hasFile('profile_picture')) {
-            // Delete old image if it's a Cloudinary asset
-            if ($coach->profile_picture && str_contains($coach->profile_picture, 'cloudinary.com')) {
-                // Extract public ID from URL
-                $parts = explode('/', $coach->profile_picture);
-                $filename = end($parts);
-                $publicId = 'coaches/' . explode('.', $filename)[0];
-                \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::destroy($publicId);
-            }
+            try {
+                $file = $request->file('profile_picture');
+                \Log::info('Attempting Cloudinary upload for coach update', ['coach_id' => $id, 'size' => $file->getSize()]);
 
-            $file = $request->file('profile_picture');
-            $result = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::upload($file->getRealPath(), [
-                'folder' => 'coaches'
-            ]);
-            $validated['profile_picture'] = $result->getSecurePath();
+                // Delete old image if it's a Cloudinary asset
+                if ($coach->profile_picture && str_contains($coach->profile_picture, 'cloudinary.com')) {
+                    try {
+                        $parts = explode('/', $coach->profile_picture);
+                        $filename = end($parts);
+                        $publicId = 'coaches/' . explode('.', $filename)[0];
+                        \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::uploadApi()->destroy($publicId);
+                    } catch (\Exception $e) {
+                        \Log::warning('Failed to delete old Cloudinary image', ['error' => $e->getMessage()]);
+                    }
+                }
+
+                $result = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::uploadApi()->upload($file->getRealPath(), [
+                    'folder' => 'coaches'
+                ]);
+                $validated['profile_picture'] = $result['secure_url'];
+                \Log::info('Cloudinary update successful', ['url' => $validated['profile_picture']]);
+            } catch (\Exception $e) {
+                \Log::error('Cloudinary update failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json(['message' => 'Image upload failed: ' . $e->getMessage()], 500);
+            }
         }
 
         $coach->update($validated);
@@ -148,7 +173,7 @@ class CoachController extends Controller
             $parts = explode('/', $coach->profile_picture);
             $filename = end($parts);
             $publicId = 'coaches/' . explode('.', $filename)[0];
-            \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::destroy($publicId);
+            \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::uploadApi()->destroy($publicId);
         }
 
         $coach->delete();
