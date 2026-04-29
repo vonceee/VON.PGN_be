@@ -15,6 +15,7 @@ for i in {1..3}; do
 done
 
 echo "Clearing caches..."
+php artisan config:clear
 php artisan config:cache
 php artisan view:cache
 
