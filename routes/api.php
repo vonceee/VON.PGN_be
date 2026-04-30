@@ -90,6 +90,8 @@ Route::get('/courses/{slug}', [CourseController::class, 'show']);
 Route::get('/lessons/{slug}', [CourseController::class, 'getLesson']);
 
 Route::get('/lichess/pgn', [LichessProxyController::class, 'pgn']);
+Route::get('/lichess/explorer/{db?}', [LichessProxyController::class, 'explorer']);
+Route::get('/lichess/tablebase/{variant?}', [LichessProxyController::class, 'tablebase']);
 
 Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
 Route::get('/tactics/leaderboard', [TacticsController::class, 'leaderboard']);
