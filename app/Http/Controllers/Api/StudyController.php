@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Notifications\CollaboratorAddedNotification;
+use App\Models\User;
 
 class StudyController extends Controller
 {
@@ -297,6 +299,12 @@ class StudyController extends Controller
         ]);
 
         $study->collaborators()->syncWithoutDetaching([$request->user_id]);
+
+        // Send notification
+        $user = User::find($request->user_id);
+        if ($user) {
+            $user->notify(new CollaboratorAddedNotification($study->load('owner')));
+        }
 
         return new StudyResource($study->load('collaborators'));
     }

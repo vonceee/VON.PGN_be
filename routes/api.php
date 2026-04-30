@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\UserArenaController;
 use App\Http\Controllers\Api\AcademyEnrollmentController;
 use App\Http\Controllers\Api\Admin\AcademyEnrollmentController as AdminAcademyEnrollmentController;
 use App\Http\Controllers\Api\CoachController;
+use App\Http\Controllers\Api\NotificationController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -157,6 +158,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chat/conversations/{conversationId}/typing', [ChatController::class, 'typing']);
     Route::post('/chat/status', [ChatController::class, 'updateStatus']);
     Route::get('/chat/unread', [ChatController::class, 'unreadCount']);
+
+    // Notification routes
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead']);
 
     // Matchmaking routes
     Route::get('/seeks', [MatchmakingController::class, 'index']);

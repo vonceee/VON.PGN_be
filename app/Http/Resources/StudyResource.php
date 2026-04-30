@@ -33,7 +33,8 @@ class StudyResource extends JsonResource
                 return $this->collaborators->map(function($user) {
                     $userData = (new UserProfileResource($user))->toArray(request());
                     return array_merge($userData, [
-                        'can_edit' => (bool) ($user->pivot->can_edit ?? true)
+                        'can_edit' => (bool) ($user->pivot->can_edit ?? true),
+                        'is_syncing' => (bool) ($user->pivot->is_syncing ?? true),
                     ]);
                 });
             }),
