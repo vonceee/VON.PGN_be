@@ -139,6 +139,7 @@ class StudyController extends Controller
             'current_fen' => 'sometimes|required|string',
             'orientation' => 'sometimes|required|string|in:white,black',
             'moves' => 'sometimes|array|nullable',
+            'pgn_tags' => 'sometimes|array|nullable',
         ]);
 
         $chapter->update($request->all());
@@ -185,11 +186,11 @@ class StudyController extends Controller
                 foreach ($games as $gameContent) {
                     if (empty(trim($gameContent))) continue;
 
-                    // Extract tags
+                    // Extract tags using a more robust regex that handles escaped quotes
                     $tags = [];
-                    preg_match_all('/\[(\w+)\s+"(.*)"\]/', $gameContent, $matches, PREG_SET_ORDER);
+                    preg_match_all('/\[(\w+)\s+"((?:[^"\\\\]|\\\\.)*)"\]/', $gameContent, $matches, PREG_SET_ORDER);
                     foreach ($matches as $match) {
-                        $tags[$match[1]] = $match[2];
+                        $tags[$match[1]] = stripslashes($match[2]);
                     }
 
                     $name = $tags['ChapterName'] ?? $tags['Event'] ?? ('Chapter ' . ($order + 1));
@@ -205,6 +206,7 @@ class StudyController extends Controller
                         'initial_fen' => $initialFen,
                         'current_fen' => $initialFen,
                         'moves' => ['pgn' => $gameContent],
+                        'pgn_tags' => $tags,
                         'order' => ++$order,
                     ]);
 

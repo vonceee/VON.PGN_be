@@ -17,11 +17,13 @@ class StudyChapter extends Model
         'current_fen',
         'orientation',
         'moves',
-        'order'
+        'order',
+        'pgn_tags'
     ];
 
     protected $casts = [
         'moves' => 'array',
+        'pgn_tags' => 'array',
     ];
 
     /**
