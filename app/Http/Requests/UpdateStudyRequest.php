@@ -16,6 +16,7 @@ class UpdateStudyRequest extends FormRequest
         return [
             'name' => 'sometimes|required|string|max:255',
             'visibility' => 'sometimes|required|in:public,private,unlisted',
+            'engine_visibility' => 'sometimes|required|in:everyone,owner',
         ];
     }
 }

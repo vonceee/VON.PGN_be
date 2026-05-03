@@ -48,6 +48,7 @@ class StudyController extends Controller
             'user_id' => Auth::id(),
             'name' => $request->name,
             'visibility' => $request->visibility,
+            'engine_visibility' => $request->engine_visibility ?? 'everyone',
         ]);
 
         // Create an initial empty chapter

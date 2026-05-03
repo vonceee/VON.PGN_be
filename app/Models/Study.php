@@ -14,7 +14,8 @@ class Study extends Model
     protected $fillable = [
         'user_id',
         'name',
-        'visibility'
+        'visibility',
+        'engine_visibility'
     ];
 
     /**

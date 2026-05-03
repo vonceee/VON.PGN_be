@@ -16,6 +16,7 @@ class StoreStudyRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'visibility' => 'required|in:public,private,unlisted',
+            'engine_visibility' => 'sometimes|required|in:everyone,owner',
         ];
     }
 }
