@@ -218,6 +218,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/studies/{study}', [StudyController::class, 'update']);
     Route::delete('/studies/{study}', [StudyController::class, 'destroy']);
     Route::post('/studies/{study}/chapters', [StudyController::class, 'addChapter']);
+    Route::post('/studies/{study}/chapters/reorder', [StudyController::class, 'reorderChapters']);
     Route::put('/studies/{study}/chapters/{chapter}', [StudyController::class, 'updateChapter']);
     Route::delete('/studies/{study}/chapters/{chapter}', [StudyController::class, 'deleteChapter']);
     Route::post('/studies/{study}/collaborators', [StudyController::class, 'addCollaborator']);

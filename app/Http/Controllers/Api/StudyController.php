@@ -165,6 +165,31 @@ class StudyController extends Controller
     }
 
     /**
+     * Reorder chapters in the study.
+     */
+    public function reorderChapters(Request $request, Study $study)
+    {
+        $this->authorize('manageChapters', $study);
+
+        $request->validate([
+            'chapter_ids' => 'required|array',
+            'chapter_ids.*' => 'exists:study_chapters,id'
+        ]);
+
+        $chapterIds = $request->chapter_ids;
+
+        DB::transaction(function () use ($chapterIds, $study) {
+            foreach ($chapterIds as $index => $id) {
+                StudyChapter::where('id', $id)
+                    ->where('study_id', $study->id)
+                    ->update(['order' => $index + 1]);
+            }
+        });
+
+        return response()->json(['message' => 'Chapters reordered successfully']);
+    }
+
+    /**
      * Import a multi-game PGN into the study.
      */
     public function importPgn(ImportPgnRequest $request, Study $study)
