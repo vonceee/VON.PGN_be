@@ -203,6 +203,10 @@ class StudyController extends Controller
                 // Normalize newlines
                 $pgn = str_replace("\r\n", "\n", $pgn);
                 
+                // Fix missing spaces after move numbers: "1.d4" -> "1. d4", "1...Nf6" -> "1... Nf6"
+                // This helps the frontend tokenizer and other PGN tools parse the moves correctly.
+                $pgn = preg_replace('/(\d+\.{1,3})([^\s])/', '$1 $2', $pgn);
+                
                 // Split PGN by games. Improved regex to handle multiple newlines and whitespace.
                 $games = preg_split('/\n\s*\n(?=\[)/', trim($pgn));
                 
@@ -219,7 +223,17 @@ class StudyController extends Controller
                         $tags[$match[1]] = stripslashes($match[2]);
                     }
 
-                    $name = $tags['ChapterName'] ?? $tags['Event'] ?? ('Chapter ' . ($order + 1));
+                    // Determine chapter name: prioritized tags
+                    $name = $tags['ChapterName'] ?? null;
+                    
+                    if (!$name && isset($tags['White']) && isset($tags['Black'])) {
+                        $name = $tags['White'] . ' - ' . $tags['Black'];
+                    }
+                    
+                    if (!$name) {
+                        $name = $tags['Event'] ?? ('Chapter ' . ($order + 1));
+                    }
+
                     if (isset($tags['StudyName']) && str_starts_with($name, $tags['StudyName'])) {
                         $name = trim(str_replace($tags['StudyName'] . ':', '', $name));
                         if (empty($name)) $name = $tags['ChapterName'] ?? 'Untitled';
