@@ -179,20 +179,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/games/history', [GameController::class, 'history']);
     Route::post('/game/{gameId}/sync-clock', [GameController::class, 'syncClock']);
 
-    // User tournament management
-    Route::get('/my/tournaments', [UserTournamentController::class, 'index']);
-    Route::post('/my/tournaments', [UserTournamentController::class, 'store']);
-    Route::get('/my/tournaments/{id}', [UserTournamentController::class, 'show']);
-    Route::put('/my/tournaments/{id}', [UserTournamentController::class, 'update']);
-    Route::delete('/my/tournaments/{id}', [UserTournamentController::class, 'destroy']);
-    Route::post('/my/tournaments/media', [UserTournamentController::class, 'uploadMedia']);
+    Route::middleware('admin')->group(function () {
+        // User tournament management
+        Route::get('/my/tournaments', [UserTournamentController::class, 'index']);
+        Route::post('/my/tournaments', [UserTournamentController::class, 'store']);
+        Route::get('/my/tournaments/{id}', [UserTournamentController::class, 'show']);
+        Route::put('/my/tournaments/{id}', [UserTournamentController::class, 'update']);
+        Route::delete('/my/tournaments/{id}', [UserTournamentController::class, 'destroy']);
+        Route::post('/my/tournaments/media', [UserTournamentController::class, 'uploadMedia']);
 
-    // User arena management
-    Route::get('/my/arenas', [UserArenaController::class, 'index']);
-    Route::post('/my/arenas', [UserArenaController::class, 'store']);
-    Route::get('/my/arenas/{id}', [UserArenaController::class, 'show']);
-    Route::put('/my/arenas/{id}', [UserArenaController::class, 'update']);
-    Route::delete('/my/arenas/{id}', [UserArenaController::class, 'destroy']);
+        // User arena management
+        Route::get('/my/arenas', [UserArenaController::class, 'index']);
+        Route::post('/my/arenas', [UserArenaController::class, 'store']);
+        Route::get('/my/arenas/{id}', [UserArenaController::class, 'show']);
+        Route::put('/my/arenas/{id}', [UserArenaController::class, 'update']);
+        Route::delete('/my/arenas/{id}', [UserArenaController::class, 'destroy']);
+    });
 
     // Payment routes
     Route::post('/payments/checkout', [PaymentController::class, 'createCheckout']);
