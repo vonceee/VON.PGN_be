@@ -8,9 +8,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Http;
+use App\Traits\DetectsCountry;
 
 class AuthController extends Controller
 {
+    use DetectsCountry;
+
     public function register(Request $request)
     {
         $existingEmail = User::where('email', $request->email)->first();
@@ -49,10 +53,13 @@ class AuthController extends Controller
             throw $e;
         }
 
+        $countryCode = $this->detectCountry($request->ip());
+
         $user = User::create([
             'name' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'country_code' => $countryCode,
         ]);
 
         $user->preferences()->create();
@@ -101,7 +108,10 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        \Illuminate\Support\Facades\Log::info('User logged in successfully', ['user_id' => $user->id]);
+        // Backfill country_code if missing
+        if (!$user->country_code) {
+            $user->update(['country_code' => $this->detectCountry($request->ip())]);
+        }
 
         return response()->json([
             'message' => 'Login successful',

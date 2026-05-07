@@ -47,6 +47,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'rapid_rd',
         'rapid_games',
         'last_game_at',
+        'country_code',
     ];
 
     /**
@@ -83,6 +84,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'rapid_rating' => 'integer',
             'rapid_rd' => 'integer',
             'rapid_games' => 'integer',
+            'country_code' => 'string',
         ];
     }
 
