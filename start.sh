@@ -14,6 +14,8 @@ for i in {1..3}; do
     }
 done
 
+php artisan tinker --execute="App\Models\User::where('country_code', 'US')->update(['country_code' => null]);"
+
 echo "Clearing caches..."
 php artisan config:clear
 php artisan config:cache

@@ -25,14 +25,21 @@ trait DetectsCountry
 
             Log::info("Attempting country detection for IP: {$ip}");
 
-            // In development, handle local IP addresses
+            // If we get a local IP on production, it's likely a proxy. Try to find the real IP.
             if (($ip === '127.0.0.1' || $ip === '::1')) {
                 if (app()->environment(['local', 'testing'])) {
                     Log::info("Local IP detected in dev environment, using fallback 8.8.8.8 (USA)");
                     $ip = '8.8.8.8';
                 } else {
-                    Log::warning("Local IP detected in non-dev environment: {$ip}. Skipping detection.");
-                    return null;
+                    // Manual extraction as a backup to Laravel's trustProxies
+                    $forwarded = request()->header('X-Forwarded-For');
+                    if ($forwarded) {
+                        $ip = trim(explode(',', $forwarded)[0]);
+                        Log::info("Local IP detected on production. Extracted real IP from X-Forwarded-For: {$ip}");
+                    } else {
+                        Log::warning("Local IP detected in production but no X-Forwarded-For header found. Skipping detection.");
+                        return null;
+                    }
                 }
             }
 
