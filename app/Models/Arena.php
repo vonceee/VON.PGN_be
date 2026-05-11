@@ -51,4 +51,12 @@ class Arena extends Model
     {
         return $query->where('status', 'past');
     }
+
+    /**
+     * Chat messages in the arena lobby.
+     */
+    public function messages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ArenaMessage::class);
+    }
 }

@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\AcademyEnrollmentController;
 use App\Http\Controllers\Api\Admin\AcademyEnrollmentController as AdminAcademyEnrollmentController;
 use App\Http\Controllers\Api\CoachController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ArenaChatController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -113,6 +114,7 @@ Route::get('/users/{id}/tournaments', [TournamentController::class, 'userTournam
 // Arena routes
 Route::get('/arenas', [ArenaController::class, 'index']);
 Route::get('/arenas/{slug}', [ArenaController::class, 'show']);
+Route::get('/arenas/{slug}/messages', [ArenaChatController::class, 'index']);
 
 // Media Proxy (Public with CORS)
 Route::get('/media/{type}/{filename}', [MediaProxyController::class, 'serve'])
@@ -205,6 +207,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Tournament bookmark routes
     Route::post('/tournaments/{slug}/bookmark', [TournamentBookmarkController::class, 'toggle']);
+
+    // Arena chat routes
+    Route::post('/arenas/{slug}/messages', [ArenaChatController::class, 'store']);
 });
 
 // Public/Guest accessible Study routes
