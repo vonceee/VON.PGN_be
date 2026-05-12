@@ -302,9 +302,12 @@ class GameController
     public function history(Request $request): JsonResponse
     {
         $user = $request->user();
+        $type = $request->query('type');
+
         return response()->json(Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
             ->where(function($q) use ($user) { $q->where('white_player_id', $user->id)->orWhere('black_player_id', $user->id); })
             ->whereIn('status', ['completed', 'aborted'])
+            ->byType($type)
             ->orderBy('created_at', 'desc')
             ->paginate(10));
     }

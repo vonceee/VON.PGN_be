@@ -109,6 +109,28 @@ class Game extends Model
             && $this->black_last_heartbeat_at->diffInSeconds(now()) > 30;
     }
 
+    public function scopeByType($query, $type)
+    {
+        if (!$type || $type === 'all') return $query;
+
+        // totalTimeMs = initial_time_ms + (increment_ms * 40)
+        // Bullet: < 180s (180,000ms)
+        // Blitz: < 600s (600,000ms)
+        // Rapid: >= 600s
+        
+        switch (strtolower($type)) {
+            case 'bullet':
+                return $query->whereRaw('(initial_time_ms + (increment_ms * 40)) < 180000');
+            case 'blitz':
+                return $query->whereRaw('(initial_time_ms + (increment_ms * 40)) >= 180000')
+                             ->whereRaw('(initial_time_ms + (increment_ms * 40)) < 600000');
+            case 'rapid':
+                return $query->whereRaw('(initial_time_ms + (increment_ms * 40)) >= 600000');
+        }
+
+        return $query;
+    }
+
     /**
      * Format game data for frontend display.
      */
