@@ -63,4 +63,27 @@ class ArenaController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Internal endpoint for the microservice to sync standings during an arena.
+     */
+    public function syncStandingsInternal(Request $request, $id): \Illuminate\Http\JsonResponse
+    {
+        if ($request->header('X-Internal-Secret') !== config('services.chess.internal_secret')) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $arena = Arena::where('id', $id)
+            ->orWhere('slug', $id)
+            ->firstOrFail();
+
+        $standings = $request->input('standings', []);
+        
+        $arena->update([
+            'standings' => $standings,
+            'current_participants' => count($standings)
+        ]);
+
+        return response()->json(['success' => true]);
+    }
 }

@@ -275,3 +275,4 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/internal/game/create', [GameController::class, 'createGameInternal']);
     Route::post('/internal/arena/match', [GameController::class, 'createArenaMatchInternal']);
     Route::post('/internal/arena/{id}/finalize', [ArenaController::class, 'finalizeArenaInternal']);
+    Route::post('/internal/arena/{id}/sync-standings', [ArenaController::class, 'syncStandingsInternal']);
