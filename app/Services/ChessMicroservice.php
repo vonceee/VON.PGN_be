@@ -58,25 +58,40 @@ class ChessMicroservice
                 }
 
                 if ($response->status() === 404) {
-                    Log::warning('Game missing from microservice. Marking as abandoned in DB.', [
-                        'game_id' => $game->id
+                    Log::info("Game not found in microservice, marking as completed", [
+                        'game_id' => $game->id,
+                        'endpoint' => $url
                     ]);
                     
                     $game->update([
                         'status' => 'completed',
-                        'result' => null,
-                        'termination' => 'abandoned'
+                        'termination' => 'aborted',
+                        'result' => null
                     ]);
-                    
+
                     return null;
                 }
 
-                Log::error('Microservice returned HTTP error', [
+                // If we get a 502 or 503, it's likely a cold start or temporary overload.
+                // We should retry instead of immediately failing.
+                if (in_array($response->status(), [502, 503])) {
+                    Log::warning("Microservice returned {$response->status()}, retrying (attempt $attempt)", [
+                        'game_id' => $game->id,
+                        'endpoint' => $url
+                    ]);
+                    
+                    if ($attempt < $maxRetries) {
+                        sleep($attempt * 2);
+                        continue;
+                    }
+                }
+
+                Log::error('Microservice fetchGameState failed', [
                     'game_id' => $game->id,
                     'status' => $response->status(),
                     'body' => $response->body()
                 ]);
-                
+
                 throw new \Exception('Microservice returned HTTP ' . $response->status());
                 
             } catch (\Illuminate\Http\Client\ConnectionException $e) {

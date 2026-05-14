@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class MatchmakingController
 {
@@ -126,11 +127,27 @@ class MatchmakingController
                 'time_control' => $timeControl,
                 'matched' => false,
             ]);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            return response()->json(['message' => $e->getMessage()], 503);
+        } catch (HttpException $e) {
+            Log::warning('Matchmaking seek HTTP error: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'status' => $e->getStatusCode()
+            ]);
+            return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
         } catch (\Throwable $e) {
-            Log::error('Matchmaking seek FAILED: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return response()->json(['message' => 'Internal server error'], 500);
+            Log::error('Matchmaking seek CRITICAL FAILURE: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Return more info if in local/testing, otherwise keep it generic for security
+            $message = app()->environment('local', 'testing') 
+                ? 'Matchmaking error: ' . $e->getMessage() 
+                : 'Matchmaking error. Please try again.';
+
+            return response()->json(['message' => $message], 500);
         }
     }
 
