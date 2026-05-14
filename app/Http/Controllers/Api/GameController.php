@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class GameController
 {
@@ -54,8 +55,21 @@ class GameController
                     'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
                 ]),
             ]);
-        } catch (\Exception $e) {
-            Log::error("[GameController] Failed to fetch game state: " . $e->getMessage());
+        } catch (HttpException $e) {
+            Log::warning('[GameController] show HTTP error: ' . $e->getMessage(), [
+                'user_id' => $user?->id,
+                'status' => $e->getStatusCode()
+            ]);
+            return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
+        } catch (\Throwable $e) {
+            Log::error('[GameController] show CRITICAL FAILURE: ' . $e->getMessage(), [
+                'user_id' => $user?->id,
+                'game_id' => $gameId,
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => substr($e->getTraceAsString(), 0, 1000)
+            ]);
             return response()->json(['message' => 'Could not retrieve live game state'], 503);
         }
     }
@@ -67,6 +81,13 @@ class GameController
     {
         try {
             $user = $request->user();
+
+            // Validate microservice URL configuration
+            if (!$this->microservice->getMicroserviceUrl()) {
+                Log::error('[GameController] CHESS_MICROSERVICE_URL is not configured');
+                return response()->json(['message' => 'System configuration error'], 500);
+            }
+
             $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
                 ->where('status', 'active')
                 ->where(function ($q) use ($user) {
@@ -104,10 +125,20 @@ class GameController
                     'bufferCountdown' => $gameData['bufferCountdown'] ?? null,
                 ]),
             ]);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            return response()->json(['message' => $e->getMessage()], 503);
+        } catch (HttpException $e) {
+            Log::warning('[GameController] activeGame HTTP error: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'status' => $e->getStatusCode()
+            ]);
+            return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
         } catch (\Throwable $e) {
-            Log::error('activeGame FAILED: ' . $e->getMessage());
+            Log::error('[GameController] activeGame CRITICAL FAILURE: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => substr($e->getTraceAsString(), 0, 1000)
+            ]);
             return response()->json(['message' => 'Internal server error'], 500);
         }
     }
