@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'verified_organizer',
         'last_seen_at',
         'is_online',
+        'is_bot',
         // Live chess ratings
         'bullet_rating',
         'bullet_rd',

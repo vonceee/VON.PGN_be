@@ -42,7 +42,17 @@ class MatchmakingController
             $ratingData = $this->getRatingData($user, $timeControl);
             $elo = $ratingData['rating'];
 
-            Log::info('Matchmaking seek called', ['user_id' => $user->id, 'time_control' => $timeControl]);
+            Log::info('Matchmaking seek called', [
+                'user_id' => $user->id, 
+                'time_control' => $timeControl,
+                'allow_bot' => $request->boolean('allow_bot')
+            ]);
+
+            // Validate microservice URL configuration
+            if (!$this->microservice->getMicroserviceUrl()) {
+                Log::error('CHESS_MICROSERVICE_URL is not configured');
+                return response()->json(['message' => 'System configuration error'], 500);
+            }
 
             // Check if user already has an active game
             $existingGame = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
@@ -136,10 +146,11 @@ class MatchmakingController
         } catch (\Throwable $e) {
             Log::error('Matchmaking seek CRITICAL FAILURE: ' . $e->getMessage(), [
                 'user_id' => $user->id,
+                'request' => $request->all(),
                 'exception' => get_class($e),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
+                'trace' => substr($e->getTraceAsString(), 0, 1000) // Truncate for log size
             ]);
             
             // Return more info if in local/testing, otherwise keep it generic for security

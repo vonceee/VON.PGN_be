@@ -21,6 +21,11 @@ class ChessMicroservice
         $this->microserviceUrl = env('CHESS_MICROSERVICE_URL', $defaultUrl);
     }
 
+    public function getMicroserviceUrl(): ?string
+    {
+        return $this->microserviceUrl;
+    }
+
     /**
      * Helper to fetch game state from microservice and handle synchronization.
      * Includes retries for cold-start scenarios where microservice is waking up.
