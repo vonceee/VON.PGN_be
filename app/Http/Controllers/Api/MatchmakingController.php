@@ -303,5 +303,21 @@ class MatchmakingController
             return ['category' => 'rapid', 'rating' => $user->rapid_rating ?? 1500, 'rd' => $user->rapid_rd ?? 350, 'vol' => 0.06];
         }
     }
+    public function removeSeekInternal(Request $request): JsonResponse
+    {
+        if ($request->header('X-Internal-Secret') !== config('services.chess.internal_secret')) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $userId = $request->input('user_id');
+        if (!$userId) {
+            return response()->json(['message' => 'User ID required'], 400);
+        }
+
+        GameSeek::where('user_id', $userId)->delete();
+
+        Log::info('Matchmaking seek removed via internal disconnect', ['user_id' => $userId]);
+
+        return response()->json(['success' => true]);
     }
 }
