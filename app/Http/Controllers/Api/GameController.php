@@ -96,6 +96,7 @@ class GameController
                 ->first();
 
             if (!$game) {
+                /*
                 // FALLBACK: If no active game, check if we should match with a bot
                 $seek = GameSeek::where('user_id', $user->id)->first();
                 if ($seek && $seek->created_at->diffInSeconds(now()) > 15) {
@@ -106,6 +107,7 @@ class GameController
                         return $this->initializeBotGame($user, $bot, $seek->time_control);
                     }
                 }
+                */
                 
                 return response()->json(['game' => null]);
             }

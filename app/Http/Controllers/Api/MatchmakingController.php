@@ -119,6 +119,7 @@ class MatchmakingController
                 return $this->initializeGame($user, $matchResult['opponent'], $timeControl, $matchResult['matchedSeekId']);
             }
 
+            /* 
             // FALLBACK: Match with a bot if allowed and no human found
             $allowBot = $request->boolean('allow_bot', false);
             if ($allowBot) {
@@ -131,6 +132,7 @@ class MatchmakingController
                     Log::warning("[Matchmaking] No bots found in database for user {$user->id}. Ensure BotUserSeeder has been run.");
                 }
             }
+            */
 
             return response()->json([
                 'message' => 'Searching for opponent...',
