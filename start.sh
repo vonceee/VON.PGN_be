@@ -14,6 +14,8 @@ for i in {1..3}; do
     }
 done
 
+php artisan db:seed --class=BotUserSeeder
+
 echo "Clearing caches..."
 php artisan config:clear
 php artisan config:cache
