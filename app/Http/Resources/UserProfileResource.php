@@ -30,6 +30,7 @@ class UserProfileResource extends JsonResource
             'is_online' => $this->is_online ?? false,
             'last_seen_at' => $this->last_seen_at?->toIso8601String(),
             'country_code' => $this->country_code,
+            'daily_packs_available' => $this->daily_packs_available ?? 10,
 
             // Follow stats
             'followers_count' => $this->followers_count ?? 0,

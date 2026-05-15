@@ -37,6 +37,13 @@ use App\Http\Controllers\Api\Admin\AcademyEnrollmentController as AdminAcademyEn
 use App\Http\Controllers\Api\CoachController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ArenaChatController;
+use App\Http\Controllers\Api\GachaController;
+use App\Http\Controllers\Api\FideController;
+
+Route::get('/fide/players', [FideController::class, 'players']);
+Route::get('/fide/ranking', [FideController::class, 'ranking']);
+Route::get('/fide/players/{id}', [FideController::class, 'show']);
+Route::get('/fide/federations', [FideController::class, 'federations']);
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -211,7 +218,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Arena chat routes
     Route::post('/arenas/{slug}/messages', [ArenaChatController::class, 'store']);
+
+    // Gacha routes
+    Route::get('/gacha/collection', [GachaController::class, 'collection']);
+    Route::post('/gacha/pull', [GachaController::class, 'pull']);
 });
+
+Route::get('/gacha/players', [GachaController::class, 'index']);
 
 // Public/Guest accessible Study routes
 Route::get('/studies', [StudyController::class, 'index']);

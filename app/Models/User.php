@@ -48,6 +48,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'rapid_games',
         'last_game_at',
         'country_code',
+        'daily_packs_available',
+        'last_pack_reset',
     ];
 
     /**
@@ -75,6 +77,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_online' => 'boolean',
             'last_seen_at' => 'datetime',
             'last_game_at' => 'datetime',
+            'last_pack_reset' => 'datetime',
+            'daily_packs_available' => 'integer',
             'bullet_rating' => 'integer',
             'bullet_rd' => 'integer',
             'bullet_games' => 'integer',
@@ -102,6 +106,11 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Badge::class, 'badge_user')
             ->withPivot('earned_at');
+    }
+
+    public function collectibles()
+    {
+        return $this->hasMany(UserCollectible::class);
     }
 
     public function followers()
