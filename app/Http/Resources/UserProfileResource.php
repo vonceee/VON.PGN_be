@@ -47,6 +47,7 @@ class UserProfileResource extends JsonResource
                 'theme' => $this->preferences->theme ?? 'system',
                 'boardStyle' => $this->preferences->board_style ?? 'classic',
                 'pieceStyle' => $this->preferences->piece_style ?? 'standard',
+                'backgroundImage' => $this->preferences->background_image,
                 'soundEnabled' => (bool) ($this->preferences->sound_enabled ?? true),
             ],
 

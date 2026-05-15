@@ -90,4 +90,26 @@ class UserProfileController extends Controller
             'verified_organizer' => $user->verified_organizer,
         ]);
     }
+
+    public function updatePreferences(Request $request)
+    {
+        $user = $request->user();
+        
+        $validated = $request->validate([
+            'theme' => 'nullable|string|in:light,dark,transparent,system',
+            'board_style' => 'nullable|string|max:50',
+            'piece_style' => 'nullable|string|max:50',
+            'background_image' => 'nullable|string|max:400',
+            'sound_enabled' => 'nullable|boolean',
+        ]);
+
+        $user->preferences()->updateOrCreate(
+            ['user_id' => $user->id],
+            $validated
+        );
+
+        $user->load(['preferences', 'progress', 'badges']);
+
+        return new UserProfileResource($user);
+    }
 }

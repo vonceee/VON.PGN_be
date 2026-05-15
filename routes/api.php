@@ -141,6 +141,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/email/update', [AuthController::class, 'updateEmail']);
     Route::get('/profile', [UserProfileController::class, 'myProfile']);
     Route::put('/profile/bio', [UserProfileController::class, 'updateBio']);
+    Route::put('/profile/preferences', [UserProfileController::class, 'updatePreferences']);
 
     Route::post('/progress/complete-lecture', [ProgressController::class, 'completeLecture']);
 
