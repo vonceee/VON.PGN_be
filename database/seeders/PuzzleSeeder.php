@@ -9,6 +9,13 @@ class PuzzleSeeder extends Seeder
 {
     public function run(): void
     {
+        // Safety check: skip if the table is already populated (avoids slow updates/duplicates)
+        $existingCount = Puzzle::count();
+        if ($existingCount > 100) {
+            $this->command?->info("Puzzles table already seeded with {$existingCount} records. Skipping to prevent duplicate/slow seeder runs.");
+            return;
+        }
+
         $jsonPath = database_path('puzzles_selected.json');
         $csvPath  = storage_path('app/lichess_db_puzzle.csv');
 
