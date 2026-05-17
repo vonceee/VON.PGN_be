@@ -37,11 +37,13 @@ class GameController
 
         $game = Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])->find($gameId);
 
-        if (!$game) return response()->json(['message' => 'Game not found'], 404);
+        if (!$game)
+            return response()->json(['message' => 'Game not found'], 404);
 
         try {
             $gameData = $this->microservice->fetchGameState($game);
-            if (!$gameData) return response()->json(['message' => 'Game state unavailable'], 410);
+            if (!$gameData)
+                return response()->json(['message' => 'Game state unavailable'], 410);
 
             return response()->json([
                 'game' => array_merge($game->toDisplayArray($user?->id), [
@@ -81,13 +83,15 @@ class GameController
     {
         try {
             $user = $request->user();
+            $game = $user->whiteActiveGame ?: $user->blackActiveGame;
 
             if (!$game) {
                 return response()->json(['game' => null]);
             }
 
             $gameData = $this->microservice->fetchGameState($game);
-            if (!$gameData) return response()->json(['game' => null]);
+            if (!$gameData)
+                return response()->json(['game' => null]);
 
             return response()->json([
                 'game' => array_merge($game->toDisplayArray($user->id), [
@@ -126,7 +130,8 @@ class GameController
     {
         $user = $request->user();
         $response = Http::timeout(5)->post($this->microservice->getUrl() . '/api/resign', [
-            'gameId' => $gameId, 'userId' => $user->id
+            'gameId' => $gameId,
+            'userId' => $user->id
         ]);
 
         return response()->json($response->json(), $response->status());
@@ -139,7 +144,9 @@ class GameController
     {
         $user = $request->user();
         $response = Http::timeout(5)->post($this->microservice->getUrl() . '/api/draw', [
-            'gameId' => $gameId, 'userId' => $user->id, 'action' => $request->input('action')
+            'gameId' => $gameId,
+            'userId' => $user->id,
+            'action' => $request->input('action')
         ]);
 
         return response()->json($response->json(), $response->status());
@@ -152,7 +159,8 @@ class GameController
     {
         $user = $request->user();
         $response = Http::timeout(5)->post($this->microservice->getUrl() . '/api/abort', [
-            'gameId' => $gameId, 'userId' => $user->id
+            'gameId' => $gameId,
+            'userId' => $user->id
         ]);
 
         return response()->json($response->json(), $response->status());
@@ -164,8 +172,9 @@ class GameController
     public function syncClock(Request $request, string $gameId): JsonResponse
     {
         $game = Game::find($gameId);
-        if (!$game) return response()->json(['message' => 'Not found'], 404);
-        
+        if (!$game)
+            return response()->json(['message' => 'Not found'], 404);
+
         return response()->json($this->microservice->fetchGameState($game));
     }
 
@@ -176,11 +185,11 @@ class GameController
     {
 
         if ($request->header('X-Internal-Secret') !== config('services.chess.internal_secret')) {
-             return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $game = Game::with(['whitePlayer', 'blackPlayer'])->find($gameId);
-        
+
         if (!$game) {
             return response()->json(['message' => 'Game not found'], 404);
         }
@@ -226,8 +235,8 @@ class GameController
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $whitePlayer = \App\Models\User::findOrFail($request->white_id);
-        $blackPlayer = \App\Models\User::findOrFail($request->black_id);
+        $whitePlayer = User::findOrFail($request->white_id);
+        $blackPlayer = User::findOrFail($request->black_id);
         $timeControl = $request->time_control;
 
         $timeData = $this->parseTimeControl($timeControl);
@@ -277,8 +286,8 @@ class GameController
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $whitePlayer = \App\Models\User::findOrFail($request->white_id);
-        $blackPlayer = \App\Models\User::findOrFail($request->black_id);
+        $whitePlayer = User::findOrFail($request->white_id);
+        $blackPlayer = User::findOrFail($request->black_id);
         $timeControl = $request->input('time_control', '3+0');
         $arenaId = $request->arena_id;
 
@@ -313,7 +322,8 @@ class GameController
         $type = $request->query('type');
 
         return response()->json(Game::with(['whitePlayer:id,name', 'blackPlayer:id,name'])
-            ->where(function($q) use ($user) { $q->where('white_player_id', $user->id)->orWhere('black_player_id', $user->id); })
+            ->where(function ($q) use ($user) {
+                $q->where('white_player_id', $user->id)->orWhere('black_player_id', $user->id); })
             ->whereIn('status', ['completed', 'aborted'])
             ->byType($type)
             ->orderBy('created_at', 'desc')
@@ -331,7 +341,7 @@ class GameController
     {
         $ratingData = $this->getRatingData($game->whitePlayer, $game->time_control);
         $category = $ratingData['category'];
-        
+
 
         try {
             foreach (['white' => $game->whitePlayer, 'black' => $game->blackPlayer] as $key => $user) {
@@ -372,17 +382,17 @@ class GameController
     {
         $parts = explode('+', $timeControl);
         return [
-            'initial_time_ms' => (int)($parts[0] ?? 600) * 1000,
-            'increment_ms' => (int)($parts[1] ?? 0) * 1000,
+            'initial_time_ms' => (int) ($parts[0] ?? 600) * 1000,
+            'increment_ms' => (int) ($parts[1] ?? 0) * 1000,
         ];
     }
 
     private function getRatingData($user, string $timeControl): array
     {
         $parts = explode('+', $timeControl);
-        $initial = (int)($parts[0] ?? 600);
-        $inc = (int)($parts[1] ?? 0);
-        
+        $initial = (int) ($parts[0] ?? 600);
+        $inc = (int) ($parts[1] ?? 0);
+
         // If the initial time is > 3600, it's almost certainly milliseconds (since 3600s = 1 hour)
         if ($initial > 3600) {
             $initial = $initial / 1000;
