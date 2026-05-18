@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ArenaChatController;
 use App\Http\Controllers\Api\GachaController;
 use App\Http\Controllers\Api\FideController;
+use App\Http\Controllers\Api\WoodpeckerController;
 
 Route::get('/fide/players', [FideController::class, 'players']);
 Route::get('/fide/ranking', [FideController::class, 'ranking']);
@@ -154,6 +155,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/progress/complete-lecture', [ProgressController::class, 'completeLecture']);
 
     Route::post('/tactics/solve', [TacticsController::class, 'solve']);
+
+    // Woodpecker Method routes
+    Route::get('/tactics/woodpecker', [WoodpeckerController::class, 'index']);
+    Route::post('/tactics/woodpecker', [WoodpeckerController::class, 'store']);
+    Route::get('/tactics/woodpecker/{id}', [WoodpeckerController::class, 'show']);
+    Route::post('/tactics/woodpecker/{id}/solve', [WoodpeckerController::class, 'solve']);
+    Route::post('/tactics/woodpecker/{id}/abandon', [WoodpeckerController::class, 'abandon']);
 
     // Follow routes
     Route::post('/users/{id}/follow', [FollowController::class, 'follow']);
