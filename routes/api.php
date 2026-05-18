@@ -103,6 +103,7 @@ Route::get('/lichess/explorer/{db?}', [LichessProxyController::class, 'explorer'
 Route::get('/lichess/tablebase/{variant?}', [LichessProxyController::class, 'tablebase']);
 
 Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
+Route::get('/tactics/themes', [TacticsController::class, 'themes']);
 Route::get('/tactics/leaderboard', [TacticsController::class, 'leaderboard']);
 
 // Public route for submitting coach applications

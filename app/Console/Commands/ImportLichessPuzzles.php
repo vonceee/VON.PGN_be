@@ -22,7 +22,27 @@ class ImportLichessPuzzles extends Command
     protected $description = 'Import puzzles from the official Lichess CSV database with full column mapping';
 
     /**
-     * Execute the console command.
+     * Parse and stream the official Lichess puzzles CSV dataset into the local database.
+     *
+     * Architectural Choice:
+     * - Disables SQL query logs and extends PHP execution & memory configurations for batch processing.
+     * - Uses buffered streaming CSV parsing (`fgetcsv`) to keep a flat O(1) memory profile.
+     * - Performs parameterized batch insertions using raw `DB::table()->insertOrIgnore` rather than Eloquent.
+     * - Triggers static theme cache compilation at the end of execution to restore fast API loads.
+     *
+     * Alternatives Considered:
+     * - Eloquent Model hydration: Rejected as creating millions of Model instances exhausts PHP RAM limits.
+     * - Standard `DB::insert`: Rejected because `insertOrIgnore` is required to tolerate duplicate Lichess IDs safely.
+     * - Laravel database seeding chunk methods: Rejected as CSV streaming is more memory-efficient.
+     *
+     * @return int Exit code (0 for success, 1 for failure).
+     *
+     * Assumptions & Edge Cases:
+     * - Assumes the target CSV has the standard Lichess schema with at least 10 fields.
+     * - Tolerates empty files, nonexistent file paths, and skips files with standard column headers gracefully.
+     *
+     * // CRITICAL: Database query logs must be disabled using DB::disableQueryLog() to prevent PHP memory exhaustion leaks during massive imports.
+     * // TRADEOFF: A batch chunk size of 3000 is utilized. While larger batch sizes reduce transactional roundtrips, 3000 is the mathematical sweet spot to avoid the MySQL 65,535 statement placeholder parameter threshold (10 columns * 3000 rows = 30,000 placeholders).
      */
     public function handle()
     {
@@ -35,12 +55,10 @@ class ImportLichessPuzzles extends Command
             return 1;
         }
 
-        // 1. Memory and Execution Time Optimizations
         ini_set('memory_limit', '1024M');
         set_time_limit(0);
         DB::disableQueryLog();
 
-        // 2. Handle Table Truncation to Prevent Duplicates and Optimize Speed
         if ($truncate) {
             $this->warn("⚠️ Truncating the 'puzzles' table to start fresh...");
             DB::table('puzzles')->truncate();
@@ -56,12 +74,11 @@ class ImportLichessPuzzles extends Command
         $file = fopen($filepath, 'r');
         $count = 0;
         $batch = [];
-        $chunkSize = 3000; // Perfect sweet-spot below the 65,535 parameters limit
+        $chunkSize = 3000;
 
-        // Skip the header row if it exists
         $firstLine = fgets($file);
         if (!str_contains($firstLine, 'PuzzleId')) {
-            rewind($file); // no header, start from beginning
+            rewind($file);
         }
 
         $now = now()->toDateTimeString();
@@ -70,18 +87,6 @@ class ImportLichessPuzzles extends Command
             if ($limit !== null && $count >= $limit) {
                 break;
             }
-
-            // Standard Lichess CSV columns: 
-            // 0: PuzzleId
-            // 1: FEN
-            // 2: Moves
-            // 3: Rating
-            // 4: RatingDeviation
-            // 5: Popularity
-            // 6: NbPlays
-            // 7: Themes
-            // 8: GameUrl
-            // 9: OpeningTags
 
             $batch[] = [
                 'lichess_puzzle_id' => $data[0] ?? null,
@@ -100,7 +105,6 @@ class ImportLichessPuzzles extends Command
 
             $count++;
 
-            // Insert in chunks to optimize database index and query parsing speed
             if ($count % $chunkSize === 0) {
                 DB::table('puzzles')->insertOrIgnore($batch);
                 $batch = [];
@@ -108,12 +112,14 @@ class ImportLichessPuzzles extends Command
             }
         }
 
-        // Insert any remaining puzzles
         if (!empty($batch)) {
             DB::table('puzzles')->insertOrIgnore($batch);
         }
 
         fclose($file);
+
+        $this->call('puzzles:calculate-themes');
+
         $this->info("✅ Successfully imported {$count} puzzles!");
         return 0;
     }

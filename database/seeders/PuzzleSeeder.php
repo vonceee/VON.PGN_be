@@ -27,6 +27,9 @@ class PuzzleSeeder extends Seeder
             $this->command?->warn('No puzzle data found. Seeding 3 fallback puzzles.');
             $this->seedFallback();
         }
+
+        // Invalidate theme counts cache
+        \Illuminate\Support\Facades\Cache::forget('puzzle_theme_counts:' . app()->environment());
     }
 
     private function seedFromJson(string $path): void
