@@ -248,10 +248,6 @@ class WoodpeckerController extends Controller
             $activeCycle->end_time = Carbon::now();
             $activeCycle->save();
 
-            // Reward credits! (Formula: base 10 + 10% of total puzzles)
-            $creditsRewarded = 10 + (int) floor($session->total_puzzles / 10);
-            $user->increment('credits', $creditsRewarded);
-
             if ($activeCycle->cycle_number < 4) {
                 // Initialize Next Cycle
                 $nextCycleNumber = $activeCycle->cycle_number + 1;

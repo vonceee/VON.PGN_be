@@ -219,7 +219,6 @@ class GameController
 
             if ($status === 'completed' && $ratingChanges && $newRatings) {
                 $this->updatePlayerRatings($game, $newRatings);
-                $this->awardGachaCredits($game);
             }
         });
 
@@ -358,25 +357,7 @@ class GameController
         }
     }
 
-    private function awardGachaCredits(Game $game): void
-    {
-        try {
-            $result = $game->result; // 'white', 'black', or 'draw'
 
-            if ($result === 'white') {
-                $game->whitePlayer->increment('credits', 20);
-                $game->blackPlayer->increment('credits', 5);
-            } elseif ($result === 'black') {
-                $game->blackPlayer->increment('credits', 20);
-                $game->whitePlayer->increment('credits', 5);
-            } elseif ($result === 'draw') {
-                $game->whitePlayer->increment('credits', 10);
-                $game->blackPlayer->increment('credits', 10);
-            }
-        } catch (\Exception $e) {
-            Log::error("[Gacha] Failed to award credits: " . $e->getMessage());
-        }
-    }
 
     private function parseTimeControl(string $timeControl): array
     {

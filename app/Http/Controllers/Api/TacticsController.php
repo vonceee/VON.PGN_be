@@ -259,9 +259,7 @@ class TacticsController extends Controller
         $newStreak = $request->success ? $currentStreak + 1 : 0;
         $progress->puzzle_streak = $newStreak;
 
-        if ($request->success) {
-            $user->increment('credits', 1);
-        }
+
 
         $progress->save();
 
