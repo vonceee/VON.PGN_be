@@ -155,6 +155,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/progress/complete-lecture', [ProgressController::class, 'completeLecture']);
 
     Route::post('/tactics/solve', [TacticsController::class, 'solve']);
+    Route::get('/tactics/history', [TacticsController::class, 'history']);
 
     // Woodpecker Method routes
     Route::get('/tactics/woodpecker', [WoodpeckerController::class, 'index']);

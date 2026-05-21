@@ -102,6 +102,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(UserProgress::class);
     }
 
+    public function puzzleAttempts()
+    {
+        return $this->hasMany(PuzzleAttempt::class);
+    }
+
     public function badges()
     {
         return $this->belongsToMany(Badge::class, 'badge_user')

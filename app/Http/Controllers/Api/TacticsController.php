@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Puzzle;
 use App\Models\UserProgress;
+use App\Models\PuzzleAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,14 @@ class TacticsController extends Controller
      */
     public function getDailyPuzzle(Request $request)
     {
+        $puzzleId = $request->query('puzzle_id');
+        if ($puzzleId) {
+            $puzzle = Puzzle::find($puzzleId);
+            if ($puzzle) {
+                return response()->json(['data' => $puzzle]);
+            }
+        }
+
         $user = $request->user('sanctum');
         if ($user && !$user->progress) {
             $user->progress()->create();
@@ -263,12 +272,37 @@ class TacticsController extends Controller
 
         $progress->save();
 
+        $user->puzzleAttempts()->create([
+            'puzzle_id' => $puzzle->id,
+            'success' => $request->success,
+            'rating_change' => $ratingChange,
+            'user_rating_after' => $progress->puzzle_rating,
+        ]);
+
         return response()->json([
             'success' => true,
             'new_rating' => $progress->puzzle_rating,
             'rating_change' => $ratingChange,
             'new_streak' => $newStreak,
         ]);
+    }
+
+    public function history(Request $request)
+    {
+        $user = $request->user('sanctum');
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $history = PuzzleAttempt::where('user_id', $user->id)
+            ->with(['puzzle:id,lichess_puzzle_id,rating,themes'])
+            ->orderBy('created_at', 'desc')
+            ->limit(15)
+            ->get()
+            ->reverse()
+            ->values();
+
+        return response()->json(['data' => $history]);
     }
 
     public function leaderboard(Request $request)
