@@ -163,6 +163,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tactics/woodpecker/{id}', [WoodpeckerController::class, 'show']);
     Route::post('/tactics/woodpecker/{id}/solve', [WoodpeckerController::class, 'solve']);
     Route::post('/tactics/woodpecker/{id}/abandon', [WoodpeckerController::class, 'abandon']);
+    Route::delete('/tactics/woodpecker/{id}', [WoodpeckerController::class, 'destroy']);
 
     // Follow routes
     Route::post('/users/{id}/follow', [FollowController::class, 'follow']);

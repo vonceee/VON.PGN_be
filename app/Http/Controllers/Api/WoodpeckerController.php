@@ -316,4 +316,26 @@ class WoodpeckerController extends Controller
             'session' => $session->load('cycles'),
         ]);
     }
+
+    /**
+     * Delete a session and all its cycles.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user('sanctum');
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $session = WoodpeckerSession::where('user_id', $user->id)->findOrFail($id);
+
+        DB::transaction(function () use ($session) {
+            $session->cycles()->delete();
+            $session->delete();
+        });
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
 }
