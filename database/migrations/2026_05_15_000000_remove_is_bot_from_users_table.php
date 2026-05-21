@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         // Delete all bot users before dropping the column
-        DB::table('users')->where('is_bot', true)->delete();
+        DB::table('users')->whereRaw('is_bot = true')->delete();
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('is_bot');
