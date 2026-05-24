@@ -49,11 +49,14 @@ class StudyController extends Controller
             'name' => $request->name,
             'visibility' => $request->visibility,
             'engine_visibility' => $request->engine_visibility ?? 'everyone',
+            'category' => $request->category ?? 'general',
+            'orientation' => $request->orientation ?? 'white',
         ]);
 
-        // Create an initial empty chapter
+        // Create an initial empty chapter inheriting the study's orientation
         $study->chapters()->create([
             'name' => 'Chapter 1',
+            'orientation' => $request->orientation ?? 'white',
             'order' => 1,
         ]);
 
@@ -81,7 +84,13 @@ class StudyController extends Controller
     {
         $this->authorize('update', $study);
 
+        $oldOrientation = $study->orientation;
         $study->update($request->validated());
+
+        // If it's an opening repertoire and the orientation changed, sync all chapters
+        if ($study->category === 'opening_repertoire' && $request->has('orientation') && $request->orientation !== $oldOrientation) {
+            $study->chapters()->update(['orientation' => $request->orientation]);
+        }
 
         return new StudyResource($study);
     }
@@ -117,7 +126,7 @@ class StudyController extends Controller
             'name' => $request->name,
             'initial_fen' => $request->initial_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
             'current_fen' => $request->initial_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-            'orientation' => $request->orientation ?? 'white',
+            'orientation' => $request->orientation ?? $study->orientation ?? 'white',
             'order' => $order,
         ]);
 
@@ -241,10 +250,19 @@ class StudyController extends Controller
 
                     $initialFen = $tags['FEN'] ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
+                    // Parse chapter orientation from PGN tags or inherit from study default
+                    $orientation = $study->orientation ?? 'white';
+                    if (isset($tags['Orientation'])) {
+                        $orientation = strtolower($tags['Orientation']) === 'black' ? 'black' : 'white';
+                    } elseif (isset($tags['orientation'])) {
+                        $orientation = strtolower($tags['orientation']) === 'black' ? 'black' : 'white';
+                    }
+
                     $study->chapters()->create([
                         'name' => $name,
                         'initial_fen' => $initialFen,
                         'current_fen' => $initialFen,
+                        'orientation' => $orientation,
                         'moves' => ['pgn' => $gameContent],
                         'pgn_tags' => $tags,
                         'order' => ++$order,

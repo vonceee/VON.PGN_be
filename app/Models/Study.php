@@ -15,7 +15,9 @@ class Study extends Model
         'user_id',
         'name',
         'visibility',
-        'engine_visibility'
+        'engine_visibility',
+        'category',
+        'orientation'
     ];
 
     /**
