@@ -31,9 +31,18 @@ class StudyController extends Controller
 
         if ($request->has('my')) {
             abort_if(!$user, 401, 'Authentication required');
-            $query->where('user_id', $user->id);
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('collaborators', function ($c) use ($user) {
+                      $c->where('users.id', $user->id);
+                  });
+            });
         } else {
             $query->where('visibility', 'public');
+        }
+
+        if ($request->has('category')) {
+            $query->where('category', $request->category);
         }
 
         return StudyResource::collection($query->paginate(20));
