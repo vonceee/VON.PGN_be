@@ -241,7 +241,6 @@ Route::get('/gacha/players', [GachaController::class, 'index']);
 Route::get('/studies', [StudyController::class, 'index']);
 Route::get('/studies/{study}', [StudyController::class, 'show']);
 Route::get('/studies/{study}/export-pgn', [StudyController::class, 'exportPgn']);
-Route::get('/studies/{study}/messages', [StudyController::class, 'messages']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // Authenticated Study routes
@@ -256,6 +255,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/studies/{study}/collaborators', [StudyController::class, 'addCollaborator']);
     Route::delete('/studies/{study}/collaborators/{userId}', [StudyController::class, 'removeCollaborator']);
     Route::put('/studies/{study}/collaborators/{userId}', [StudyController::class, 'updateCollaborator']);
+    Route::get('/studies/{study}/messages', [StudyController::class, 'messages']);
     Route::post('/studies/{study}/messages', [StudyController::class, 'sendMessage']);
     Route::delete('/studies/{study}/messages', [StudyController::class, 'clearMessages']);
 });
