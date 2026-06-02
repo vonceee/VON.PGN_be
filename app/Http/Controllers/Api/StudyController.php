@@ -365,9 +365,17 @@ class StudyController extends Controller
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
+            'can_edit' => 'sometimes|boolean',
         ]);
 
-        $study->collaborators()->syncWithoutDetaching([$request->user_id]);
+        $pivotData = [];
+        if ($request->has('can_edit')) {
+            $pivotData['can_edit'] = $request->can_edit;
+        }
+
+        $study->collaborators()->syncWithoutDetaching([
+            $request->user_id => $pivotData
+        ]);
 
         // Send notification
         $user = User::find($request->user_id);
