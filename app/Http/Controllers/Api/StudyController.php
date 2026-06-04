@@ -371,7 +371,7 @@ class StudyController extends Controller
 
             $pivotData = [];
             if ($request->has('can_edit')) {
-                $pivotData['can_edit'] = (bool) $request->can_edit;
+                $pivotData['can_edit'] = DB::raw($request->can_edit ? 'true' : 'false');
             }
 
             $study->collaborators()->syncWithoutDetaching([
@@ -424,7 +424,7 @@ class StudyController extends Controller
         ]);
 
         $study->collaborators()->updateExistingPivot($userId, [
-            'can_edit' => (bool) $request->can_edit,
+            'can_edit' => DB::raw($request->can_edit ? 'true' : 'false'),
         ]);
 
         return new StudyResource($study->load('collaborators'));
