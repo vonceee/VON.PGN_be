@@ -361,29 +361,43 @@ class StudyController extends Controller
      */
     public function addCollaborator(Request $request, Study $study)
     {
-        $this->authorize('update', $study);
+        try {
+            $this->authorize('update', $study);
 
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'can_edit' => 'sometimes|boolean',
-        ]);
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'can_edit' => 'sometimes|boolean',
+            ]);
 
-        $pivotData = [];
-        if ($request->has('can_edit')) {
-            $pivotData['can_edit'] = $request->can_edit;
+            $pivotData = [];
+            if ($request->has('can_edit')) {
+                $pivotData['can_edit'] = $request->can_edit;
+            }
+
+            $study->collaborators()->syncWithoutDetaching([
+                $request->user_id => $pivotData
+            ]);
+
+            // Send notification
+            $user = User::find($request->user_id);
+            if ($user) {
+                $user->notify(new CollaboratorAddedNotification($study->load('owner')));
+            }
+
+            return new StudyResource($study->load('collaborators'));
+        } catch (\Exception $e) {
+            Log::error("Add Collaborator Failed: " . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Failed to add collaborator.',
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => explode("\n", $e->getTraceAsString())
+            ], 500);
         }
-
-        $study->collaborators()->syncWithoutDetaching([
-            $request->user_id => $pivotData
-        ]);
-
-        // Send notification
-        $user = User::find($request->user_id);
-        if ($user) {
-            $user->notify(new CollaboratorAddedNotification($study->load('owner')));
-        }
-
-        return new StudyResource($study->load('collaborators'));
     }
 
     /**
