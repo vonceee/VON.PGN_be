@@ -313,7 +313,7 @@ class TacticsController extends Controller
 
         $cachedData = Cache::remember($cacheKey, $cacheDuration, function () use ($limit) {
             // Top 10 by Tactics Rating
-            $topTacticsRating = UserProgress::with('user:id,name,email')
+            $topTacticsRating = UserProgress::with('user:id,name,email,country_code')
                 ->orderBy('puzzle_rating', 'desc')
                 ->limit($limit)
                 ->get()
@@ -323,11 +323,12 @@ class TacticsController extends Controller
                         'user_id' => $item->user_id,
                         'username' => $item->user->name,
                         'score' => $item->puzzle_rating,
+                        'country_code' => $item->user->country_code,
                     ];
                 });
 
             // Top 10 by Tactics Streak
-            $topStreak = UserProgress::with('user:id,name,email')
+            $topStreak = UserProgress::with('user:id,name,email,country_code')
                 ->orderBy('puzzle_streak', 'desc')
                 ->limit($limit)
                 ->get()
@@ -337,45 +338,49 @@ class TacticsController extends Controller
                         'user_id' => $item->user_id,
                         'username' => $item->user->name,
                         'score' => $item->puzzle_streak,
+                        'country_code' => $item->user->country_code,
                     ];
                 });
 
             // Top 10 by Bullet Rating
             $topBulletRating = \App\Models\User::orderBy('bullet_rating', 'desc')
                 ->limit($limit)
-                ->get(['id', 'name', 'bullet_rating'])
+                ->get(['id', 'name', 'bullet_rating', 'country_code'])
                 ->map(function ($item, $index) {
                     return [
                         'rank' => $index + 1,
                         'user_id' => $item->id,
                         'username' => $item->name,
                         'score' => $item->bullet_rating,
+                        'country_code' => $item->country_code,
                     ];
                 });
 
             // Top 10 by Blitz Rating
             $topBlitzRating = \App\Models\User::orderBy('blitz_rating', 'desc')
                 ->limit($limit)
-                ->get(['id', 'name', 'blitz_rating'])
+                ->get(['id', 'name', 'blitz_rating', 'country_code'])
                 ->map(function ($item, $index) {
                     return [
                         'rank' => $index + 1,
                         'user_id' => $item->id,
                         'username' => $item->name,
                         'score' => $item->blitz_rating,
+                        'country_code' => $item->country_code,
                     ];
                 });
 
             // Top 10 by Rapid Rating
             $topRapidRating = \App\Models\User::orderBy('rapid_rating', 'desc')
                 ->limit($limit)
-                ->get(['id', 'name', 'rapid_rating'])
+                ->get(['id', 'name', 'rapid_rating', 'country_code'])
                 ->map(function ($item, $index) {
                     return [
                         'rank' => $index + 1,
                         'user_id' => $item->id,
                         'username' => $item->name,
                         'score' => $item->rapid_rating,
+                        'country_code' => $item->country_code,
                     ];
                 });
 
