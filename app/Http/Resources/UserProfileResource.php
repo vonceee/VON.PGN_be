@@ -21,7 +21,6 @@ class UserProfileResource extends JsonResource
             'uid' => (string) $this->id,
             'email' => $this->email,
             'username' => $this->name,
-            'displayName' => $this->name,
             'bio' => $this->bio,
             'is_admin' => $this->is_admin,
             'verified_organizer' => $this->verified_organizer ?? false,

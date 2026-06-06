@@ -27,7 +27,7 @@ class StudyController extends Controller
     public function index(Request $request)
     {
         $user = Auth::guard('sanctum')->user();
-        $query = Study::with(['owner', 'collaborators'])->withCount('chapters')->orderBy('updated_at', 'desc');
+        $query = Study::with(['owner'])->withCount('chapters');
 
         if ($request->has('my')) {
             abort_if(!$user, 401, 'Authentication required');
@@ -43,6 +43,24 @@ class StudyController extends Controller
 
         if ($request->has('category')) {
             $query->where('category', $request->category);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('owner', function ($ownerQ) use ($search) {
+                      $ownerQ->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $sort = $request->input('sort', 'last_updated');
+        if ($sort === 'alphabetical') {
+            $query->orderBy('name', 'asc');
+        } else {
+            $query->orderBy('updated_at', 'desc');
         }
 
         return StudyResource::collection($query->paginate(20));

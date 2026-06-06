@@ -12,7 +12,6 @@ class UserSearchResource extends JsonResource
         return [
             'uid' => (string) $this->id,
             'username' => $this->name,
-            'displayName' => $this->name,
         ];
     }
 }

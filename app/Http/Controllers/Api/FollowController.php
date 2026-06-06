@@ -108,7 +108,6 @@ class FollowController extends Controller
             return [
                 'uid' => (string) $follower->id,
                 'username' => $follower->name,
-                'displayName' => $follower->name,
                 'is_following' => $currentUser ? $currentUser->isFollowing($follower) : false,
             ];
         });
@@ -151,7 +150,6 @@ class FollowController extends Controller
             return [
                 'uid' => (string) $followedUser->id,
                 'username' => $followedUser->name,
-                'displayName' => $followedUser->name,
                 'is_following' => true,
             ];
         });
