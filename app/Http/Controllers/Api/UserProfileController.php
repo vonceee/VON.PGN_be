@@ -99,7 +99,6 @@ class UserProfileController extends Controller
             'theme' => 'nullable|string|in:light,dark,transparent,system',
             'board_style' => 'nullable|string|max:50',
             'piece_style' => 'nullable|string|max:50',
-            'background_image' => 'nullable|string|max:400',
             'sound_enabled' => 'nullable|boolean',
         ]);
 

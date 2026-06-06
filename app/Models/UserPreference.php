@@ -11,7 +11,6 @@ class UserPreference extends Model
         'theme',
         'board_style',
         'piece_style',
-        'background_image',
         'sound_enabled',
     ];
 

@@ -26,8 +26,7 @@ use App\Http\Controllers\Api\TournamentBookmarkController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\LichessProxyController;
 use App\Http\Controllers\Api\MediaProxyController;
-use App\Http\Controllers\Api\CoachApplicationController;
-use App\Http\Controllers\Api\Admin\CoachApplicationController as AdminCoachApplicationController;
+
 use App\Http\Controllers\Api\MatchmakingController;
 use App\Http\Controllers\Api\StudyController;
 use App\Http\Controllers\Api\ArenaController;
@@ -37,14 +36,9 @@ use App\Http\Controllers\Api\Admin\AcademyEnrollmentController as AdminAcademyEn
 use App\Http\Controllers\Api\CoachController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ArenaChatController;
-use App\Http\Controllers\Api\GachaController;
-use App\Http\Controllers\Api\FideController;
 use App\Http\Controllers\Api\WoodpeckerController;
 
-Route::get('/fide/players', [FideController::class, 'players']);
-Route::get('/fide/ranking', [FideController::class, 'ranking']);
-Route::get('/fide/players/{id}', [FideController::class, 'show']);
-Route::get('/fide/federations', [FideController::class, 'federations']);
+
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -107,12 +101,7 @@ Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
 Route::get('/tactics/themes', [TacticsController::class, 'themes']);
 Route::get('/tactics/leaderboard', [TacticsController::class, 'leaderboard']);
 
-// Public route for submitting coach applications
-Route::post('/coach-applications', [CoachApplicationController::class, 'store'])
-    ->middleware('throttle:5,60'); // Rate limiting
 
-// Check if current user has submitted an application
-Route::middleware('auth:sanctum')->get('/coach-applications/my-status', [CoachApplicationController::class, 'myStatus']);
 
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournaments/bookmarks', [TournamentBookmarkController::class, 'index'])
@@ -230,12 +219,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Arena chat routes
     Route::post('/arenas/{slug}/messages', [ArenaChatController::class, 'store']);
 
-    // Gacha routes
-    Route::get('/gacha/collection', [GachaController::class, 'collection']);
-    Route::post('/gacha/pull', [GachaController::class, 'pull']);
 });
-
-Route::get('/gacha/players', [GachaController::class, 'index']);
 
 // Public/Guest accessible Study routes
 Route::get('/studies', [StudyController::class, 'index']);
@@ -281,12 +265,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     
     Route::post('users/{id}/toggle-verified-organizer', [UserProfileController::class, 'toggleVerifiedOrganizer']);
 
-    // Coach applications management
-    Route::get('/coach-applications', [AdminCoachApplicationController::class, 'index']);
-    Route::get('/coach-applications/{id}', [AdminCoachApplicationController::class, 'show']);
-    Route::post('/coach-applications/{id}/approve', [AdminCoachApplicationController::class, 'approve']);
-    Route::post('/coach-applications/{id}/reject', [AdminCoachApplicationController::class, 'reject']);
-    Route::delete('/coach-applications/{id}', [AdminCoachApplicationController::class, 'destroy']);
+
 
     // Academy Enrollments management
     Route::get('/academy/enrollments', [AdminAcademyEnrollmentController::class, 'index']);

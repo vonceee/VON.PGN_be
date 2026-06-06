@@ -29,7 +29,6 @@ class UserProfileResource extends JsonResource
             'is_online' => $this->is_online ?? false,
             'last_seen_at' => $this->last_seen_at?->toIso8601String(),
             'country_code' => $this->country_code,
-            'daily_packs_available' => $this->daily_packs_available ?? 10,
 
             // Follow stats
             'followers_count' => $this->followers_count ?? 0,
@@ -47,7 +46,6 @@ class UserProfileResource extends JsonResource
                 'theme' => $this->preferences->theme ?? 'system',
                 'boardStyle' => $this->preferences->board_style ?? 'classic',
                 'pieceStyle' => $this->preferences->piece_style ?? 'standard',
-                'backgroundImage' => $this->preferences->background_image,
                 'soundEnabled' => (bool) ($this->preferences->sound_enabled ?? true),
             ],
 
