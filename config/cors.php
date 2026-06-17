@@ -21,6 +21,9 @@ return [
 
     'allowed_origins' => [
         env('FRONTEND_URL', 'http://localhost:4200'),
+        'http://localhost:4200',
+        'http://127.0.0.1:4200',
+        'http://192.168.254.146:4200',
         'https://vonchess.net',
         'https://www.vonchess.net'
     ],
