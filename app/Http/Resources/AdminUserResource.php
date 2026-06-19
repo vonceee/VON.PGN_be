@@ -20,9 +20,7 @@ class AdminUserResource extends JsonResource
             'last_seen_at' => $this->last_seen_at?->toIso8601String(),
             'is_online' => $this->is_online,
             'ratings' => [
-                'bullet' => $this->bullet_rating ?? 1500,
-                'blitz' => $this->blitz_rating ?? 1500,
-                'rapid' => $this->rapid_rating ?? 1500,
+                'tactics' => $this->progress->puzzle_rating ?? 1200,
             ],
         ];
     }

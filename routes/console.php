@@ -1,8 +1,6 @@
 <?php
 
-use App\Jobs\CheckGameTimeJob;
 use App\Jobs\SyncBroadcastsJob;
-use App\Models\Game;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;

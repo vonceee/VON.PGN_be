@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\TacticsController;
 use App\Http\Controllers\Api\TournamentController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\ChatController;
-use App\Http\Controllers\Api\GameController;
+
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\ChapterController as AdminChapterController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
@@ -27,15 +27,12 @@ use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\LichessProxyController;
 use App\Http\Controllers\Api\MediaProxyController;
 
-use App\Http\Controllers\Api\MatchmakingController;
 use App\Http\Controllers\Api\StudyController;
-use App\Http\Controllers\Api\ArenaController;
-use App\Http\Controllers\Api\UserArenaController;
 use App\Http\Controllers\Api\AcademyEnrollmentController;
 use App\Http\Controllers\Api\Admin\AcademyEnrollmentController as AdminAcademyEnrollmentController;
 use App\Http\Controllers\Api\CoachController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\ArenaChatController;
+
 use App\Http\Controllers\Api\WoodpeckerController;
 
 
@@ -109,10 +106,7 @@ Route::get('/tournaments/bookmarks', [TournamentBookmarkController::class, 'inde
 Route::get('/tournaments/{slug}', [TournamentController::class, 'show']);
 Route::get('/users/{id}/tournaments', [TournamentController::class, 'userTournaments']);
 
-// Arena routes
-Route::get('/arenas', [ArenaController::class, 'index']);
-Route::get('/arenas/{slug}', [ArenaController::class, 'show']);
-Route::get('/arenas/{slug}/messages', [ArenaChatController::class, 'index']);
+
 
 // Media Proxy (Public with CORS)
 Route::get('/media/{type}/{filename}', [MediaProxyController::class, 'serve'])
@@ -175,19 +169,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead']);
 
-    // Matchmaking routes
-    Route::get('/seeks', [MatchmakingController::class, 'index']);
-    Route::post('/seeks/{seekId}/join', [MatchmakingController::class, 'joinSeek']);
-    Route::post('/game/seek', [MatchmakingController::class, 'seek']);
-    Route::post('/game/seek/cancel', [MatchmakingController::class, 'cancelSeek']);
-    Route::get('/game/active', [GameController::class, 'activeGame']);
-    Route::get('/game/{gameId}', [GameController::class, 'show']);
-    Route::post('/game/{gameId}/resign', [GameController::class, 'resign']);
-    Route::post('/game/{gameId}/draw', [GameController::class, 'draw']);
-    Route::post('/game/{gameId}/abort', [GameController::class, 'abort']);
-    Route::get('/games/archived/{gameId}', [GameController::class, 'showArchived']);
-    Route::get('/games/history', [GameController::class, 'history']);
-    Route::post('/game/{gameId}/sync-clock', [GameController::class, 'syncClock']);
+
 
     Route::middleware('admin')->group(function () {
         // User tournament management
@@ -198,12 +180,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/my/tournaments/{id}', [UserTournamentController::class, 'destroy']);
         Route::post('/my/tournaments/media', [UserTournamentController::class, 'uploadMedia']);
 
-        // User arena management
-        Route::get('/my/arenas', [UserArenaController::class, 'index']);
-        Route::post('/my/arenas', [UserArenaController::class, 'store']);
-        Route::get('/my/arenas/{id}', [UserArenaController::class, 'show']);
-        Route::put('/my/arenas/{id}', [UserArenaController::class, 'update']);
-        Route::delete('/my/arenas/{id}', [UserArenaController::class, 'destroy']);
+
     });
 
     // Payment routes
@@ -216,8 +193,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Tournament bookmark routes
     Route::post('/tournaments/{slug}/bookmark', [TournamentBookmarkController::class, 'toggle']);
 
-    // Arena chat routes
-    Route::post('/arenas/{slug}/messages', [ArenaChatController::class, 'store']);
+
 
 });
 
@@ -274,10 +250,4 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::delete('/academy/enrollments/{id}', [AdminAcademyEnrollmentController::class, 'destroy']);
 });
 
-// Internal microservice routes
-    Route::post('/internal/game/{gameId}/complete', [GameController::class, 'completeGameInternal']);
-    Route::post('/internal/game/create', [GameController::class, 'createGameInternal']);
-    Route::post('/internal/arena/match', [GameController::class, 'createArenaMatchInternal']);
-    Route::post('/internal/arena/{id}/finalize', [ArenaController::class, 'finalizeArenaInternal']);
-    Route::post('/internal/arena/{id}/sync-standings', [ArenaController::class, 'syncStandingsInternal']);
-    Route::post('/internal/matchmaking/cleanup', [MatchmakingController::class, 'removeSeekInternal']);
+

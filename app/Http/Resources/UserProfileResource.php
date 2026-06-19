@@ -35,11 +35,7 @@ class UserProfileResource extends JsonResource
             'following_count' => $this->following_count ?? 0,
             'is_following' => $currentUser ? $currentUser->isFollowing($this->resource) : false,
 
-            // Live Chess Ratings
-            'ratings' => $this->getLiveChessRatings(),
 
-            // Active Game Preview
-            'active_game' => $this->getActiveGameData($request),
 
             // Nested Preferences
             'preferences' => [
@@ -72,33 +68,5 @@ class UserProfileResource extends JsonResource
         ];
     }
 
-    private function getActiveGameData(Request $request): ?array
-    {
-        $game = $this->whiteActiveGame ?: $this->blackActiveGame;
-        if (!$game) return null;
 
-        $microservice = resolve(\App\Services\ChessMicroservice::class);
-        $liveState = null;
-
-        try {
-            $liveState = $microservice->fetchGameState($game);
-        } catch (\Exception $e) {
-            // Silently fail if microservice is down
-        }
-
-        return [
-            'id' => $game->id,
-            'white_player' => [
-                'id' => $game->whitePlayer->id,
-                'name' => $game->whitePlayer->name,
-            ],
-            'black_player' => [
-                'id' => $game->blackPlayer->id,
-                'name' => $game->blackPlayer->name,
-            ],
-            'fen' => $liveState['fen'] ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-            'time_control' => $game->time_control,
-            'status' => $game->status,
-        ];
-    }
 }
