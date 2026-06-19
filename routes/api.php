@@ -9,7 +9,6 @@ use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\TacticsController;
 use App\Http\Controllers\Api\TournamentController;
 use App\Http\Controllers\Api\FollowController;
-use App\Http\Controllers\Api\ChatController;
 
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\ChapterController as AdminChapterController;
@@ -91,12 +90,9 @@ Route::get('/courses/{slug}', [CourseController::class, 'show']);
 Route::get('/lessons/{slug}', [CourseController::class, 'getLesson']);
 
 Route::get('/lichess/pgn', [LichessProxyController::class, 'pgn']);
-Route::get('/lichess/explorer/{db?}', [LichessProxyController::class, 'explorer']);
-Route::get('/lichess/tablebase/{variant?}', [LichessProxyController::class, 'tablebase']);
 
 Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
 Route::get('/tactics/themes', [TacticsController::class, 'themes']);
-Route::get('/tactics/leaderboard', [TacticsController::class, 'leaderboard']);
 
 
 
@@ -125,8 +121,7 @@ Route::post('/academy/enroll', [AcademyEnrollmentController::class, 'store'])
 Route::post('/academy/enroll', [AcademyEnrollmentController::class, 'store'])
     ->middleware('throttle:5,60');
 
-// PayMongo webhook (no auth - verified by PayMongo signature)
-Route::post('/webhooks/paymongo', [PaymentController::class, 'webhook']);
+
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -153,16 +148,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/{id}/follow', [FollowController::class, 'unfollow']);
     Route::get('/users/{id}/follow-status', [FollowController::class, 'status']);
 
-    // Chat routes
-    Route::get('/chat/conversations', [ChatController::class, 'conversations']);
-    Route::post('/chat/conversations', [ChatController::class, 'startConversation']);
-    Route::get('/chat/conversations/{conversationId}/messages', [ChatController::class, 'messages']);
-    Route::post('/chat/conversations/{conversationId}/messages', [ChatController::class, 'sendMessage']);
-    Route::post('/chat/conversations/{conversationId}/read', [ChatController::class, 'markAsRead']);
-    Route::post('/chat/conversations/{conversationId}/typing', [ChatController::class, 'typing']);
-    Route::post('/chat/status', [ChatController::class, 'updateStatus']);
-    Route::get('/chat/unread', [ChatController::class, 'unreadCount']);
-
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
@@ -183,9 +168,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 
-    // Payment routes
-    Route::post('/payments/checkout', [PaymentController::class, 'createCheckout']);
-    Route::get('/payments/history', [PaymentController::class, 'history']);
+
 
     // Tournament bookmark routes
     Route::post('/tournaments/{slug}/bookmark', [TournamentBookmarkController::class, 'toggle']);

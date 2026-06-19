@@ -5,25 +5,19 @@ The central orchestration and authentication layer for the VON.CHESS platform, b
 ## Core Responsibilities
 
 - **Authentication**: Secure user management via Laravel Sanctum.
-- **Data Persistence**: Manage user profiles, game history, and tournament data in PostgreSQL.
-- **Matchmaking**: Orchestrate game creation and player pairing.
-- **Microservice Bridge**: Acts as the primary controller for the Node.js game engine.
+- **Data Persistence**: Manage user profiles, studies, courses, tactics progress, and tournament data in PostgreSQL.
+- **Study Sync**: Keep the database in sync with collaborative analysis sessions.
 
 ## Modular Controller Architecture
 
-The project has been refactored to move away from fat controllers into a service-oriented structure:
+The project has been refactored to focus on specific user study and training domains:
 
-### 1. Matchmaking & Seeks
-- **[`MatchmakingController`](./app/Http/Controllers/Api/MatchmakingController.php)**: Isolated logic for handling player seeks and joining queues.
-- **[`SeeksService`](./app/Services/SeeksService.php)**: Underlying logic for queue management.
+### 1. Studies & Collaboration
+- **[`StudyController`](./app/Http/Controllers/Api/StudyController.php)**: Isolated logic for handling study creation, chapter manipulation, collaborator management, and analysis logs.
 
-### 2. Game Management
-- **[`GameController`](./app/Http/Controllers/Api/GameController.php)**: Handles active game actions (resigning, draws, etc.).
-- **[`ChessMicroservice`](./app/Services/ChessMicroservice.php)**: A dedicated service for all outgoing communication to the Node.js authoritative engine. Includes retry logic for cold starts.
-
-### 3. Internal Authoritative APIs
-- **`/api/internal/game/complete`**: Secured endpoint used by the Node.js microservice to report authoritative game results.
-- **`/api/internal/game/create`**: Used for rematch orchestration.
+### 2. Tactics Training & Spaced Repetition
+- **[`TacticsController`](./app/Http/Controllers/Api/TacticsController.php)**: Serves puzzles, stores solve statistics, and supports custom motifs/themes.
+- **[`WoodpeckerController`](./app/Http/Controllers/Api/WoodpeckerController.php)**: Orchestrates Woodpecker training sets, custom cycle setups, and accuracy tracking.
 
 ## Tech Stack
 
