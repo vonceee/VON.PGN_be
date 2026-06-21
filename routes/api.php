@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\CoachController;
 use App\Http\Controllers\Api\NotificationController;
 
 use App\Http\Controllers\Api\WoodpeckerController;
+use App\Http\Controllers\Api\GuessTheGameController;
 
 
 
@@ -93,6 +94,8 @@ Route::get('/lichess/pgn', [LichessProxyController::class, 'pgn']);
 
 Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
 Route::get('/tactics/themes', [TacticsController::class, 'themes']);
+Route::get('/guess-the-game/daily', [GuessTheGameController::class, 'getDailyChallenge']);
+Route::get('/guess-the-game/next', [GuessTheGameController::class, 'getNextChallenge']);
 
 
 
@@ -214,6 +217,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     Route::post('tournaments/media', [AdminTournamentController::class, 'uploadMedia']);
     Route::post('resolve-maps-url', [MapsUrlResolverController::class, 'resolve']);
+    Route::post('guess-the-game/import', [GuessTheGameController::class, 'importChallenge']);
     
     // User management
     Route::get('users', [AdminUserController::class, 'index']);
