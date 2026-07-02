@@ -94,6 +94,8 @@ class StudyController extends Controller
             'order' => 1,
         ]);
 
+        $this->syncStudyPreview($study);
+
         return new StudyResource($study->load(['owner', 'chapters']));
     }
 
@@ -164,6 +166,8 @@ class StudyController extends Controller
             'order' => $order,
         ]);
 
+        $this->syncStudyPreview($study);
+
         return new StudyChapterResource($chapter);
     }
 
@@ -188,6 +192,8 @@ class StudyController extends Controller
 
         $chapter->update($request->all());
 
+        $this->syncStudyPreview($study);
+
         return new StudyChapterResource($chapter);
     }
 
@@ -203,6 +209,8 @@ class StudyController extends Controller
         }
 
         $chapter->delete();
+
+        $this->syncStudyPreview($study);
 
         return response()->json(['message' => 'Chapter deleted successfully']);
     }
@@ -228,6 +236,8 @@ class StudyController extends Controller
                     ->update(['order' => $index + 1]);
             }
         });
+
+        $this->syncStudyPreview($study);
 
         return response()->json(['message' => 'Chapters reordered successfully']);
     }
@@ -304,6 +314,8 @@ class StudyController extends Controller
 
                     $importedCount++;
                 }
+
+                $this->syncStudyPreview($study);
 
                 return response()->json([
                     'message' => "Successfully imported {$importedCount} chapters.",
@@ -502,5 +514,38 @@ class StudyController extends Controller
         $study->messages()->delete();
 
         return response()->json(['message' => 'Chat cleared successfully']);
+    }
+
+    private function syncStudyPreview(Study $study)
+    {
+        $firstChapter = $study->chapters()->orderBy('order')->first();
+        if (!$firstChapter) {
+            $study->update([
+                'preview_fen' => 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                'preview_last_move' => null,
+            ]);
+            return;
+        }
+
+        $moves = $firstChapter->moves ?? [];
+        $initialFen = $firstChapter->initial_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+        $previewFen = $initialFen;
+        $previewLastMove = null;
+
+        if (is_array($moves) && count($moves) > 0) {
+            $lastNode = end($moves);
+            if (isset($lastNode['fen'])) {
+                $previewFen = $lastNode['fen'];
+            }
+            if (isset($lastNode['uci'])) {
+                $previewLastMove = $lastNode['uci'];
+            }
+        }
+
+        $study->update([
+            'preview_fen' => $previewFen,
+            'preview_last_move' => $previewLastMove,
+        ]);
     }
 }

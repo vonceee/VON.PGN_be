@@ -22,6 +22,8 @@ class StudyResource extends JsonResource
             'orientation' => $this->orientation ?? 'white',
             'engine_visibility' => $this->engine_visibility,
             'user_id' => $this->user_id, // ADDED THIS
+            'preview_fen' => $this->preview_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            'preview_last_move' => $this->preview_last_move,
             'owner' => $this->whenLoaded('owner', function() {
                 return [
                     'id' => $this->owner->id,

@@ -17,7 +17,9 @@ class Study extends Model
         'visibility',
         'engine_visibility',
         'category',
-        'orientation'
+        'orientation',
+        'preview_fen',
+        'preview_last_move'
     ];
 
     /**
