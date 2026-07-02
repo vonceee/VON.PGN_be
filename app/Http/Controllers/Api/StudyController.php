@@ -27,7 +27,14 @@ class StudyController extends Controller
     public function index(Request $request)
     {
         $user = Auth::guard('sanctum')->user();
-        $query = Study::with(['owner'])->withCount('chapters');
+        $relations = ['owner'];
+        if ($request->has('include')) {
+            $includes = explode(',', $request->include);
+            if (in_array('chapters', $includes)) {
+                $relations[] = 'chapters';
+            }
+        }
+        $query = Study::with($relations)->withCount('chapters');
 
         if ($request->has('my')) {
             abort_if(!$user, 401, 'Authentication required');
