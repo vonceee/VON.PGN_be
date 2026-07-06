@@ -259,7 +259,7 @@ class StudyController extends Controller
                 
                 // Fix missing spaces after move numbers: "1.d4" -> "1. d4", "1...Nf6" -> "1... Nf6"
                 // This helps the frontend tokenizer and other PGN tools parse the moves correctly.
-                $pgn = preg_replace('/(\d+\.{1,3})([^\s])/', '$1 $2', $pgn);
+                $pgn = preg_replace('/(\d+\.{1,3})([^\s\.])/', '$1 $2', $pgn);
                 
                 // Split PGN by games. Improved regex to handle multiple newlines and whitespace.
                 $games = preg_split('/\n\s*\n(?=\[)/', trim($pgn));
@@ -468,11 +468,20 @@ class StudyController extends Controller
                 }
             }
             
-            // 5. Post-comments
-            if (!empty($node['comments'])) {
-                foreach ($node['comments'] as $comment) {
-                    $pgn .= "{ " . trim($comment) . " } ";
+            // 5. Post-comments & clock
+            $hasComments = !empty($node['comments']);
+            $hasClk = !empty($node['clk']);
+            if ($hasComments || $hasClk) {
+                $pgn .= "{ ";
+                if ($hasClk) {
+                    $pgn .= "[%clk " . $node['clk'] . "] ";
                 }
+                if ($hasComments) {
+                    foreach ($node['comments'] as $comment) {
+                        $pgn .= trim($comment) . " ";
+                    }
+                }
+                $pgn .= "} ";
                 $forceNumber = true;
             } else {
                 $forceNumber = false;

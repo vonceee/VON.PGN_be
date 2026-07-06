@@ -140,6 +140,8 @@ class GuessTheGameController extends Controller
             'id' => $chapter->id,
             'white_player' => $tags['White'] ?? 'Unknown White',
             'black_player' => $tags['Black'] ?? 'Unknown Black',
+            'white_rating' => $tags['WhiteElo'] ?? null,
+            'black_rating' => $tags['BlackElo'] ?? null,
             'event' => $tags['Event'] ?? ($chapter->study->name ?? 'Unknown Event'),
             'year' => $year,
             'eco' => $tags['ECO'] ?? null,
@@ -148,6 +150,7 @@ class GuessTheGameController extends Controller
             'active_date' => null,
             'is_study_chapter' => true,
             'study_id' => $chapter->study_id,
+            'study_link' => $tags['StudyLink'] ?? null,
         ];
     }
 
