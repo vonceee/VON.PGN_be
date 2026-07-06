@@ -354,35 +354,61 @@ class StudyController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $study->load('chapters');
+        $chapterIdsInput = request()->query('chapter_ids');
+        if ($chapterIdsInput) {
+            if (is_string($chapterIdsInput)) {
+                $chapterIds = explode(',', $chapterIdsInput);
+            } else {
+                $chapterIds = (array)$chapterIdsInput;
+            }
+            $chapters = $study->chapters()->whereIn('id', $chapterIds)->orderBy('order')->get();
+        } else {
+            $chapters = $study->chapters()->orderBy('order')->get();
+        }
+
         $pgn = "";
         $userName = $user ? $user->name : 'Unknown';
 
-        foreach ($study->chapters as $chapter) {
-            $pgn .= "[Event \"" . ($study->name . ": " . $chapter->name) . "\"]\n";
-            $pgn .= "[Site \"VON.CHESS\"]\n";
-            $pgn .= "[Date \"" . now()->format('Y.m.d') . "\"]\n";
-            $pgn .= "[Round \"?\"]\n";
-            $pgn .= "[White \"?\"]\n";
-            $pgn .= "[Black \"?\"]\n";
-            $pgn .= "[Result \"*\"]\n";
+        foreach ($chapters as $chapter) {
+            $tags = $chapter->pgn_tags ?? [];
+            
+            // Standard/override tags
+            $tags['Event'] = $study->name . ": " . $chapter->name;
+            $tags['Site'] = $tags['Site'] ?? 'VON.CHESS';
+            $tags['Date'] = $tags['Date'] ?? now()->format('Y.m.d');
+            $tags['Round'] = $tags['Round'] ?? '?';
+            $tags['White'] = $tags['White'] ?? '?';
+            $tags['Black'] = $tags['Black'] ?? '?';
+            
+            $result = $tags['Result'] ?? '*';
+            $tags['Result'] = $result;
+            
             if ($chapter->initial_fen !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
-                $pgn .= "[SetUp \"1\"]\n";
-                $pgn .= "[FEN \"" . $chapter->initial_fen . "\"]\n";
+                $tags['SetUp'] = '1';
+                $tags['FEN'] = $chapter->initial_fen;
+            } else {
+                unset($tags['SetUp']);
+                unset($tags['FEN']);
             }
-            $pgn .= "[StudyName \"" . $study->name . "\"]\n";
-            $pgn .= "[ChapterName \"" . $chapter->name . "\"]\n";
-            $pgn .= "[Annotator \"" . $userName . "\"]\n\n";
+            
+            $tags['StudyName'] = $study->name;
+            $tags['ChapterName'] = $chapter->name;
+            $tags['Annotator'] = $userName;
+
+            foreach ($tags as $key => $value) {
+                $pgn .= "[" . $key . " \"" . $value . "\"]\n";
+            }
+            $pgn .= "\n";
 
             // Moves
             $moves = $chapter->moves;
             if (isset($moves['pgn'])) {
                 $pgn .= $moves['pgn'];
+            } elseif (is_array($moves)) {
+                $serialized = $this->serializeMoveTree($moves);
+                $pgn .= !empty($serialized) ? $serialized . " " . $result : $result;
             } else {
-                // If it's a tree, we'd need to serialize it back to PGN.
-                // For now, if it's already a chapter created via UI, we might just have a flat array or tree.
-                // We'll need a helper to serialize MoveNode[] -> PGN string.
-                $pgn .= "*"; 
+                $pgn .= $result;
             }
             
             $pgn .= "\n\n";
@@ -391,6 +417,77 @@ class StudyController extends Controller
         return response($pgn)
             ->header('Content-Type', 'application/x-chess-pgn')
             ->header('Content-Disposition', 'attachment; filename="' . str_replace(' ', '_', $study->name) . '.pgn"');
+    }
+
+    /**
+     * Recursively serializes a UI-edited moves tree (array of MoveNode) to a PGN string.
+     */
+    private function serializeMoveTree(array $nodes, int $lastPly = 0, bool $forceNumber = true): string
+    {
+        $pgn = "";
+        foreach ($nodes as $node) {
+            $ply = $node['ply'] ?? ($lastPly + 1);
+            $isWhite = ($ply % 2 !== 0);
+            
+            // 1. Pre-comments
+            if (!empty($node['preComments'])) {
+                foreach ($node['preComments'] as $comment) {
+                    $pgn .= "{ " . trim($comment) . " } ";
+                }
+                $forceNumber = true;
+            }
+            
+            // 2. Move number
+            if ($isWhite) {
+                $moveNum = ceil($ply / 2);
+                $pgn .= $moveNum . ". ";
+            } elseif ($forceNumber) {
+                $moveNum = ceil($ply / 2);
+                $pgn .= $moveNum . "... ";
+            }
+            
+            // 3. Move SAN
+            $pgn .= ($node['san'] ?? '') . " ";
+            
+            // 4. Glyphs / NAGs (optional)
+            if (!empty($node['glyphs'])) {
+                foreach ($node['glyphs'] as $glyph) {
+                    if (is_array($glyph) && isset($glyph['symbol'])) {
+                        $pgn .= $glyph['symbol'] . " ";
+                    } elseif (is_numeric($glyph)) {
+                        $pgn .= "$" . $glyph . " ";
+                    } elseif (is_string($glyph)) {
+                        $pgn .= $glyph . " ";
+                    }
+                }
+            }
+            
+            // 5. Post-comments
+            if (!empty($node['comments'])) {
+                foreach ($node['comments'] as $comment) {
+                    $pgn .= "{ " . trim($comment) . " } ";
+                }
+                $forceNumber = true;
+            } else {
+                $forceNumber = false;
+            }
+            
+            // 6. Variations
+            if (!empty($node['variations'])) {
+                foreach ($node['variations'] as $variation) {
+                    if (!empty($variation)) {
+                        $pgn .= "( " . trim($this->serializeMoveTree($variation, $ply - 1, true)) . " ) ";
+                        $forceNumber = true;
+                    }
+                }
+            }
+            
+            // 7. Children (mainline continuation)
+            if (!empty($node['children'])) {
+                $pgn .= $this->serializeMoveTree($node['children'], $ply, $forceNumber);
+            }
+        }
+        return trim($pgn);
     }
 
     /**
