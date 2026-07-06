@@ -83,6 +83,7 @@ class StudyController extends Controller
             'name' => $request->name,
             'visibility' => $request->visibility,
             'engine_visibility' => $request->engine_visibility ?? 'everyone',
+            'export_visibility' => $request->export_visibility ?? 'owner',
             'category' => $request->category ?? 'general',
             'orientation' => $request->orientation ?? 'white',
         ]);
@@ -351,6 +352,11 @@ class StudyController extends Controller
 
         // Check visibility
         if ($study->visibility === 'private' && (!$user || $study->user_id !== $user->id)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Check export visibility
+        if (($study->export_visibility ?? 'owner') === 'owner' && (!$user || $study->user_id !== $user->id)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

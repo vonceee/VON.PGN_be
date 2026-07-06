@@ -17,6 +17,7 @@ class StoreStudyRequest extends FormRequest
             'name' => 'required|string|max:255',
             'visibility' => 'required|in:public,private,unlisted',
             'engine_visibility' => 'sometimes|required|in:everyone,owner',
+            'export_visibility' => 'sometimes|required|in:everyone,owner',
             'category' => 'sometimes|required|string|in:general,opening_repertoire',
             'orientation' => 'sometimes|required|string|in:white,black',
         ];

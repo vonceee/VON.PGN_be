@@ -21,6 +21,7 @@ class StudyResource extends JsonResource
             'category' => $this->category ?? 'general',
             'orientation' => $this->orientation ?? 'white',
             'engine_visibility' => $this->engine_visibility,
+            'export_visibility' => $this->export_visibility,
             'user_id' => $this->user_id, // ADDED THIS
             'preview_fen' => $this->preview_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
             'preview_last_move' => $this->preview_last_move,

@@ -16,6 +16,7 @@ class Study extends Model
         'name',
         'visibility',
         'engine_visibility',
+        'export_visibility',
         'category',
         'orientation',
         'preview_fen',
