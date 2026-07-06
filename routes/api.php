@@ -217,7 +217,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     Route::post('tournaments/media', [AdminTournamentController::class, 'uploadMedia']);
     Route::post('resolve-maps-url', [MapsUrlResolverController::class, 'resolve']);
-    Route::post('guess-the-game/import', [GuessTheGameController::class, 'importChallenge']);
     
     // User management
     Route::get('users', [AdminUserController::class, 'index']);
