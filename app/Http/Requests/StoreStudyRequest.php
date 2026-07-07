@@ -18,7 +18,7 @@ class StoreStudyRequest extends FormRequest
             'visibility' => 'required|in:public,private,unlisted',
             'engine_visibility' => 'sometimes|required|in:everyone,owner',
             'export_visibility' => 'sometimes|required|in:everyone,owner',
-            'category' => 'sometimes|required|string|in:general,opening_repertoire',
+            'category' => 'sometimes|required|string|in:general,opening_repertoire,middlegame,endgame',
             'orientation' => 'sometimes|required|string|in:white,black',
         ];
     }
