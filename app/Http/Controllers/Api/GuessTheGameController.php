@@ -132,9 +132,26 @@ class GuessTheGameController extends Controller
 
         // Clean headers from PGN
         $pgn = preg_replace('/\[.*?\]\s*/', '', $pgn);
+        $pgn = preg_replace('/\s*\.\.\.\s*$/', '', $pgn);
         $pgn = trim($pgn);
 
         $result = $tags['Result'] ?? '*';
+
+        $startPly = null;
+        foreach ($tags as $key => $value) {
+            $lowerKey = strtolower($key);
+            if ($lowerKey === 'startply' || $lowerKey === 'guessstartply') {
+                if (is_numeric($value)) {
+                    $startPly = (int)$value;
+                    break;
+                }
+            } elseif ($lowerKey === 'startmove' || $lowerKey === 'guessstartmove') {
+                if (is_numeric($value)) {
+                    $startPly = ((int)$value - 1) * 2;
+                    break;
+                }
+            }
+        }
 
         return [
             'id' => $chapter->id,
@@ -151,6 +168,8 @@ class GuessTheGameController extends Controller
             'is_study_chapter' => true,
             'study_id' => $chapter->study_id,
             'study_link' => $tags['StudyLink'] ?? null,
+            'initial_fen' => $chapter->initial_fen,
+            'start_ply' => $startPly,
         ];
     }
 
