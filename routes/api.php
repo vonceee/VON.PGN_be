@@ -34,8 +34,7 @@ use App\Http\Controllers\Api\NotificationController;
 
 use App\Http\Controllers\Api\WoodpeckerController;
 use App\Http\Controllers\Api\GuessTheGameController;
-
-
+use App\Http\Controllers\Api\BlogController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -235,5 +234,17 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::put('/academy/enrollments/{id}', [AdminAcademyEnrollmentController::class, 'update']);
     Route::delete('/academy/enrollments/{id}', [AdminAcademyEnrollmentController::class, 'destroy']);
 });
+
+// Blog routes
+Route::get('/blogs', [BlogController::class, 'index']);
+Route::get('/blogs/{slug}', [BlogController::class, 'show']);
+
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/my/blogs', [BlogController::class, 'myBlogs']);
+    Route::post('/blogs', [BlogController::class, 'store']);
+    Route::put('/blogs/{id}', [BlogController::class, 'update']);
+    Route::delete('/blogs/{id}', [BlogController::class, 'destroy']);
+});
+
 
 
