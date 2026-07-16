@@ -54,4 +54,16 @@ class Study extends Model
     {
         return $this->hasMany(StudyMessage::class);
     }
+
+    /**
+     * Resolve the route binding using the obfuscated study key.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $id = \App\Utils\StudyObfuscator::decode($value);
+        if ($id <= 0) {
+            abort(404);
+        }
+        return $this->where('id', $id)->firstOrFail();
+    }
 }

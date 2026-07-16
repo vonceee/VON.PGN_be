@@ -23,16 +23,12 @@ class StudyPolicy
      */
     public function view(?User $user, Study $study): bool
     {
-        if ($study->visibility === 'public') {
+        if ($study->visibility === 'public' || $study->visibility === 'unlisted') {
             return true;
         }
 
         if (!$user) {
             return false;
-        }
-
-        if ($study->visibility === 'unlisted') {
-            return true;
         }
 
         if ($study->visibility === 'private') {

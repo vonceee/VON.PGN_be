@@ -15,7 +15,7 @@ class StudyResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => \App\Utils\StudyObfuscator::encode($this->id),
             'name' => $this->name,
             'visibility' => $this->visibility,
             'category' => $this->category ?? 'general',
