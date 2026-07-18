@@ -124,10 +124,17 @@ class GuessTheGameController extends Controller
         // Extract PGN moves
         $moves = $chapter->moves;
         $pgn = '';
+        $description = null;
         if (isset($moves['pgn'])) {
             $pgn = $moves['pgn'];
         } elseif (is_array($moves)) {
             $pgn = $this->serializeMoveTree($moves);
+            
+            // Extract description from the preComments of the first move node
+            $firstMove = reset($moves);
+            if (!empty($firstMove['preComments']) && is_array($firstMove['preComments'])) {
+                $description = implode("\n", $firstMove['preComments']);
+            }
         }
 
         // Clean headers from PGN
@@ -164,6 +171,7 @@ class GuessTheGameController extends Controller
             'eco' => $tags['ECO'] ?? null,
             'result' => $result,
             'pgn' => $pgn,
+            'description' => $description,
             'active_date' => null,
             'is_study_chapter' => true,
             'study_id' => $chapter->study_id,
