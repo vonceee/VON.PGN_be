@@ -22,6 +22,16 @@ class StudyResource extends JsonResource
             'orientation' => $this->orientation ?? 'white',
             'engine_visibility' => $this->engine_visibility,
             'export_visibility' => $this->export_visibility,
+            'description' => $this->description ?? cache()->remember("study_pre_move_comments_{$this->id}", 600, function() {
+                $firstChapter = $this->chapters()->orderBy('order')->first();
+                if ($firstChapter && is_array($firstChapter->moves) && count($firstChapter->moves) > 0) {
+                    $firstMove = $firstChapter->moves[0] ?? null;
+                    if ($firstMove && is_array($firstMove) && !empty($firstMove['preComments'])) {
+                        return implode(" ", $firstMove['preComments']);
+                    }
+                }
+                return null;
+            }),
             'user_id' => $this->user_id, // ADDED THIS
             'preview_fen' => $this->preview_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
             'preview_last_move' => $this->preview_last_move,
