@@ -23,7 +23,9 @@ class StudyResource extends JsonResource
             'engine_visibility' => $this->engine_visibility,
             'export_visibility' => $this->export_visibility,
             'description' => $this->description ?? cache()->remember("study_pre_move_comments_{$this->id}", 600, function() {
-                $firstChapter = $this->chapters()->orderBy('order')->first();
+                $firstChapter = $this->relationLoaded('chapters')
+                    ? $this->chapters->sortBy('order')->first()
+                    : $this->chapters()->orderBy('order')->first();
                 if ($firstChapter && is_array($firstChapter->moves) && count($firstChapter->moves) > 0) {
                     $firstMove = $firstChapter->moves[0] ?? null;
                     if ($firstMove && is_array($firstMove) && !empty($firstMove['preComments'])) {

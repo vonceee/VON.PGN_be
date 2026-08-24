@@ -21,13 +21,13 @@ class GuessTheGameController extends Controller
      */
     public function getDailyChallenge(Request $request)
     {
-        $user = User::whereRaw('LOWER(name) = ?', ['vonchess'])->first();
+        $user = User::where('name', 'vonchess')->first();
         if (!$user) {
             return response()->json(['error' => 'No challenges available. Please ensure the user "vonchess" exists.'], 404);
         }
 
         $study = Study::where('user_id', $user->id)
-            ->whereRaw('LOWER(name) = ?', [strtolower('GTG source')])
+            ->where('name', 'GTG source')
             ->first();
 
         if (!$study) {
@@ -45,12 +45,13 @@ class GuessTheGameController extends Controller
             return response()->json(['error' => 'Challenge not found.'], 404);
         }
 
-        $chapters = $study->chapters()->get();
-        if ($chapters->isEmpty()) {
+        $chapterIds = $study->chapters()->pluck('id');
+        if ($chapterIds->isEmpty()) {
             return response()->json(['error' => 'No challenges available. Please ensure the study "GTG source" has chapters.'], 404);
         }
 
-        $chapter = $chapters->random();
+        $randomId = $chapterIds->random();
+        $chapter = StudyChapter::find($randomId);
         return response()->json(['data' => $this->transformChapterToChallenge($chapter)]);
     }
 
@@ -64,13 +65,13 @@ class GuessTheGameController extends Controller
     {
         $currentId = $request->query('current_id');
         
-        $user = User::whereRaw('LOWER(name) = ?', ['vonchess'])->first();
+        $user = User::where('name', 'vonchess')->first();
         if (!$user) {
             return response()->json(['error' => 'No challenges available. Please ensure the user "vonchess" exists.'], 404);
         }
 
         $study = Study::where('user_id', $user->id)
-            ->whereRaw('LOWER(name) = ?', [strtolower('GTG source')])
+            ->where('name', 'GTG source')
             ->first();
 
         if (!$study) {
@@ -81,9 +82,9 @@ class GuessTheGameController extends Controller
         if ($currentId) {
             $query->where('id', '!=', $currentId);
         }
-        $chapters = $query->get();
+        $chapterIds = $query->pluck('id');
 
-        if ($chapters->isEmpty()) {
+        if ($chapterIds->isEmpty()) {
             // If there's only 1 chapter total, fallback to returning the current one
             if ($currentId) {
                 $chapter = StudyChapter::where('id', $currentId)
@@ -97,7 +98,8 @@ class GuessTheGameController extends Controller
                 return response()->json(['error' => 'No other challenges available.'], 404);
             }
         } else {
-            $chapter = $chapters->random();
+            $randomId = $chapterIds->random();
+            $chapter = StudyChapter::find($randomId);
         }
 
         return response()->json(['data' => $this->transformChapterToChallenge($chapter)]);
