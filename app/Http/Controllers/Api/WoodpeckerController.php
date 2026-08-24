@@ -60,7 +60,7 @@ class WoodpeckerController extends Controller
         $query = DB::table('puzzles');
 
         if ($theme && $theme !== 'mix') {
-            $query->whereRaw("CONCAT(' ', themes, ' ') LIKE ?", ["% {$theme} %"]);
+            $query->whereRaw("MATCH(themes) AGAINST(? IN BOOLEAN MODE)", ['+' . $theme]);
         }
 
         if ($ratingMin !== null && $ratingMax !== null) {
@@ -79,7 +79,7 @@ class WoodpeckerController extends Controller
         if (count($puzzleIds) < $totalPuzzles) {
             $fallbackQuery = DB::table('puzzles');
             if ($theme && $theme !== 'mix') {
-                $fallbackQuery->whereRaw("CONCAT(' ', themes, ' ') LIKE ?", ["% {$theme} %"]);
+                $fallbackQuery->whereRaw("MATCH(themes) AGAINST(? IN BOOLEAN MODE)", ['+' . $theme]);
             }
             if ($ratingMin !== null && $ratingMax !== null) {
                 $fallbackQuery->whereBetween('rating', [$ratingMin - 150, $ratingMax + 150]);
@@ -91,7 +91,7 @@ class WoodpeckerController extends Controller
         if (count($puzzleIds) < $totalPuzzles) {
             $fallbackQuery = DB::table('puzzles');
             if ($theme && $theme !== 'mix') {
-                $fallbackQuery->whereRaw("CONCAT(' ', themes, ' ') LIKE ?", ["% {$theme} %"]);
+                $fallbackQuery->whereRaw("MATCH(themes) AGAINST(? IN BOOLEAN MODE)", ['+' . $theme]);
             }
             $puzzleIds = $this->getRandomPuzzleIds($fallbackQuery, $totalPuzzles);
         }

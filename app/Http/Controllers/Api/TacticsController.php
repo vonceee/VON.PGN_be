@@ -53,7 +53,7 @@ class TacticsController extends Controller
         $query = Puzzle::query();
 
         if ($theme && $theme !== 'mix') {
-            $query->whereRaw("CONCAT(' ', themes, ' ') LIKE ?", ["% {$theme} %"]);
+            $query->whereRaw("MATCH(themes) AGAINST(? IN BOOLEAN MODE)", ['+' . $theme]);
         }
 
         $ratingQuery = clone $query;
