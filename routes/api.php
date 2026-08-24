@@ -156,6 +156,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead']);
 
+    // Bughouse routes
+    Route::post('/bughouse/invite', [\App\Http\Controllers\Api\BughouseController::class, 'sendInvite']);
+    Route::post('/bughouse/cancel-invite', [\App\Http\Controllers\Api\BughouseController::class, 'cancelInvite']);
+
+
 
 
     Route::middleware('admin')->group(function () {

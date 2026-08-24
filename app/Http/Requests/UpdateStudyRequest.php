@@ -20,6 +20,8 @@ class UpdateStudyRequest extends FormRequest
             'export_visibility' => 'sometimes|required|in:everyone,owner',
             'category' => 'sometimes|required|string|in:general,opening_repertoire,middlegame,endgame',
             'orientation' => 'sometimes|required|string|in:white,black',
+            'preview_fen' => 'sometimes|nullable|string',
+            'preview_last_move' => 'sometimes|nullable|string',
         ];
     }
 }

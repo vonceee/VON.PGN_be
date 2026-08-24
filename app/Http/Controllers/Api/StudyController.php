@@ -193,8 +193,6 @@ class StudyController extends Controller
 
         $chapter->update($request->all());
 
-        $this->syncStudyPreview($study);
-
         return new StudyChapterResource($chapter);
     }
 

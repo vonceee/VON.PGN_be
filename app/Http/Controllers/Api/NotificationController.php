@@ -12,7 +12,9 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
-        $notifications = $request->user()->notifications()->paginate(20);
+        $notifications = $request->user()->notifications()
+            ->where('type', '!=', \App\Notifications\BughouseInviteNotification::class)
+            ->paginate(20);
 
         return response()->json($notifications);
     }
@@ -33,7 +35,9 @@ class NotificationController extends Controller
      */
     public function markAllAsRead(Request $request)
     {
-        $request->user()->unreadNotifications->markAsRead();
+        $request->user()->unreadNotifications()
+            ->where('type', '!=', \App\Notifications\BughouseInviteNotification::class)
+            ->update(['read_at' => now()]);
 
         return response()->json(['message' => 'All notifications marked as read']);
     }
@@ -44,7 +48,9 @@ class NotificationController extends Controller
     public function unreadCount(Request $request)
     {
         return response()->json([
-            'count' => $request->user()->unreadNotifications()->count()
+            'count' => $request->user()->unreadNotifications()
+                ->where('type', '!=', \App\Notifications\BughouseInviteNotification::class)
+                ->count()
         ]);
     }
 }
