@@ -72,7 +72,7 @@ class WoodpeckerController extends Controller
         }
 
         // Shuffled subset pick
-        $puzzleIds = (clone $query)->inRandomOrder()->limit($totalPuzzles)->pluck('id')->toArray();
+        $puzzleIds = $this->getRandomPuzzleIds($query, $totalPuzzles);
 
         // 2. Robust fallback algorithm in case filters are too narrow:
         // Fallback 1: Expand rating limits by 300 Elo
@@ -84,7 +84,7 @@ class WoodpeckerController extends Controller
             if ($ratingMin !== null && $ratingMax !== null) {
                 $fallbackQuery->whereBetween('rating', [$ratingMin - 150, $ratingMax + 150]);
             }
-            $puzzleIds = $fallbackQuery->inRandomOrder()->limit($totalPuzzles)->pluck('id')->toArray();
+            $puzzleIds = $this->getRandomPuzzleIds($fallbackQuery, $totalPuzzles);
         }
 
         // Fallback 2: Remove rating limits completely
@@ -93,12 +93,12 @@ class WoodpeckerController extends Controller
             if ($theme && $theme !== 'mix') {
                 $fallbackQuery->whereRaw("CONCAT(' ', themes, ' ') LIKE ?", ["% {$theme} %"]);
             }
-            $puzzleIds = $fallbackQuery->inRandomOrder()->limit($totalPuzzles)->pluck('id')->toArray();
+            $puzzleIds = $this->getRandomPuzzleIds($fallbackQuery, $totalPuzzles);
         }
 
         // Fallback 3: Return any random puzzles globally
         if (count($puzzleIds) < $totalPuzzles) {
-            $puzzleIds = DB::table('puzzles')->inRandomOrder()->limit($totalPuzzles)->pluck('id')->toArray();
+            $puzzleIds = $this->getRandomPuzzleIds(DB::table('puzzles'), $totalPuzzles);
         }
 
         if (empty($puzzleIds)) {
@@ -337,5 +337,49 @@ class WoodpeckerController extends Controller
         return response()->json([
             'success' => true
         ]);
+    }
+
+    /**
+     * Optimized O(1) hybrid random puzzle picker.
+     * Uses range-based primary key picking for dense datasets,
+     * and falls back to plucking matching IDs for sparse/filtered datasets.
+     */
+    private function getRandomPuzzleIds($query, $limit)
+    {
+        $minMax = DB::table('puzzles')->selectRaw('MIN(id) as min_id, MAX(id) as max_id')->first();
+        if (!$minMax || $minMax->min_id === null) {
+            return [];
+        }
+
+        $minId = $minMax->min_id;
+        $maxId = $minMax->max_id;
+        $sampled = [];
+        $maxAttempts = $limit * 3;
+        $attempts = 0;
+
+        while (count($sampled) < $limit && $attempts < $maxAttempts) {
+            $attempts++;
+            $randomId = rand($minId, $maxId);
+            $id = (clone $query)->where('id', '>=', $randomId)->value('id');
+            if ($id && !in_array($id, $sampled)) {
+                $sampled[] = $id;
+            }
+        }
+
+        // Fallback for sparse results: pluck and sample matching IDs
+        if (count($sampled) < $limit) {
+            $allIds = (clone $query)->pluck('id')->toArray();
+            if (!empty($allIds)) {
+                $count = count($allIds);
+                $keys = array_rand($allIds, min($count, $limit));
+                $keys = is_array($keys) ? $keys : [$keys];
+                $sampled = [];
+                foreach ($keys as $k) {
+                    $sampled[] = $allIds[$k];
+                }
+            }
+        }
+
+        return $sampled;
     }
 }
