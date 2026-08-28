@@ -23,8 +23,12 @@ class BughouseController extends Controller
         // Delete existing unread bughouse invites from this sender to prevent stacking
         $receiver->unreadNotifications()
             ->where('type', BughouseInviteNotification::class)
-            ->where('data->sender_username', $request->user()->name)
-            ->delete();
+            ->get()
+            ->each(function ($notification) use ($request) {
+                if (($notification->data['sender_username'] ?? null) === $request->user()->name) {
+                    $notification->delete();
+                }
+            });
 
         // Dispatch database notification
         $receiver->notify(new BughouseInviteNotification($request->user()));
@@ -47,8 +51,12 @@ class BughouseController extends Controller
 
         $receiver->unreadNotifications()
             ->where('type', BughouseInviteNotification::class)
-            ->where('data->sender_username', $request->user()->name)
-            ->delete();
+            ->get()
+            ->each(function ($notification) use ($request) {
+                if (($notification->data['sender_username'] ?? null) === $request->user()->name) {
+                    $notification->delete();
+                }
+            });
 
         return response()->json([
             'message' => 'Invitation cancelled successfully.',
