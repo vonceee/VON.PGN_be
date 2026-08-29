@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\WoodpeckerController;
 use App\Http\Controllers\Api\GuessTheGameController;
 use App\Http\Controllers\Api\BlogController;
+use App\Http\Controllers\Api\ActivityLogController;
 
 Route::get('/ping', function () {
     return response()->json(['pong' => true, 'timestamp' => now()->toIso8601String()]);
@@ -95,6 +96,7 @@ Route::get('/tactics/next', [TacticsController::class, 'getDailyPuzzle']);
 Route::get('/tactics/themes', [TacticsController::class, 'themes']);
 Route::get('/guess-the-game/daily', [GuessTheGameController::class, 'getDailyChallenge']);
 Route::get('/guess-the-game/next', [GuessTheGameController::class, 'getNextChallenge']);
+Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
 
 

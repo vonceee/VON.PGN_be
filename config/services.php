@@ -53,6 +53,7 @@ return [
 
     'chess' => [
         'internal_secret' => env('INTERNAL_SECRET', 'v0n_ch3ss_s3cr3t_2026'),
+        'creator_username' => env('CREATOR_USERNAME', 'vonchess'),
     ],
 
 ];
