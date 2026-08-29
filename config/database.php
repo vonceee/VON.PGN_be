@@ -96,13 +96,13 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
-            'prepared_statements' => false,
+            'prepared_statements' => env('DB_PREPARED_STATEMENTS', true),
             'connect_timeout' => 15,
             'schema' => 'public',
             'options' => [
                 PDO::ATTR_TIMEOUT => 15,
                 PDO::ATTR_PERSISTENT => false,
-                PDO::ATTR_EMULATE_PREPARES => true,
+                PDO::ATTR_EMULATE_PREPARES => env('DB_EMULATE_PREPARES', false),
             ],
         ],
 
