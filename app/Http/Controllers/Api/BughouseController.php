@@ -19,6 +19,12 @@ class BughouseController extends Controller
         ]);
 
         $receiver = User::where('name', $request->receiver_username)->firstOrFail();
+
+        if ($receiver->id === $request->user()->id) {
+            return response()->json([
+                'message' => 'You cannot invite yourself.',
+            ], 422);
+        }
         
         // Delete existing unread bughouse invites from this sender to prevent stacking
         $receiver->unreadNotifications()
