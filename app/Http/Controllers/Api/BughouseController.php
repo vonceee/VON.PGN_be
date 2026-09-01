@@ -68,4 +68,71 @@ class BughouseController extends Controller
             'message' => 'Invitation cancelled successfully.',
         ]);
     }
+
+    /**
+     * Update the authenticated user's bughouse win/loss/draw record.
+     */
+    public function updateRecord(Request $request)
+    {
+        $request->validate([
+            'game_id' => 'required|string',
+            'outcome' => 'required|string|in:win,draw,loss',
+        ]);
+
+        $user = $request->user();
+        $gameId = $request->game_id;
+        $outcome = $request->outcome;
+
+        // Perform an atomic check & lock using Cache::add (returns false if the key already exists)
+        $cacheKey = "bughouse_processed_game:{$user->id}:{$gameId}";
+        if (!\Illuminate\Support\Facades\Cache::add($cacheKey, true, now()->addDay())) {
+            return response()->json([
+                'message' => 'Game outcome already processed.',
+                'bughouse_stats' => [
+                    'wins' => (int) $user->bughouse_wins,
+                    'draws' => (int) $user->bughouse_draws,
+                    'losses' => (int) $user->bughouse_losses,
+                ],
+            ]);
+        }
+
+        if ($outcome === 'win') {
+            $user->increment('bughouse_wins');
+        } elseif ($outcome === 'draw') {
+            $user->increment('bughouse_draws');
+        } elseif ($outcome === 'loss') {
+            $user->increment('bughouse_losses');
+        }
+
+        return response()->json([
+            'message' => 'Record updated successfully.',
+            'bughouse_stats' => [
+                'wins' => (int) $user->bughouse_wins,
+                'draws' => (int) $user->bughouse_draws,
+                'losses' => (int) $user->bughouse_losses,
+            ],
+        ]);
+    }
+
+    /**
+     * Reset the authenticated user's bughouse stats.
+     */
+    public function resetRecord(Request $request)
+    {
+        $user = $request->user();
+        $user->update([
+            'bughouse_wins' => 0,
+            'bughouse_draws' => 0,
+            'bughouse_losses' => 0,
+        ]);
+
+        return response()->json([
+            'message' => 'Record reset successfully.',
+            'bughouse_stats' => [
+                'wins' => 0,
+                'draws' => 0,
+                'losses' => 0,
+            ],
+        ]);
+    }
 }

@@ -35,7 +35,12 @@ class UserProfileResource extends JsonResource
             'following_count' => $this->following_count ?? 0,
             'is_following' => $currentUser ? $currentUser->isFollowing($this->resource) : false,
 
-
+            // Bughouse Stats
+            'bughouse_stats' => [
+                'wins' => (int) ($this->bughouse_wins ?? 0),
+                'draws' => (int) ($this->bughouse_draws ?? 0),
+                'losses' => (int) ($this->bughouse_losses ?? 0),
+            ],
 
             // Nested Preferences
             'preferences' => [

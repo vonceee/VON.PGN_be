@@ -161,6 +161,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Bughouse routes
     Route::post('/bughouse/invite', [\App\Http\Controllers\Api\BughouseController::class, 'sendInvite']);
     Route::post('/bughouse/cancel-invite', [\App\Http\Controllers\Api\BughouseController::class, 'cancelInvite']);
+    Route::post('/bughouse/record', [\App\Http\Controllers\Api\BughouseController::class, 'updateRecord']);
+    Route::post('/bughouse/record/reset', [\App\Http\Controllers\Api\BughouseController::class, 'resetRecord']);
 
 
 
