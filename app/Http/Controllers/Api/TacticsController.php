@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Puzzle;
 use App\Models\UserProgress;
-use App\Models\PuzzleAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -78,24 +77,15 @@ class TacticsController extends Controller
         $themeKey = ($theme && $theme !== 'mix') ? $theme : 'mix';
         $bucket = (int) (round($userRating / 100) * 100);
 
-        // 1. Client session exclusion buffer (capped at 20 IDs)
+        // 1. Client session exclusion buffer (capped at 50 IDs)
         $excludeIds = [];
         if ($request->has('exclude_ids')) {
             $raw = $request->query('exclude_ids');
             $parsed = is_array($raw) ? $raw : explode(',', (string) $raw);
-            $excludeIds = array_slice(array_filter(array_map('intval', $parsed)), -20);
+            $excludeIds = array_slice(array_filter(array_map('intval', $parsed)), -50);
         }
 
-        // 2. User attempt history buffer (last 50 attempts using composite index [user_id, created_at])
-        if ($user) {
-            $historyExcludeIds = $user->puzzleAttempts()
-                ->latest()
-                ->limit(50)
-                ->pluck('puzzle_id')
-                ->toArray();
-            $excludeIds = array_unique(array_merge($excludeIds, $historyExcludeIds));
-        }
-        // 3. Fetch from cached rating-bucket pool
+        // 2. Fetch from cached rating-bucket pool
         $puzzle = $this->getPooledPuzzle($themeKey, $bucket, $excludeIds);
 
         if (!$puzzle) {
@@ -325,23 +315,18 @@ class TacticsController extends Controller
         $puzzle = Puzzle::findOrFail($request->puzzle_id);
         $progress = $user->progress()->firstOrCreate([]);
 
-        // If puzzle has already been attempted by this user, permit legitimate practice but award 0 rating
-        $alreadyAttempted = $user->puzzleAttempts()
-            ->where('puzzle_id', $puzzle->id)
-            ->exists();
-
         // Security check: Only the server-assigned active puzzle can award/deduct rating.
         // Guessed IDs, manual URL queries, or replayed puzzles operate strictly in unrated practice mode.
         $activeId = (int) Cache::get("user:{$user->id}:active_puzzle_id");
         $isAssigned = ($activeId !== 0 && $activeId === (int) $puzzle->id);
 
-        if (!$isAssigned || $alreadyAttempted) {
+        if (!$isAssigned) {
             return response()->json([
                 'success' => true,
                 'new_rating' => $progress->puzzle_rating ?? 1200,
                 'rating_change' => 0,
                 'new_streak' => $progress->puzzle_streak ?? 0,
-                'already_attempted' => $alreadyAttempted,
+                'already_attempted' => true,
                 'is_rated' => false,
             ]);
         }
@@ -386,16 +371,7 @@ class TacticsController extends Controller
         $newStreak = $request->success ? $currentStreak + 1 : 0;
         $progress->puzzle_streak = $newStreak;
 
-
-
         $progress->save();
-
-        $user->puzzleAttempts()->create([
-            'puzzle_id' => $puzzle->id,
-            'success' => $request->success,
-            'rating_change' => $ratingChange,
-            'user_rating_after' => $progress->puzzle_rating,
-        ]);
 
         // Clear active puzzle assignment so the user's subsequent request yields a fresh puzzle
         Cache::forget("user:{$user->id}:active_puzzle_id");
@@ -411,20 +387,7 @@ class TacticsController extends Controller
 
     public function history(Request $request)
     {
-        $user = $request->user('sanctum');
-        if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        $history = PuzzleAttempt::where('user_id', $user->id)
-            ->with(['puzzle:id,lichess_puzzle_id,rating,themes'])
-            ->orderBy('created_at', 'desc')
-            ->limit(15)
-            ->get()
-            ->reverse()
-            ->values();
-
-        return response()->json(['data' => $history]);
+        return response()->json(['data' => []]);
     }
 
 }
