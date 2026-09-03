@@ -7,23 +7,15 @@ use App\Models\User;
 use App\Http\Resources\UserProfileResource;
 use App\Http\Resources\UserSearchResource;
 use Illuminate\Http\Request;
-use App\Traits\DetectsCountry;
 
 class UserProfileController extends Controller
 {
-    use DetectsCountry;
-
     public function myProfile(Request $request)
     {
         $user = User::with(['preferences', 'progress', 'badges'])->find($request->user()->id);
 
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
-        }
-
-        // Backfill country_code if missing
-        if (!$user->country_code) {
-            $user->update(['country_code' => $this->detectCountry($request->ip())]);
         }
 
         return new UserProfileResource($user);

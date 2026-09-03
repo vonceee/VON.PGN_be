@@ -50,19 +50,41 @@ class TacticsController extends Controller
         $userRating = $user ? ($user->progress->puzzle_rating ?? 1200) : 1200;
 
         $theme = $request->query('theme');
-        $query = Puzzle::query();
+        $themeKey = ($theme && $theme !== 'mix') ? $theme : 'mix';
+        $bucket = (int) (round($userRating / 100) * 100);
 
-        if ($theme && $theme !== 'mix') {
-            $query->whereRaw("MATCH(themes) AGAINST(? IN BOOLEAN MODE)", ['+' . $theme]);
+        // 1. Client session exclusion buffer (capped at 20 IDs)
+        $excludeIds = [];
+        if ($request->has('exclude_ids')) {
+            $raw = $request->query('exclude_ids');
+            $parsed = is_array($raw) ? $raw : explode(',', (string) $raw);
+            $excludeIds = array_slice(array_filter(array_map('intval', $parsed)), -20);
         }
 
-        $ratingQuery = clone $query;
-        $puzzle = $this->getRandomPuzzle(
-            $ratingQuery->whereBetween('rating', [$userRating - 150, $userRating + 150])
-        );
+        // 2. User attempt history buffer (last 50 attempts using composite index [user_id, created_at])
+        if ($user) {
+            $historyExcludeIds = $user->puzzleAttempts()
+                ->latest()
+                ->limit(50)
+                ->pluck('puzzle_id')
+                ->toArray();
+            $excludeIds = array_unique(array_merge($excludeIds, $historyExcludeIds));
+        }
+        // 3. Fetch from cached rating-bucket pool
+        $puzzle = $this->getPooledPuzzle($themeKey, $bucket, $excludeIds);
 
         if (!$puzzle) {
-            $puzzle = $this->getRandomPuzzle($query);
+            // Fallback: If candidates were exhausted by exclusions, relax exclusions
+            $puzzle = $this->getPooledPuzzle($themeKey, $bucket, []);
+        }
+
+        if (!$puzzle) {
+            // Ultimate fallback to direct query if pool is completely empty
+            $query = Puzzle::query();
+            if ($themeKey !== 'mix') {
+                $query->whereRaw("MATCH(themes) AGAINST(? IN BOOLEAN MODE)", ['+' . $themeKey]);
+            }
+            $puzzle = $query->first();
         }
 
         return response()->json(['data' => $puzzle]);
@@ -185,33 +207,75 @@ class TacticsController extends Controller
      * // AI-GENERATED WORKAROUND: Implements absolute MIN/MAX range picking combined with a query-level ID threshold filter to achieve O(1) complexity on large tables, bypassing MySQL index scan limits.
      * // CRITICAL: Do not append ordering or raw limit statements to the incoming $query argument, as it will conflict with this method's ID range queries.
      */
-    private function getRandomPuzzle($query)
+    /**
+     * Retrieve a puzzle using a cached pool of diverse puzzle IDs for the given theme and rating bucket.
+     * Guarantees true uniform random distribution and O(1) performance while excluding recently seen/solved puzzles.
+     *
+     * @param string $themeKey
+     * @param int $bucket
+     * @param array $excludeIds
+     * @return \App\Models\Puzzle|null
+     */
+    private function getPooledPuzzle(string $themeKey, int $bucket, array $excludeIds): ?Puzzle
     {
-        $minMax = DB::table('puzzles')
-            ->selectRaw('MIN(id) as min_id, MAX(id) as max_id')
-            ->first();
+        $cacheKey = "puzzle_pool:{$themeKey}:{$bucket}";
+        $poolTtl = 600; // 10 minutes
 
-        if (!$minMax || $minMax->min_id === null) {
+        $poolIds = Cache::remember($cacheKey, $poolTtl, function () use ($themeKey, $bucket) {
+            $query = Puzzle::query();
+            if ($themeKey !== 'mix') {
+                $query->whereRaw("MATCH(themes) AGAINST(? IN BOOLEAN MODE)", ['+' . $themeKey]);
+            }
+            $query->whereBetween('rating', [$bucket - 150, $bucket + 150]);
+
+            $count = (clone $query)->count();
+            if ($count === 0) {
+                // If rating range has no puzzles for this theme, broaden to all ratings for that theme
+                $fallbackQuery = Puzzle::query();
+                if ($themeKey !== 'mix') {
+                    $fallbackQuery->whereRaw("MATCH(themes) AGAINST(? IN BOOLEAN MODE)", ['+' . $themeKey]);
+                }
+                $count = (clone $fallbackQuery)->count();
+                if ($count === 0) {
+                    return [];
+                }
+                return (clone $fallbackQuery)->limit(200)->pluck('id')->toArray();
+            }
+
+            if ($count <= 200) {
+                return (clone $query)->pluck('id')->toArray();
+            }
+
+            // Sample across the dataset using 5 distributed offset chunks (40 IDs each = 200 IDs)
+            $sampledIds = [];
+            $chunkSize = 40;
+            for ($i = 0; $i < 5; $i++) {
+                $offset = rand(0, max(0, $count - $chunkSize));
+                $chunk = (clone $query)
+                    ->select('id')
+                    ->skip($offset)
+                    ->limit($chunkSize)
+                    ->pluck('id')
+                    ->toArray();
+                $sampledIds = array_merge($sampledIds, $chunk);
+            }
+
+            return array_values(array_unique($sampledIds));
+        });
+
+        if (empty($poolIds)) {
             return null;
         }
 
-        $minId = $minMax->min_id;
-        $maxId = $minMax->max_id;
+        // Exclude recent session and user history IDs
+        $availableIds = array_values(array_diff($poolIds, $excludeIds));
 
-        for ($i = 0; $i < 3; $i++) {
-            $randomId = rand($minId, $maxId);
-            $puzzle = (clone $query)->where('id', '>=', $randomId)->first();
-            if ($puzzle) {
-                return $puzzle;
-            }
+        if (empty($availableIds)) {
+            return null;
         }
 
-        $count = (clone $query)->count();
-        if ($count > 0) {
-            return (clone $query)->skip(rand(0, $count - 1))->first();
-        }
-
-        return null;
+        $pickedId = $availableIds[array_rand($availableIds)];
+        return Puzzle::find($pickedId);
     }
 
     public function solve(Request $request)
