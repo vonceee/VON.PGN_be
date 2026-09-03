@@ -34,19 +34,44 @@ class TacticsController extends Controller
      */
     public function getDailyPuzzle(Request $request)
     {
+        $user = $request->user('sanctum');
         $puzzleId = $request->query('puzzle_id');
+
         if ($puzzleId) {
             $puzzle = Puzzle::find($puzzleId);
             if ($puzzle) {
-                return response()->json(['data' => $puzzle]);
+                // A manually queried ID is only rated if it matches the user's active assignment
+                $activeId = $user ? (int) Cache::get("user:{$user->id}:active_puzzle_id") : null;
+                $isRated = ($activeId !== null && $activeId === (int) $puzzle->id);
+                return response()->json([
+                    'data' => $puzzle,
+                    'is_rated' => $isRated,
+                ]);
             }
+            return response()->json(['error' => 'Puzzle not found', 'data' => null], 404);
         }
 
-        $user = $request->user('sanctum');
         if ($user && !$user->progress) {
             $user->progress()->create();
             $user->refresh();
         }
+
+        // If user already has an active puzzle in progress, resume it unless explicitly requesting a new one
+        $isNewRequested = $request->boolean('new') || $request->boolean('skip');
+        if ($user && !$isNewRequested) {
+            $activeId = (int) Cache::get("user:{$user->id}:active_puzzle_id");
+            if ($activeId) {
+                $activePuzzle = Puzzle::find($activeId);
+                if ($activePuzzle) {
+                    return response()->json([
+                        'data' => $activePuzzle,
+                        'is_rated' => true,
+                        'resumed' => true,
+                    ]);
+                }
+            }
+        }
+
         $userRating = $user ? ($user->progress->puzzle_rating ?? 1200) : 1200;
 
         $theme = $request->query('theme');
@@ -87,7 +112,15 @@ class TacticsController extends Controller
             $puzzle = $query->first();
         }
 
-        return response()->json(['data' => $puzzle]);
+        if ($user && $puzzle) {
+            // Store official assigned active puzzle for 24h
+            Cache::put("user:{$user->id}:active_puzzle_id", (int) $puzzle->id, 86400);
+        }
+
+        return response()->json([
+            'data' => $puzzle,
+            'is_rated' => true,
+        ]);
     }
 
     /**
@@ -292,6 +325,27 @@ class TacticsController extends Controller
         $puzzle = Puzzle::findOrFail($request->puzzle_id);
         $progress = $user->progress()->firstOrCreate([]);
 
+        // If puzzle has already been attempted by this user, permit legitimate practice but award 0 rating
+        $alreadyAttempted = $user->puzzleAttempts()
+            ->where('puzzle_id', $puzzle->id)
+            ->exists();
+
+        // Security check: Only the server-assigned active puzzle can award/deduct rating.
+        // Guessed IDs, manual URL queries, or replayed puzzles operate strictly in unrated practice mode.
+        $activeId = (int) Cache::get("user:{$user->id}:active_puzzle_id");
+        $isAssigned = ($activeId !== 0 && $activeId === (int) $puzzle->id);
+
+        if (!$isAssigned || $alreadyAttempted) {
+            return response()->json([
+                'success' => true,
+                'new_rating' => $progress->puzzle_rating ?? 1200,
+                'rating_change' => 0,
+                'new_streak' => $progress->puzzle_streak ?? 0,
+                'already_attempted' => $alreadyAttempted,
+                'is_rated' => false,
+            ]);
+        }
+
         /**
          * Dynamic Elo Rating Calculation
          */
@@ -343,11 +397,15 @@ class TacticsController extends Controller
             'user_rating_after' => $progress->puzzle_rating,
         ]);
 
+        // Clear active puzzle assignment so the user's subsequent request yields a fresh puzzle
+        Cache::forget("user:{$user->id}:active_puzzle_id");
+
         return response()->json([
             'success' => true,
             'new_rating' => $progress->puzzle_rating,
             'rating_change' => $ratingChange,
             'new_streak' => $newStreak,
+            'is_rated' => true,
         ]);
     }
 
