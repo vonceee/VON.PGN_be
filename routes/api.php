@@ -255,5 +255,14 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::delete('/blogs/{id}', [BlogController::class, 'destroy']);
 });
 
+// World Championship Matchup & Editorial Story routes
+use App\Http\Controllers\Api\WorldChampionshipController;
+
+Route::get('/world-championships', [WorldChampionshipController::class, 'index']);
+Route::get('/world-championships/{slug}', [WorldChampionshipController::class, 'show']);
+Route::post('/world-championships', [WorldChampionshipController::class, 'store']);
+Route::put('/world-championships/{id}', [WorldChampionshipController::class, 'update']);
+
+
 
 
