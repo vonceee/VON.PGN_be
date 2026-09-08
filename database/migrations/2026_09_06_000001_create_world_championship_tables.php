@@ -20,18 +20,18 @@ return new class extends Migration
         // 1. World Championship Matches (Overview, duels, scores, venues)
         Schema::create('world_championship_matches', function (Blueprint $table) {
             $table->id();
-            $table->string('slug')->unique(); // e.g. 'wcc-2024', 'wcc-1972', 'opera-game'
+            $table->string('slug')->unique(); // e.g. 'wcc-2024', 'wcc-1972'
             $table->unsignedSmallInteger('year')->index(); // e.g. 2024
             $table->string('display_year')->nullable(); // e.g. '1993 (PCA)'
             $table->string('title'); // e.g. '2024 World Chess Championship'
-            $table->string('champion'); // e.g. 'Ding Liren'
-            $table->string('challenger'); // e.g. 'Gukesh Dommaraju'
-            $table->string('winner'); // e.g. 'Gukesh Dommaraju'
-            $table->string('score'); // e.g. '7.5 - 6.5'
-            $table->string('format'); // e.g. '14 Classical Games + Tiebreaks'
-            $table->string('location'); // e.g. 'Resorts World Sentosa, Singapore'
-            $table->string('era'); // e.g. 'Modern Era (2006-Present)'
-            $table->text('description'); // Historical context & narrative
+            $table->string('champion')->default('Defender'); // e.g. 'Ding Liren'
+            $table->string('challenger')->default('Challenger'); // e.g. 'Gukesh Dommaraju'
+            $table->string('winner')->nullable(); // e.g. 'Gukesh Dommaraju'
+            $table->string('score', 50)->default('0 - 0'); // e.g. '7.5 - 6.5'
+            $table->string('format')->nullable(); // e.g. '14 Classical Games + Tiebreaks'
+            $table->string('location')->nullable(); // e.g. 'Resorts World Sentosa, Singapore'
+            $table->string('era')->default('Modern Era (2006-Present)'); // e.g. 'Modern Era (2006-Present)'
+            $table->text('description')->nullable(); // Historical context & narrative
             $table->json('key_highlights')->nullable(); // Bullet points
             $table->unsignedInteger('games_count')->default(0);
             $table->unsignedBigInteger('study_id')->nullable()->index(); // Optional FK/link to studies table
@@ -51,13 +51,13 @@ return new class extends Migration
             $table->string('slug')->unique()->nullable(); // e.g. 'wcc-2024-g14'
             $table->string('title'); // e.g. 'Game 14: The Crowning Moment'
             $table->string('subtitle')->nullable(); // e.g. 'Ding Liren vs. Gukesh Dommaraju – Singapore, 2024'
-            $table->string('white_player');
-            $table->string('black_player');
-            $table->string('result', 10); // '1-0', '0-1', '1/2-1/2', '*'
+            $table->string('white_player')->nullable();
+            $table->string('black_player')->nullable();
+            $table->string('result', 10)->default('*'); // '1-0', '0-1', '1/2-1/2', '*'
             $table->date('game_date')->nullable();
             $table->string('eco', 10)->nullable(); // e.g. 'D37'
             $table->string('opening_name')->nullable(); // e.g. "Queen's Gambit Declined"
-            $table->longText('pgn'); // Complete PGN moves & tags
+            $table->longText('pgn')->nullable(); // Complete PGN moves & tags
             $table->string('initial_fen')->default('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
             $table->unsignedSmallInteger('total_plies')->default(0);
             $table->text('narrative_overview')->nullable(); // Intro paragraph for editorial layout

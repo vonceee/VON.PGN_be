@@ -89,18 +89,18 @@ Stores high-level championship duel information.
 | Column | Type | Nullable | Default | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | No | Auto | Primary Key |
-| `slug` | `VARCHAR(100)` | No | - | Unique URL slug (e.g., `wcc-2024`, `wcc-1972`, `opera-game`) |
+| `slug` | `VARCHAR(100)` | No | - | Unique URL slug (e.g., `wcc-2024`, `wcc-1972`) |
 | `year` | `SMALLINT UNSIGNED` | No | - | Year match took place (indexed for range filters) |
 | `display_year` | `VARCHAR(50)` | Yes | `NULL` | Custom display label (e.g. `1993 (PCA)`, `1993 (FIDE)`) |
 | `title` | `VARCHAR(255)` | No | - | Official match title |
-| `champion` | `VARCHAR(150)` | No | - | Defending champion name |
-| `challenger` | `VARCHAR(150)` | No | - | Official challenger name |
-| `winner` | `VARCHAR(150)` | No | - | Victorious player |
-| `score` | `VARCHAR(50)` | No | - | Final match score (e.g. `7.5 - 6.5`) |
-| `format` | `VARCHAR(150)` | No | - | Match structure (e.g. `14 Classical Games + Rapid Tiebreaks`) |
-| `location` | `VARCHAR(255)` | No | - | Host city and country venue |
-| `era` | `VARCHAR(100)` | No | - | Era classification (Modern, Split, Soviet FIDE, Early Classical) |
-| `description` | `TEXT` | No | - | Comprehensive historical duel summary |
+| `champion` | `VARCHAR(150)` | No | `'Defender'` | Defending champion name |
+| `challenger` | `VARCHAR(150)` | No | `'Challenger'` | Official challenger name |
+| `winner` | `VARCHAR(150)` | Yes | `NULL` | Victorious player |
+| `score` | `VARCHAR(50)` | Yes | `'0 - 0'` | Final match score (e.g. `7.5 - 6.5`) |
+| `format` | `VARCHAR(150)` | Yes | `NULL` | Match structure (e.g. `14 Classical Games + Rapid Tiebreaks`) |
+| `location` | `VARCHAR(255)` | Yes | `NULL` | Host city and country venue |
+| `era` | `VARCHAR(100)` | Yes | `'Modern Era (2006-Present)'` | Era classification |
+| `description` | `TEXT` | Yes | `NULL` | Historical duel summary |
 | `key_highlights` | `JSON` | Yes | `NULL` | Array of milestone bullet points |
 | `games_count` | `INT UNSIGNED` | No | `0` | Number of recorded games |
 | `study_id` | `BIGINT UNSIGNED` | Yes | `NULL` | Foreign key referencing interactive study in `studies` |
@@ -129,42 +129,41 @@ Stores individual games played within each championship.
 | `slug` | `VARCHAR(120)` | Yes | `NULL` | Unique game slug (e.g. `wcc-2024-g14`) |
 | `title` | `VARCHAR(255)` | No | - | Game title (e.g. `Game 14: The Crowning Moment`) |
 | `subtitle` | `VARCHAR(255)` | Yes | `NULL` | Editorial subhead (`Ding Liren vs. Gukesh – Singapore, 2024`) |
-| `white_player` | `VARCHAR(150)` | No | - | Player with White pieces |
-| `black_player` | `VARCHAR(150)` | No | - | Player with Black pieces |
-| `result` | `VARCHAR(10)` | No | - | `1-0`, `0-1`, `1/2-1/2`, or `*` |
+| `white_player` | `VARCHAR(150)` | Yes | `NULL` | Player with White pieces (auto-extracted from PGN) |
+| `black_player` | `VARCHAR(150)` | Yes | `NULL` | Player with Black pieces (auto-extracted from PGN) |
+| `result` | `VARCHAR(10)` | Yes | `'*'` | `1-0`, `0-1`, `1/2-1/2`, or `*` (auto-extracted from PGN) |
 | `game_date` | `DATE` | Yes | `NULL` | Date of the game |
-| `eco` | `VARCHAR(10)` | Yes | `NULL` | Opening ECO code (e.g. `D37`, `C41`) |
-| `opening_name` | `VARCHAR(150)` | Yes | `NULL` | Opening name (e.g. `Queen's Gambit Declined`) |
-| `pgn` | `LONGTEXT` | No | - | Full standard PGN string including metadata tags |
-| `initial_fen` | `VARCHAR(100)` | No | Starting pos | Starting position FEN string |
-| `total_plies` | `SMALLINT UNSIGNED`| No | `0` | Total half-moves count (e.g. 33, 80) |
-| `narrative_overview`| `TEXT` | Yes | `NULL` | Opening prose setting the atmosphere |
-| `is_highlighted` | `BOOLEAN` | No | `FALSE` | Featured/highlight game flag |
-| `order` | `INT` | No | `0` | Sort order |
+| `eco` | `VARCHAR(10)` | Yes | `NULL` | ECO opening code (e.g. `D37`) |
+| `opening_name` | `VARCHAR(150)` | Yes | `NULL` | Opening name |
+| `pgn` | `LONGTEXT` | Yes | `NULL` | Complete PGN moves & tags |
+| `initial_fen` | `VARCHAR(100)` | Yes | Default FEN | Starting board position |
+| `total_plies` | `SMALLINT UNSIGNED`| No | `0` | Number of half-moves |
+| `narrative_overview` | `TEXT` | Yes | `NULL` | Editorial narrative overview |
+| `is_highlighted` | `BOOLEAN` | No | `FALSE` | Key game feature flag |
+| `order` | `INT` | No | `0` | Display order |
 | `created_at` | `TIMESTAMP` | Yes | `NULL` | Creation timestamp |
 | `updated_at` | `TIMESTAMP` | Yes | `NULL` | Last updated timestamp |
 
 **Indexes**:
 - `PRIMARY (id)`
-- `UNIQUE (slug)`
 - `INDEX (match_id, game_number)`
 - `INDEX (match_id, is_highlighted)`
 
 ---
 
 ### 3.3. `world_championship_game_sections`
-Stores the editorial story chapters and annotated move blocks matching the two-column editorial design.
+Stores narrative story sections linked to specific game moves.
 
 | Column | Type | Nullable | Default | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | No | Auto | Primary Key |
 | `game_id` | `BIGINT UNSIGNED` | No | - | Foreign Key -> `world_championship_games.id` (CASCADE) |
-| `title` | `VARCHAR(255)` | No | - | Section heading (e.g. `Grabbing the center`) |
-| `content` | `LONGTEXT` | No | - | Editorial markdown prose with bold moves |
-| `start_ply` | `SMALLINT UNSIGNED`| Yes | `NULL` | Initial move ply for this section |
-| `end_ply` | `SMALLINT UNSIGNED`| Yes | `NULL` | Concluding move ply for this section |
-| `key_move_san`| `VARCHAR(20)` | Yes | `NULL` | Highlight move (e.g. `10. Nxb5!`, `50. Qh6+!!`) |
-| `order` | `INT` | No | `1` | Section order index |
+| `title` | `VARCHAR(255)` | No | - | Section headline (e.g. `Opening Phase`, `Tactical Turning Point`) |
+| `content` | `LONGTEXT` | No | - | Narrative prose with embedded moves |
+| `start_ply` | `SMALLINT UNSIGNED`| Yes | `NULL` | Starting ply index on board |
+| `end_ply` | `SMALLINT UNSIGNED`| Yes | `NULL` | Ending ply index on board |
+| `key_move_san` | `VARCHAR(20)` | Yes | `NULL` | Critical highlighted move SAN |
+| `order` | `INT` | No | `1` | Sequential order |
 | `created_at` | `TIMESTAMP` | Yes | `NULL` | Creation timestamp |
 | `updated_at` | `TIMESTAMP` | Yes | `NULL` | Last updated timestamp |
 
@@ -174,7 +173,7 @@ Stores the editorial story chapters and annotated move blocks matching the two-c
 
 ---
 
-## 4. Pure SQL / DDL Schema
+## 4. DDL Definition
 
 ```sql
 -- 1. Matches Table
@@ -184,14 +183,14 @@ CREATE TABLE IF NOT EXISTS world_championship_matches (
     year SMALLINT UNSIGNED NOT NULL,
     display_year VARCHAR(50) NULL,
     title VARCHAR(255) NOT NULL,
-    champion VARCHAR(150) NOT NULL,
-    challenger VARCHAR(150) NOT NULL,
-    winner VARCHAR(150) NOT NULL,
-    score VARCHAR(50) NOT NULL,
-    format VARCHAR(150) NOT NULL,
-    location VARCHAR(255) NOT NULL,
-    era VARCHAR(100) NOT NULL,
-    description TEXT NOT NULL,
+    champion VARCHAR(150) NOT NULL DEFAULT 'Defender',
+    challenger VARCHAR(150) NOT NULL DEFAULT 'Challenger',
+    winner VARCHAR(150) NULL,
+    score VARCHAR(50) NULL DEFAULT '0 - 0',
+    format VARCHAR(150) NULL,
+    location VARCHAR(255) NULL,
+    era VARCHAR(100) NULL DEFAULT 'Modern Era (2006-Present)',
+    description TEXT NULL,
     key_highlights JSON NULL,
     games_count INT UNSIGNED DEFAULT 0,
     study_id BIGINT UNSIGNED NULL,
@@ -211,9 +210,9 @@ CREATE TABLE IF NOT EXISTS world_championship_games (
     slug VARCHAR(120) NULL UNIQUE,
     title VARCHAR(255) NOT NULL,
     subtitle VARCHAR(255) NULL,
-    white_player VARCHAR(150) NOT NULL,
-    black_player VARCHAR(150) NOT NULL,
-    result VARCHAR(10) NOT NULL,
+    white_player VARCHAR(150) NULL,
+    black_player VARCHAR(150) NULL,
+    result VARCHAR(10) NULL DEFAULT '*',
     game_date DATE NULL,
     eco VARCHAR(10) NULL,
     opening_name VARCHAR(150) NULL,

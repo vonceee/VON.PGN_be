@@ -262,6 +262,7 @@ Route::get('/world-championships', [WorldChampionshipController::class, 'index']
 Route::get('/world-championships/{slug}', [WorldChampionshipController::class, 'show']);
 Route::post('/world-championships', [WorldChampionshipController::class, 'store']);
 Route::put('/world-championships/{id}', [WorldChampionshipController::class, 'update']);
+Route::delete('/world-championships/{id}', [WorldChampionshipController::class, 'destroy']);
 
 
 
