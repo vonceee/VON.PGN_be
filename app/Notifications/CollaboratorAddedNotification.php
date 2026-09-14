@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use App\Models\Study;
+use App\Utils\StudyObfuscator;
 
 class CollaboratorAddedNotification extends Notification
 {
@@ -38,12 +39,14 @@ class CollaboratorAddedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $encodedId = StudyObfuscator::encode($this->study->id);
+
         return [
-            'study_id' => $this->study->id,
+            'study_id' => $encodedId,
             'study_name' => $this->study->name,
             'owner_name' => $this->study->owner->name,
             'message' => "You have been added as a collaborator on the study \"{$this->study->name}\" by {$this->study->owner->name}.",
-            'action_url' => "/study/{$this->study->id}",
+            'action_url' => "/study/{$encodedId}",
             'type' => 'collaborator_added'
         ];
     }

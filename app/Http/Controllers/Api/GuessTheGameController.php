@@ -176,7 +176,7 @@ class GuessTheGameController extends Controller
             'description' => $description,
             'active_date' => null,
             'is_study_chapter' => true,
-            'study_id' => $chapter->study_id,
+            'study_id' => $chapter->study_id ? \App\Utils\StudyObfuscator::encode($chapter->study_id) : null,
             'study_link' => $tags['StudyLink'] ?? null,
             'initial_fen' => $chapter->initial_fen,
             'start_ply' => $startPly,

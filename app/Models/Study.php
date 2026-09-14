@@ -56,14 +56,27 @@ class Study extends Model
     }
 
     /**
-     * Resolve the route binding using the obfuscated study key.
+     * Resolve the route binding using the obfuscated study key or direct numeric ID.
      */
     public function resolveRouteBinding($value, $field = null)
     {
-        $id = \App\Utils\StudyObfuscator::decode($value);
-        if ($id <= 0) {
-            abort(404);
+        // 1. Try decoding as an obfuscated string
+        $id = \App\Utils\StudyObfuscator::decode((string) $value);
+        if ($id > 0) {
+            $study = $this->where('id', $id)->first();
+            if ($study) {
+                return $study;
+            }
         }
-        return $this->where('id', $id)->firstOrFail();
+
+        // 2. Fallback: If value is numeric, check direct ID (e.g. legacy notifications or direct integer IDs)
+        if (is_numeric($value)) {
+            $study = $this->where('id', (int) $value)->first();
+            if ($study) {
+                return $study;
+            }
+        }
+
+        abort(404);
     }
 }
