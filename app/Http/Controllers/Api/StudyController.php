@@ -124,7 +124,6 @@ class StudyController extends Controller
         $oldOrientation = $study->orientation;
         $study->update($request->validated());
 
-        // If it's an opening repertoire and the orientation changed, sync all chapters
         if ($study->category === 'opening_repertoire' && $request->has('orientation') && $request->orientation !== $oldOrientation) {
             $study->chapters()->update(['orientation' => $request->orientation]);
         }
@@ -433,11 +432,23 @@ class StudyController extends Controller
             $ply = $node['ply'] ?? ($lastPly + 1);
             $isWhite = ($ply % 2 !== 0);
             
-            // 1. Pre-comments
-            if (!empty($node['preComments'])) {
-                foreach ($node['preComments'] as $comment) {
-                    $pgn .= "{ " . trim($comment) . " } ";
+            // 1. Pre-comments & pre-shapes (root annotations before move 1)
+            $hasPreComments = !empty($node['preComments']);
+            $hasPreShapes = !empty($node['preShapes']);
+            if ($hasPreComments || $hasPreShapes) {
+                $pgn .= "{ ";
+                if ($hasPreShapes) {
+                    $shapeTag = $this->serializeShapes($node['preShapes']);
+                    if (!empty($shapeTag)) {
+                        $pgn .= $shapeTag . " ";
+                    }
                 }
+                if ($hasPreComments) {
+                    foreach ($node['preComments'] as $comment) {
+                        $pgn .= trim($comment) . " ";
+                    }
+                }
+                $pgn .= "} ";
                 $forceNumber = true;
             }
             
@@ -466,13 +477,20 @@ class StudyController extends Controller
                 }
             }
             
-            // 5. Post-comments & clock
+            // 5. Post-comments, clock & shapes
             $hasComments = !empty($node['comments']);
             $hasClk = !empty($node['clk']);
-            if ($hasComments || $hasClk) {
+            $hasShapes = !empty($node['shapes']);
+            if ($hasComments || $hasClk || $hasShapes) {
                 $pgn .= "{ ";
                 if ($hasClk) {
                     $pgn .= "[%clk " . $node['clk'] . "] ";
+                }
+                if ($hasShapes) {
+                    $shapeTag = $this->serializeShapes($node['shapes']);
+                    if (!empty($shapeTag)) {
+                        $pgn .= $shapeTag . " ";
+                    }
                 }
                 if ($hasComments) {
                     foreach ($node['comments'] as $comment) {
@@ -501,6 +519,43 @@ class StudyController extends Controller
             }
         }
         return trim($pgn);
+    }
+
+    /**
+     * Serializes an array of Chessground shapes into standard PGN [%csl] and [%cal] comment annotations.
+     */
+    private function serializeShapes(array $shapes): string
+    {
+        $csl = [];
+        $cal = [];
+
+        foreach ($shapes as $shape) {
+            if (empty($shape['orig'])) continue;
+            $brush = strtolower($shape['brush'] ?? 'green');
+            $code = match ($brush) {
+                'green' => 'G',
+                'red' => 'R',
+                'yellow' => 'Y',
+                'blue' => 'B',
+                default => 'G',
+            };
+
+            if (!empty($shape['dest']) && $shape['dest'] !== $shape['orig']) {
+                $cal[] = $code . $shape['orig'] . $shape['dest'];
+            } else {
+                $csl[] = $code . $shape['orig'];
+            }
+        }
+
+        $parts = [];
+        if (!empty($csl)) {
+            $parts[] = "[%csl " . implode(',', $csl) . "]";
+        }
+        if (!empty($cal)) {
+            $parts[] = "[%cal " . implode(',', $cal) . "]";
+        }
+
+        return implode(' ', $parts);
     }
 
     /**
@@ -547,10 +602,8 @@ class StudyController extends Controller
         }
     }
 
-    /**
-     * Remove a collaborator from the study.
-     */
-    public function removeCollaborator(Study $study, $userId)
+
+    public function removeCollaborator(Study $study, int|string $userId): \Illuminate\Http\JsonResponse
     {
         $this->authorize('update', $study);
 
@@ -559,10 +612,8 @@ class StudyController extends Controller
         return response()->json(['message' => 'Collaborator removed successfully']);
     }
 
-    /**
-     * Update collaborator permissions.
-     */
-    public function updateCollaborator(Request $request, Study $study, $userId)
+
+    public function updateCollaborator(Request $request, Study $study, int|string $userId): StudyResource
     {
         $this->authorize('update', $study);
 
