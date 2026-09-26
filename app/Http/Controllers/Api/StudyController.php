@@ -190,7 +190,12 @@ class StudyController extends Controller
             'pgn_tags' => 'sometimes|array|nullable',
         ]);
 
-        $chapter->update($request->all());
+        $data = $request->all();
+        if (isset($data['pgn_tags']) && is_array($data['pgn_tags'])) {
+            $data['pgn_tags'] = $this->sanitizePgnTags($data['pgn_tags']);
+        }
+
+        $chapter->update($data);
 
         return new StudyChapterResource($chapter);
     }
@@ -268,11 +273,13 @@ class StudyController extends Controller
                     if (empty(trim($gameContent))) continue;
 
                     // Extract tags using a more robust regex that handles escaped quotes
-                    $tags = [];
+                    $rawTags = [];
                     preg_match_all('/\[(\w+)\s+"((?:[^"\\\\]|\\\\.)*)"\]/', $gameContent, $matches, PREG_SET_ORDER);
                     foreach ($matches as $match) {
-                        $tags[$match[1]] = stripslashes($match[2]);
+                        $rawTags[$match[1]] = stripslashes($match[2]);
                     }
+
+                    $tags = $this->sanitizePgnTags($rawTags);
 
                     // Determine chapter name: prioritized tags
                     $name = $tags['ChapterName'] ?? null;
@@ -397,6 +404,8 @@ class StudyController extends Controller
             $tags['StudyName'] = $study->name;
             $tags['ChapterName'] = $chapter->name;
             $tags['Annotator'] = $userName;
+
+            $tags = $this->sanitizePgnTags($tags);
 
             foreach ($tags as $key => $value) {
                 $pgn .= "[" . $key . " \"" . $value . "\"]\n";
@@ -709,4 +718,95 @@ class StudyController extends Controller
             'preview_last_move' => $previewLastMove,
         ]);
     }
+
+    private const CANONICAL_TAGS = [
+        'Event', 'Site', 'Date', 'Round', 'White', 'Black', 'Result',
+        'WhiteElo', 'BlackElo', 'WhiteTitle', 'BlackTitle', 'WhiteTeam', 'BlackTeam',
+        'WhiteFideId', 'BlackFideId', 'TimeControl', 'Termination', 'ECO', 'Board',
+        'Annotator', 'GameId', 'SetUp', 'FEN', 'Variant'
+    ];
+
+    private const TAG_KEY_MAP = [
+        'event' => 'Event',
+        'tournament' => 'Event',
+        'site' => 'Site',
+        'date' => 'Date',
+        'round' => 'Round',
+        'white' => 'White',
+        'black' => 'Black',
+        'result' => 'Result',
+        'whiteelo' => 'WhiteElo',
+        'blackelo' => 'BlackElo',
+        'whitetitle' => 'WhiteTitle',
+        'blacktitle' => 'BlackTitle',
+        'whiteteam' => 'WhiteTeam',
+        'blackteam' => 'BlackTeam',
+        'whitefideid' => 'WhiteFideId',
+        'blackfideid' => 'BlackFideId',
+        'timecontrol' => 'TimeControl',
+        'time_control' => 'TimeControl',
+        'termination' => 'Termination',
+        'eco' => 'ECO',
+        'ecocode' => 'ECO',
+        'board' => 'Board',
+        'annotator' => 'Annotator',
+        'gameid' => 'GameId',
+        'setup' => 'SetUp',
+        'fen' => 'FEN',
+        'variant' => 'Variant',
+        'chaptername' => 'ChapterName',
+        'studyname' => 'StudyName',
+        'studylink' => 'StudyLink',
+        'orientation' => 'Orientation',
+    ];
+
+    /**
+     * Normalizes non-standard tag key casing to canonical standard.
+     */
+    private function normalizeTagKey(string $key): string
+    {
+        $trimmed = trim($key);
+        $lower = strtolower($trimmed);
+        return self::TAG_KEY_MAP[$lower] ?? $trimmed;
+    }
+
+    /**
+     * Cleans tag value like Lichess: strips ?, empty, or unknown; caps to 140 chars.
+     */
+    private function cleanTagValue($value): ?string
+    {
+        if ($value === null) return null;
+        $str = trim((string)$value);
+        if ($str === '' || $str === '?' || strtolower($str) === 'unknown') {
+            return null;
+        }
+        return mb_substr($str, 0, 140);
+    }
+
+    /**
+     * Sanitizes and canonically orders PGN tags like Lichess.
+     */
+    private function sanitizePgnTags(array $tags): array
+    {
+        $cleaned = [];
+        foreach ($tags as $rawKey => $rawValue) {
+            $key = $this->normalizeTagKey((string)$rawKey);
+            $val = $this->cleanTagValue($rawValue);
+            if ($val !== null) {
+                $cleaned[$key] = $val;
+            }
+        }
+
+        // Canonical Lichess sort order
+        $canonicalOrder = array_flip(self::CANONICAL_TAGS);
+        uksort($cleaned, function ($a, $b) use ($canonicalOrder) {
+            $rankA = $canonicalOrder[$a] ?? 9999;
+            $rankB = $canonicalOrder[$b] ?? 9999;
+            if ($rankA !== $rankB) return $rankA <=> $rankB;
+            return strcmp($a, $b);
+        });
+
+        return $cleaned;
+    }
 }
+
