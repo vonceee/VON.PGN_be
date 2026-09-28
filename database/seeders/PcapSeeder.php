@@ -229,8 +229,8 @@ class PcapSeeder extends Seeder
                     ]
                 ],
                 [
-                    'id' => 'manila-load-manna-knights',
-                    'name' => 'Manila Load Manna Knights',
+                    'id' => 'sudeco-manila-indios-bravos',
+                    'name' => 'Sudeco-Manila Indios Bravos',
                     'conference' => 'omega',
                     'roster' => [
                         ['id' => 'mlm-p1', 'name' => 'Yoseph Taher', 'title' => 'IM', 'rating' => null, 'category' => 'O', 'federation' => 'INA'],
@@ -420,12 +420,190 @@ class PcapSeeder extends Seeder
                 }
             }
 
-            // 2. STANDINGS DATA (Clean zeroed-out regular season standings)
-            $alphaRank = 1;
-            $omegaRank = 1;
+            // 2. MATCHDAY FIXTURES (Round 1 Official Results - Wesley So Cup)
+            $createEmptyBoards = function () {
+                $roles = [
+                    ['role' => 'top_gun', 'label' => 'Board 1 • Top Gun'],
+                    ['role' => 'top_gun', 'label' => 'Board 2 • Top Gun'],
+                    ['role' => 'lady', 'label' => 'Board 3 • Lady Board'],
+                    ['role' => 'senior', 'label' => 'Board 4 • Senior (60+)'],
+                    ['role' => 'homegrown', 'label' => 'Board 5 • Homegrown'],
+                    ['role' => 'homegrown', 'label' => 'Board 6 • Homegrown'],
+                    ['role' => 'homegrown', 'label' => 'Board 7 • Homegrown'],
+                ];
+                return array_map(function ($r, $i) {
+                    return [
+                        'boardNumber' => $i + 1,
+                        'role' => $r['role'],
+                        'roleLabel' => $r['label'],
+                        'playerA' => ['name' => '', 'title' => null, 'rating' => 2000],
+                        'playerB' => ['name' => '', 'title' => null, 'rating' => 2000],
+                        'blitzScoreA' => 0.0,
+                        'blitzScoreB' => 0.0,
+                        'rapidScoreA' => 0.0,
+                        'rapidScoreB' => 0.0,
+                    ];
+                }, $roles, array_keys($roles));
+            };
+
+            $matchesData = [
+                // --- DIVISION ALPHA ---
+                [
+                    'id' => 'match-rd1-alpha-1',
+                    'round' => 1,
+                    'conference' => 'alpha',
+                    'season' => '2026 Season • Wesley So Cup',
+                    'date' => 'Round 1',
+                    'time' => '7:00 PM PHT',
+                    'status' => 'completed',
+                    'team_a_id' => 'san-juan-predators',
+                    'team_b_id' => 'laguna-7lakes',
+                    'score_a' => 18.0,
+                    'score_b' => 3.0,
+                    'blitz_score_a' => 0.0,
+                    'blitz_score_b' => 0.0,
+                    'rapid_score_a' => 0.0,
+                    'rapid_score_b' => 0.0,
+                    'boards' => $createEmptyBoards(),
+                ],
+                [
+                    'id' => 'match-rd1-alpha-2',
+                    'round' => 1,
+                    'conference' => 'alpha',
+                    'season' => '2026 Season • Wesley So Cup',
+                    'date' => 'Round 1',
+                    'time' => '7:00 PM PHT',
+                    'status' => 'completed',
+                    'team_a_id' => 'manila-aq-prime',
+                    'team_b_id' => 'mindoro-tamaraws',
+                    'score_a' => 21.0,
+                    'score_b' => 0.0,
+                    'blitz_score_a' => 0.0,
+                    'blitz_score_b' => 0.0,
+                    'rapid_score_a' => 0.0,
+                    'rapid_score_b' => 0.0,
+                    'boards' => $createEmptyBoards(),
+                ],
+                [
+                    'id' => 'match-rd1-alpha-3',
+                    'round' => 1,
+                    'conference' => 'alpha',
+                    'season' => '2026 Season • Wesley So Cup',
+                    'date' => 'Round 1',
+                    'time' => '7:00 PM PHT',
+                    'status' => 'completed',
+                    'team_a_id' => 'camarines-soaring-eagles',
+                    'team_b_id' => 'ocm-cebu-ninos',
+                    'score_a' => 15.0,
+                    'score_b' => 6.0,
+                    'blitz_score_a' => 0.0,
+                    'blitz_score_b' => 0.0,
+                    'rapid_score_a' => 0.0,
+                    'rapid_score_b' => 0.0,
+                    'boards' => $createEmptyBoards(),
+                ],
+                [
+                    'id' => 'match-rd1-alpha-4',
+                    'round' => 1,
+                    'conference' => 'alpha',
+                    'season' => '2026 Season • Wesley So Cup',
+                    'date' => 'Round 1',
+                    'time' => '7:00 PM PHT',
+                    'status' => 'completed',
+                    'team_a_id' => 'isabela-knights',
+                    'team_b_id' => 'quezon-city-simba',
+                    'score_a' => 7.5,
+                    'score_b' => 13.5,
+                    'blitz_score_a' => 0.0,
+                    'blitz_score_b' => 0.0,
+                    'rapid_score_a' => 0.0,
+                    'rapid_score_b' => 0.0,
+                    'boards' => $createEmptyBoards(),
+                ],
+
+                // --- DIVISION OMEGA ---
+                [
+                    'id' => 'match-rd1-omega-1',
+                    'round' => 1,
+                    'conference' => 'omega',
+                    'season' => '2026 Season • Wesley So Cup',
+                    'date' => 'Round 1',
+                    'time' => '7:00 PM PHT',
+                    'status' => 'completed',
+                    'team_a_id' => 'sudeco-manila-indios-bravos',
+                    'team_b_id' => 'qc-chessmates-stallions',
+                    'score_a' => 11.5,
+                    'score_b' => 9.5,
+                    'blitz_score_a' => 0.0,
+                    'blitz_score_b' => 0.0,
+                    'rapid_score_a' => 0.0,
+                    'rapid_score_b' => 0.0,
+                    'boards' => $createEmptyBoards(),
+                ],
+                [
+                    'id' => 'match-rd1-omega-2',
+                    'round' => 1,
+                    'conference' => 'omega',
+                    'season' => '2026 Season • Wesley So Cup',
+                    'date' => 'Round 1',
+                    'time' => '7:00 PM PHT',
+                    'status' => 'completed',
+                    'team_a_id' => 'bacolod-blitzers',
+                    'team_b_id' => 'zamboanga-sultans',
+                    'score_a' => 13.0,
+                    'score_b' => 8.0,
+                    'blitz_score_a' => 0.0,
+                    'blitz_score_b' => 0.0,
+                    'rapid_score_a' => 0.0,
+                    'rapid_score_b' => 0.0,
+                    'boards' => $createEmptyBoards(),
+                ],
+                [
+                    'id' => 'match-rd1-omega-3',
+                    'round' => 1,
+                    'conference' => 'omega',
+                    'season' => '2026 Season • Wesley So Cup',
+                    'date' => 'Round 1',
+                    'time' => '7:00 PM PHT',
+                    'status' => 'completed',
+                    'team_a_id' => 'cagayan-kings',
+                    'team_b_id' => 'rizal-batch-towers',
+                    'score_a' => 15.5,
+                    'score_b' => 5.5,
+                    'blitz_score_a' => 0.0,
+                    'blitz_score_b' => 0.0,
+                    'rapid_score_a' => 0.0,
+                    'rapid_score_b' => 0.0,
+                    'boards' => $createEmptyBoards(),
+                ],
+                [
+                    'id' => 'match-rd1-omega-4',
+                    'round' => 1,
+                    'conference' => 'omega',
+                    'season' => '2026 Season • Wesley So Cup',
+                    'date' => 'Round 1',
+                    'time' => '7:00 PM PHT',
+                    'status' => 'completed',
+                    'team_a_id' => 'cavite-spartans',
+                    'team_b_id' => 'arriba-iriga-oragons',
+                    'score_a' => 13.0,
+                    'score_b' => 8.0,
+                    'blitz_score_a' => 0.0,
+                    'blitz_score_b' => 0.0,
+                    'rapid_score_a' => 0.0,
+                    'rapid_score_b' => 0.0,
+                    'boards' => $createEmptyBoards(),
+                ],
+            ];
+
+            foreach ($matchesData as $matchItem) {
+                PcapMatch::create($matchItem);
+            }
+
+            // 3. STANDINGS & TEAM STATS CALCULATION
+            $standingsMap = [];
             foreach ($teamsData as $teamItem) {
-                $isAlpha = $teamItem['conference'] === 'alpha';
-                PcapStanding::create([
+                $standingsMap[$teamItem['id']] = [
                     'team_id' => $teamItem['id'],
                     'conference' => $teamItem['conference'],
                     'matches_played' => 0,
@@ -437,11 +615,86 @@ class PcapSeeder extends Seeder
                     'board_points_against' => 0.0,
                     'board_points_diff' => 0.0,
                     'form' => [],
-                    'rank' => $isAlpha ? $alphaRank++ : $omegaRank++,
-                ]);
+                ];
             }
 
-            // 3. MATCHDAY FIXTURES (Empty - ready for legitimate fixture creation in PCAP Admin)
+            foreach ($matchesData as $m) {
+                if ($m['status'] !== 'completed') continue;
+
+                $tA = $m['team_a_id'];
+                $tB = $m['team_b_id'];
+                $sA = (float) $m['score_a'];
+                $sB = (float) $m['score_b'];
+
+                $standingsMap[$tA]['matches_played']++;
+                $standingsMap[$tB]['matches_played']++;
+                $standingsMap[$tA]['board_points_for'] += $sA;
+                $standingsMap[$tA]['board_points_against'] += $sB;
+                $standingsMap[$tB]['board_points_for'] += $sB;
+                $standingsMap[$tB]['board_points_against'] += $sA;
+
+                if ($sA > $sB) {
+                    $standingsMap[$tA]['won']++;
+                    $standingsMap[$tA]['match_points'] += 1;
+                    $standingsMap[$tA]['form'][] = 'W';
+
+                    $standingsMap[$tB]['lost']++;
+                    $standingsMap[$tB]['form'][] = 'L';
+                } elseif ($sA < $sB) {
+                    $standingsMap[$tB]['won']++;
+                    $standingsMap[$tB]['match_points'] += 1;
+                    $standingsMap[$tB]['form'][] = 'W';
+
+                    $standingsMap[$tA]['lost']++;
+                    $standingsMap[$tA]['form'][] = 'L';
+                } else {
+                    $standingsMap[$tA]['drawn']++;
+                    $standingsMap[$tA]['form'][] = 'D';
+                    $standingsMap[$tB]['drawn']++;
+                    $standingsMap[$tB]['form'][] = 'D';
+                }
+            }
+
+            // Update team stats in pcap_teams table
+            foreach ($standingsMap as $teamId => &$data) {
+                $data['board_points_diff'] = round($data['board_points_for'] - $data['board_points_against'], 1);
+
+                PcapTeam::where('id', $teamId)->update([
+                    'wins' => $data['won'],
+                    'losses' => $data['lost'],
+                    'draws' => $data['drawn'],
+                    'match_points' => $data['match_points'],
+                    'board_points_for' => $data['board_points_for'],
+                    'board_points_against' => $data['board_points_against'],
+                ]);
+            }
+            unset($data);
+
+            // Sort & Rank Alpha Standings
+            $alphaStandings = array_values(array_filter($standingsMap, fn($s) => $s['conference'] === 'alpha'));
+            usort($alphaStandings, function ($a, $b) {
+                if ($b['match_points'] !== $a['match_points']) return $b['match_points'] <=> $a['match_points'];
+                if ($b['board_points_diff'] != $a['board_points_diff']) return $b['board_points_diff'] <=> $a['board_points_diff'];
+                return $b['board_points_for'] <=> $a['board_points_for'];
+            });
+
+            foreach ($alphaStandings as $index => $row) {
+                $row['rank'] = $index + 1;
+                PcapStanding::create($row);
+            }
+
+            // Sort & Rank Omega Standings
+            $omegaStandings = array_values(array_filter($standingsMap, fn($s) => $s['conference'] === 'omega'));
+            usort($omegaStandings, function ($a, $b) {
+                if ($b['match_points'] !== $a['match_points']) return $b['match_points'] <=> $a['match_points'];
+                if ($b['board_points_diff'] != $a['board_points_diff']) return $b['board_points_diff'] <=> $a['board_points_diff'];
+                return $b['board_points_for'] <=> $a['board_points_for'];
+            });
+
+            foreach ($omegaStandings as $index => $row) {
+                $row['rank'] = $index + 1;
+                PcapStanding::create($row);
+            }
         });
     }
 }
