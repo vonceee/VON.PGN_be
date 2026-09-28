@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             PuzzleSeeder::class,
             CoachSeeder::class,
             BlogSeeder::class,
+            PcapSeeder::class,
         ]);
     }
 }

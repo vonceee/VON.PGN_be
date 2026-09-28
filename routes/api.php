@@ -264,6 +264,32 @@ Route::post('/world-championships', [WorldChampionshipController::class, 'store'
 Route::put('/world-championships/{id}', [WorldChampionshipController::class, 'update']);
 Route::delete('/world-championships/{id}', [WorldChampionshipController::class, 'destroy']);
 
+// PCAP (Professional Chess Association of the Philippines) League Routes
+use App\Http\Controllers\Api\PcapController;
+
+Route::prefix('pcap')->group(function () {
+    // Teams & Rosters
+    Route::get('/teams', [PcapController::class, 'indexTeams']);
+    Route::get('/teams/{id}', [PcapController::class, 'showTeam']);
+    Route::post('/teams', [PcapController::class, 'storeTeam']);
+    Route::put('/teams/{id}', [PcapController::class, 'updateTeam']);
+    Route::delete('/teams/{id}', [PcapController::class, 'destroyTeam']);
+
+    // Matchday Fixtures
+    Route::get('/matches', [PcapController::class, 'indexMatches']);
+    Route::get('/matches/{id}', [PcapController::class, 'showMatch']);
+    Route::post('/matches', [PcapController::class, 'storeMatch']);
+    Route::put('/matches/{id}', [PcapController::class, 'updateMatch']);
+    Route::delete('/matches/{id}', [PcapController::class, 'destroyMatch']);
+
+    // Division Standings
+    Route::get('/standings', [PcapController::class, 'indexStandings']);
+    Route::put('/standings/{teamId}', [PcapController::class, 'updateStanding']);
+
+    // Reset to Seed Data
+    Route::post('/reset', [PcapController::class, 'resetData']);
+});
+
 
 
 
