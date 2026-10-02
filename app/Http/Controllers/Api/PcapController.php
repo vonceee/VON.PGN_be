@@ -52,7 +52,7 @@ class PcapController extends Controller
             'success' => true,
             'data' => $teams->map->toFrontendArray(),
             'count' => $teams->count(),
-        ]);
+        ])->header('Cache-Control', 'private, max-age=60, must-revalidate');
     }
 
     /**
@@ -72,7 +72,7 @@ class PcapController extends Controller
         return response()->json([
             'success' => true,
             'data' => $team->toFrontendArray(),
-        ]);
+        ])->header('Cache-Control', 'private, max-age=60, must-revalidate');
     }
 
     /**
@@ -279,7 +279,7 @@ class PcapController extends Controller
             'success' => true,
             'data' => $matches->map->toFrontendArray(),
             'count' => $matches->count(),
-        ]);
+        ])->header('Cache-Control', 'private, max-age=60, must-revalidate');
     }
 
     /**
@@ -299,7 +299,7 @@ class PcapController extends Controller
         return response()->json([
             'success' => true,
             'data' => $match->toFrontendArray(),
-        ]);
+        ])->header('Cache-Control', 'private, max-age=60, must-revalidate');
     }
 
     /**
@@ -461,7 +461,7 @@ class PcapController extends Controller
             'success' => true,
             'data' => $standings->map->toFrontendArray(),
             'count' => $standings->count(),
-        ]);
+        ])->header('Cache-Control', 'private, max-age=60, must-revalidate');
     }
 
     /**
