@@ -92,6 +92,7 @@ class PcapController extends Controller
             'roster.*.federation' => 'nullable|string|max:10',
             'roster.*.hometown' => 'nullable|string|max:255',
             'roster.*.winLossRecord' => 'nullable|string|max:50',
+            'roster.*.chesscomUsername' => 'nullable|string|max:100',
         ]);
 
         $id = !empty($validated['id']) ? Str::slug($validated['id']) : Str::slug($validated['name']);
@@ -144,6 +145,7 @@ class PcapController extends Controller
                         'federation' => $playerData['federation'] ?? 'PHI',
                         'hometown' => $playerData['hometown'] ?? null,
                         'win_loss_record' => $playerData['winLossRecord'] ?? null,
+                        'chesscom_username' => $playerData['chesscomUsername'] ?? ($playerData['chesscom_username'] ?? null),
                     ]);
                 }
             }
@@ -182,6 +184,7 @@ class PcapController extends Controller
             'boardPointsFor' => 'nullable|numeric',
             'boardPointsAgainst' => 'nullable|numeric',
             'roster' => 'nullable|array',
+            'roster.*.chesscomUsername' => 'nullable|string|max:100',
         ]);
 
         DB::transaction(function () use ($team, $validated) {
@@ -219,6 +222,7 @@ class PcapController extends Controller
                             'federation' => $p['federation'] ?? 'PHI',
                             'hometown' => $p['hometown'] ?? null,
                             'win_loss_record' => $p['winLossRecord'] ?? null,
+                            'chesscom_username' => $p['chesscomUsername'] ?? ($p['chesscom_username'] ?? null),
                         ]);
                     }
                 }

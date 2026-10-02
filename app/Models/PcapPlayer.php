@@ -24,6 +24,7 @@ class PcapPlayer extends Model
         'federation',
         'hometown',
         'win_loss_record',
+        'chesscom_username',
     ];
 
     protected $casts = [
@@ -52,6 +53,7 @@ class PcapPlayer extends Model
             'federation' => $this->federation ?: 'PHI',
             'hometown' => $this->hometown ?? '',
             'winLossRecord' => $this->win_loss_record ?? '',
+            'chesscomUsername' => $this->chesscom_username ?? '',
         ];
     }
 }
