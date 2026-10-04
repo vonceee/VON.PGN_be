@@ -26,4 +26,21 @@
         <priority>0.8</priority>
     </url>
     @endforeach
+
+    @if(isset($pcapMatches))
+    @foreach($pcapMatches as $match)
+    <url>
+        <loc>{{ $baseUrl }}/pcap/game/{{ $match->id }}/1/rapid</loc>
+        <lastmod>{{ $match->updated_at->toAtomString() }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>{{ $baseUrl }}/pcap/game/{{ $match->id }}/1/blitz</loc>
+        <lastmod>{{ $match->updated_at->toAtomString() }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    @endforeach
+    @endif
 </urlset>

@@ -14,9 +14,6 @@ for i in {1..3}; do
     }
 done
 
-echo "Seeding PCAP data..."
-php artisan db:seed --class=PcapSeeder --force
-
 echo "Clearing caches..."
 php artisan config:clear
 php artisan config:cache

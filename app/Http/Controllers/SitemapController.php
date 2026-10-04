@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Tournament;
 use App\Models\Arena;
+use App\Models\PcapMatch;
 use Illuminate\Http\Response;
 use Carbon\Carbon;
 
@@ -38,11 +39,15 @@ class SitemapController extends Controller
             ->select('id', 'updated_at')
             ->get();
 
+        // 4. PCAP Matches: Include all match fixtures
+        $pcapMatches = PcapMatch::select('id', 'updated_at')->get();
+
         $content = view('sitemaps.dynamic', [
             'baseUrl' => $baseUrl,
             'users' => $users,
             'tournaments' => $tournaments,
             'arenas' => $arenas,
+            'pcapMatches' => $pcapMatches,
         ])->render();
 
         return response($content, 200)
