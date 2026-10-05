@@ -17,11 +17,7 @@ class PcapSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
-            // Clear existing data cleanly
-            PcapStanding::truncate();
-            PcapMatch::truncate();
-            PcapPlayer::truncate();
-            PcapTeam::truncate();
+            // Seed data idempotently without destroying existing user changes or custom fixtures
 
             // 1. TEAMS & ROSTERS (Season 6 Conference 2 Official Roster)
             $teamsData = [
@@ -36,7 +32,7 @@ class PcapSeeder extends Seeder
                         ['id' => 'pasig-p1', 'name' => 'Daniel Quizon', 'title' => 'GM', 'rating' => null, 'category' => 'O', 'federation' => 'PHI', 'chesscom_username' => 'quizden37'],
                         ['id' => 'pasig-p2', 'name' => 'Michael Concio Jr', 'title' => 'IM', 'rating' => null, 'category' => 'O', 'federation' => 'PHI', 'chesscom_username' => 'jakopogi'],
                         ['id' => 'pasig-p3', 'name' => 'Sherily Cua', 'title' => 'WFM', 'rating' => null, 'category' => 'L', 'federation' => 'PHI', 'chesscom_username' => 'resnullus'],
-                        ['id' => 'pasig-p4', 'name' => 'Chito Garma', 'title' => 'IM', 'rating' => null, 'category' => 'S', 'federation' => 'PHI', 'chesscom_username' => 'Garmask'],
+                        ['id' => 'pasig-p4', 'name' => 'Chito Garma', 'title' => 'IM', 'rating' => null, 'category' => 'S', 'federation' => 'PHI', 'chesscom_username' => 'Garma0712'],
                         ['id' => 'pasig-p5', 'name' => 'Idelfonso Datu', 'title' => 'IM', 'rating' => null, 'category' => 'HG', 'federation' => 'PHI', 'chesscom_username' => 'DanielDatu'],
                         ['id' => 'pasig-p6', 'name' => 'Marc Kevin Labog', 'title' => null, 'rating' => null, 'category' => 'HG', 'federation' => 'PHI', 'chesscom_username' => 'MarcKevinLabog'],
                         ['id' => 'pasig-p7', 'name' => 'Jerome Villanueva', 'title' => null, 'rating' => null, 'category' => 'HG', 'federation' => 'PHI', 'chesscom_username' => 'MovesChilling'],
@@ -405,18 +401,26 @@ class PcapSeeder extends Seeder
                 $roster = $teamItem['roster'];
                 unset($teamItem['roster']);
 
-                $teamItem['wins'] = 0;
-                $teamItem['losses'] = 0;
-                $teamItem['draws'] = 0;
-                $teamItem['match_points'] = 0;
-                $teamItem['board_points_for'] = 0.0;
-                $teamItem['board_points_against'] = 0.0;
-
-                $team = PcapTeam::create($teamItem);
+                $team = PcapTeam::firstOrCreate(
+                    ['id' => $teamItem['id']],
+                    [
+                        'name' => $teamItem['name'],
+                        'conference' => $teamItem['conference'],
+                        'wins' => 0,
+                        'losses' => 0,
+                        'draws' => 0,
+                        'match_points' => 0,
+                        'board_points_for' => 0.0,
+                        'board_points_against' => 0.0,
+                    ]
+                );
 
                 foreach ($roster as $playerItem) {
                     $playerItem['team_id'] = $team->id;
-                    PcapPlayer::create($playerItem);
+                    PcapPlayer::updateOrCreate(
+                        ['id' => $playerItem['id']],
+                        $playerItem
+                    );
                 }
             }
 
@@ -597,7 +601,7 @@ class PcapSeeder extends Seeder
             ];
 
             foreach ($matchesData as $matchItem) {
-                PcapMatch::create($matchItem);
+                PcapMatch::firstOrCreate(['id' => $matchItem['id']], $matchItem);
             }
 
             // 3. STANDINGS & TEAM STATS CALCULATION
@@ -680,7 +684,7 @@ class PcapSeeder extends Seeder
 
             foreach ($alphaStandings as $index => $row) {
                 $row['rank'] = $index + 1;
-                PcapStanding::create($row);
+                PcapStanding::updateOrCreate(['team_id' => $row['team_id']], $row);
             }
 
             // Sort & Rank Omega Standings
@@ -693,7 +697,7 @@ class PcapSeeder extends Seeder
 
             foreach ($omegaStandings as $index => $row) {
                 $row['rank'] = $index + 1;
-                PcapStanding::create($row);
+                PcapStanding::updateOrCreate(['team_id' => $row['team_id']], $row);
             }
         });
     }

@@ -85,14 +85,17 @@ class PcapController extends Controller
             'name' => 'required|string|max:255',
             'conference' => 'required|in:alpha,omega',
             'roster' => 'nullable|array',
+            'roster.*.id' => 'nullable|string|max:100',
             'roster.*.name' => 'nullable|string|max:255',
             'roster.*.title' => 'nullable|string|max:20',
             'roster.*.rating' => 'nullable|integer',
-            'roster.*.category' => 'nullable|string|in:O,F,S,HG',
+            'roster.*.category' => 'nullable|string|max:20',
             'roster.*.federation' => 'nullable|string|max:10',
             'roster.*.hometown' => 'nullable|string|max:255',
             'roster.*.winLossRecord' => 'nullable|string|max:50',
+            'roster.*.win_loss_record' => 'nullable|string|max:50',
             'roster.*.chesscomUsername' => 'nullable|string|max:100',
+            'roster.*.chesscom_username' => 'nullable|string|max:100',
         ]);
 
         $id = !empty($validated['id']) ? Str::slug($validated['id']) : Str::slug($validated['name']);
@@ -102,7 +105,7 @@ class PcapController extends Controller
             $id = $id . '-' . Str::random(4);
         }
 
-        $team = DB::transaction(function () use ($validated, $id) {
+        $team = DB::transaction(function () use ($validated, $id, $request) {
             $team = PcapTeam::create([
                 'id' => $id,
                 'name' => $validated['name'],
@@ -132,19 +135,20 @@ class PcapController extends Controller
             ]);
 
             // Create roster
-            $roster = $validated['roster'] ?? [];
+            $roster = $request->input('roster', $validated['roster'] ?? []);
             foreach ($roster as $index => $playerData) {
-                if (!empty($playerData['name'])) {
+                $name = trim($playerData['name'] ?? '');
+                if (!empty($name)) {
                     PcapPlayer::create([
-                        'id' => $playerData['id'] ?? ($team->id . '-p' . ($index + 1)),
+                        'id' => !empty($playerData['id']) ? $playerData['id'] : ($team->id . '-p' . ($index + 1)),
                         'team_id' => $team->id,
-                        'name' => $playerData['name'],
-                        'title' => $playerData['title'] ?? null,
-                        'rating' => isset($playerData['rating']) && $playerData['rating'] !== '' ? (int) $playerData['rating'] : null,
-                        'category' => $playerData['category'] ?? 'HG',
-                        'federation' => $playerData['federation'] ?? 'PHI',
+                        'name' => $name,
+                        'title' => !empty($playerData['title']) ? $playerData['title'] : null,
+                        'rating' => (isset($playerData['rating']) && $playerData['rating'] !== '' && is_numeric($playerData['rating'])) ? (int) $playerData['rating'] : null,
+                        'category' => !empty($playerData['category']) ? $playerData['category'] : 'HG',
+                        'federation' => !empty($playerData['federation']) ? $playerData['federation'] : 'PHI',
                         'hometown' => $playerData['hometown'] ?? null,
-                        'win_loss_record' => $playerData['winLossRecord'] ?? null,
+                        'win_loss_record' => $playerData['winLossRecord'] ?? ($playerData['win_loss_record'] ?? null),
                         'chesscom_username' => $playerData['chesscomUsername'] ?? ($playerData['chesscom_username'] ?? null),
                     ]);
                 }
@@ -184,10 +188,20 @@ class PcapController extends Controller
             'boardPointsFor' => 'nullable|numeric',
             'boardPointsAgainst' => 'nullable|numeric',
             'roster' => 'nullable|array',
+            'roster.*.id' => 'nullable|string|max:100',
+            'roster.*.name' => 'nullable|string|max:255',
+            'roster.*.title' => 'nullable|string|max:20',
+            'roster.*.rating' => 'nullable|integer',
+            'roster.*.category' => 'nullable|string|max:20',
+            'roster.*.federation' => 'nullable|string|max:10',
+            'roster.*.hometown' => 'nullable|string|max:255',
+            'roster.*.winLossRecord' => 'nullable|string|max:50',
+            'roster.*.win_loss_record' => 'nullable|string|max:50',
             'roster.*.chesscomUsername' => 'nullable|string|max:100',
+            'roster.*.chesscom_username' => 'nullable|string|max:100',
         ]);
 
-        DB::transaction(function () use ($team, $validated) {
+        DB::transaction(function () use ($team, $validated, $request) {
             $updates = [];
             if (isset($validated['name'])) $updates['name'] = $validated['name'];
             if (isset($validated['conference'])) $updates['conference'] = $validated['conference'];
@@ -206,25 +220,40 @@ class PcapController extends Controller
             }
 
             // Sync roster if provided
-            if (isset($validated['roster']) && is_array($validated['roster'])) {
-                // Delete existing players and re-create to keep roster ordering clean
-                PcapPlayer::where('team_id', $team->id)->delete();
+            if ($request->has('roster') && is_array($request->input('roster'))) {
+                $roster = $request->input('roster');
+                $keptIds = [];
 
-                foreach ($validated['roster'] as $index => $p) {
-                    if (!empty($p['name'])) {
-                        PcapPlayer::create([
-                            'id' => $p['id'] ?? ($team->id . '-p' . ($index + 1)),
-                            'team_id' => $team->id,
-                            'name' => $p['name'],
-                            'title' => $p['title'] ?? null,
-                            'rating' => isset($p['rating']) && $p['rating'] !== '' ? (int) $p['rating'] : null,
-                            'category' => $p['category'] ?? 'HG',
-                            'federation' => $p['federation'] ?? 'PHI',
-                            'hometown' => $p['hometown'] ?? null,
-                            'win_loss_record' => $p['winLossRecord'] ?? null,
-                            'chesscom_username' => $p['chesscomUsername'] ?? ($p['chesscom_username'] ?? null),
-                        ]);
+                foreach ($roster as $index => $p) {
+                    $name = trim($p['name'] ?? '');
+                    if ($name === '') {
+                        continue;
                     }
+
+                    $playerId = !empty($p['id']) ? (string) $p['id'] : ($team->id . '-p' . ($index + 1));
+                    $keptIds[] = $playerId;
+
+                    PcapPlayer::updateOrCreate(
+                        ['id' => $playerId],
+                        [
+                            'team_id' => $team->id,
+                            'name' => $name,
+                            'title' => !empty($p['title']) ? $p['title'] : null,
+                            'rating' => (isset($p['rating']) && $p['rating'] !== '' && is_numeric($p['rating'])) ? (int) $p['rating'] : null,
+                            'category' => !empty($p['category']) ? $p['category'] : 'HG',
+                            'federation' => !empty($p['federation']) ? $p['federation'] : 'PHI',
+                            'hometown' => $p['hometown'] ?? null,
+                            'win_loss_record' => $p['winLossRecord'] ?? ($p['win_loss_record'] ?? null),
+                            'chesscom_username' => $p['chesscomUsername'] ?? ($p['chesscom_username'] ?? null),
+                        ]
+                    );
+                }
+
+                // Delete any players that were removed from the roster
+                if (!empty($keptIds)) {
+                    PcapPlayer::where('team_id', $team->id)->whereNotIn('id', $keptIds)->delete();
+                } else if (empty($roster)) {
+                    PcapPlayer::where('team_id', $team->id)->delete();
                 }
             }
         });
