@@ -158,10 +158,17 @@ class StudyController extends Controller
 
         $order = $study->chapters()->max('order') + 1;
 
+        $initialFen = $request->initial_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        $parts = preg_split('/\s+/', trim($initialFen));
+        if (count($parts) < 3) {
+            $defaults = ['w', 'KQkq', '-', '0', '1'];
+            $initialFen = implode(' ', array_merge($parts, array_slice($defaults, count($parts) - 1)));
+        }
+
         $chapter = $study->chapters()->create([
             'name' => $request->name,
-            'initial_fen' => $request->initial_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-            'current_fen' => $request->initial_fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            'initial_fen' => $initialFen,
+            'current_fen' => $initialFen,
             'orientation' => $request->orientation ?? $study->orientation ?? 'white',
             'order' => $order,
         ]);
