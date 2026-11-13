@@ -275,6 +275,7 @@ class StudyController extends Controller
                 
                 $importedCount = 0;
                 $order = $study->chapters()->max('order') ?? 0;
+                $carryOverTags = [];
 
                 foreach ($games as $gameContent) {
                     if (empty(trim($gameContent))) continue;
@@ -286,7 +287,22 @@ class StudyController extends Controller
                         $rawTags[$match[1]] = stripslashes($match[2]);
                     }
 
-                    $tags = $this->sanitizePgnTags($rawTags);
+                    // Check if this chunk actually contains moves
+                    $movetextOnly = trim(preg_replace('/^\s*\[[A-Za-z0-9_]+\s+"(?:[^"\\\\]|\\\\.)*"\]\s*/m', '', $gameContent));
+                    $cleanMovesOnly = trim(preg_replace('/^(?:1-0|0-1|1\/2-1\/2|\*)\s*$/', '', $movetextOnly));
+                    $hasCustomFen = isset($rawTags['FEN']) && $rawTags['FEN'] !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+                    // If this chunk has no moves and no custom FEN, it's an orphaned/duplicate header block!
+                    // Merge its tags and skip creating an empty chapter.
+                    if (empty($cleanMovesOnly) && !$hasCustomFen && count($games) > 1) {
+                        $carryOverTags = array_merge($carryOverTags, $rawTags);
+                        continue;
+                    }
+
+                    $mergedRawTags = array_merge($carryOverTags, $rawTags);
+                    $carryOverTags = [];
+
+                    $tags = $this->sanitizePgnTags($mergedRawTags);
 
                     // Determine chapter name: prioritized tags
                     $name = $tags['ChapterName'] ?? null;
@@ -422,7 +438,9 @@ class StudyController extends Controller
             // Moves
             $moves = $chapter->moves;
             if (isset($moves['pgn'])) {
-                $pgn .= $moves['pgn'];
+                $rawPgn = $moves['pgn'];
+                $cleanMoves = trim(preg_replace('/^\s*\[[A-Za-z0-9_]+\s+"(?:[^"\\\\]|\\\\.)*"\]\s*/m', '', $rawPgn));
+                $pgn .= !empty($cleanMoves) ? $cleanMoves : $result;
             } elseif (is_array($moves)) {
                 $serialized = $this->serializeMoveTree($moves);
                 $pgn .= !empty($serialized) ? $serialized . " " . $result : $result;
